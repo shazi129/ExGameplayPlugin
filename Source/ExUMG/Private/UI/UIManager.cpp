@@ -1,15 +1,15 @@
-#include "GameUIManager.h"
-#include "GameUIManagerModule.h"
+#include "UI/UIManager.h"
+#include "ExUMGModule.h"
 #include "GameDelegates.h"
 #include "Kismet/GameplayStatics.h"
 
-void UGameUIManager::Initialize(FSubsystemCollectionBase& Collection)
+void UUIManager::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-	FWorldDelegates::OnWorldBeginTearDown.AddUObject(this, &UGameUIManager::OnWorldTearingDown);
+	FWorldDelegates::OnWorldBeginTearDown.AddUObject(this, &UUIManager::OnWorldTearingDown);
 }
 
-void UGameUIManager::OnWorldTearingDown(UWorld* World)
+void UUIManager::OnWorldTearingDown(UWorld* World)
 {
 	if (World == GetWorld())
 	{
@@ -21,37 +21,37 @@ void UGameUIManager::OnWorldTearingDown(UWorld* World)
 	}
 }
 
-void UGameUIManager::Deinitialize()
+void UUIManager::Deinitialize()
 {
 	Super::Deinitialize();
 
 }
 
-UGameUIManager* UGameUIManager::GetGameUIManager(const UObject* WorldContextObject)
+UUIManager* UUIManager::GetUIManager(const UObject* WorldContextObject)
 {
 	UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(WorldContextObject);
-	return GameInstance->GetSubsystem<UGameUIManager>();
+	return GameInstance->GetSubsystem<UUIManager>();
 }
 
-void UGameUIManager::SetPanelTemplate(TSubclassOf<UGameUIPanel> panelTemplate)
+void UUIManager::SetPanelTemplate(TSubclassOf<UUIPanel> panelTemplate)
 {
 	PanelTemplateCls = panelTemplate;
 }
 
-UGameUIPanel* UGameUIManager::FindOrCreateUIPanel(TSubclassOf<UUserWidget> widgetClass, FName panelName, EUIPaneCacheType cacheType)
+UUIPanel* UUIManager::FindOrCreateUIPanel(TSubclassOf<UUserWidget> widgetClass, FName panelName, EUIPaneCacheType cacheType)
 {
 	//如果没有设置，就加载一个默认模板
 	if (PanelTemplateCls == nullptr)
 	{
 		FString defaultPath = TEXT("Blueprint'/ExGameplayPlugin/Template/WB_PanelTemplate.WB_PanelTemplate_C'");
-		UClass* defaultCls = LoadClass<UGameUIPanel>(this, *defaultPath);
+		UClass* defaultCls = LoadClass<UUIPanel>(this, *defaultPath);
 		if (defaultCls != nullptr)
 		{
 			PanelTemplateCls = defaultCls;
 		}
 		else
 		{
-			UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIManager FindOrCreateUIPanel Error, Panel Template Class is NULL"));
+			EXUMG_LOG(Warning, TEXT("---UUIManager FindOrCreateUIPanel Error, Panel Template Class is NULL"));
 			return nullptr;
 		}
 	}
@@ -66,11 +66,11 @@ UGameUIPanel* UGameUIManager::FindOrCreateUIPanel(TSubclassOf<UUserWidget> widge
 	}
 	if (panelName.IsNone())
 	{
-		UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIManager FindOrCreateUIPanel Error, Cannot get panel name"));
+		EXUMG_LOG(Warning, TEXT("---UUIManager FindOrCreateUIPanel Error, Cannot get panel name"));
 		return nullptr;
 	}
 
-	UGameUIPanel* panel = nullptr;
+	UUIPanel* panel = nullptr;
 
 	//先通过名字查找
 	if (PanelCache.Contains(panelName))
@@ -93,7 +93,7 @@ UGameUIPanel* UGameUIManager::FindOrCreateUIPanel(TSubclassOf<UUserWidget> widge
 	//没找到，就要开始创建了
 	if (widgetClass == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Error, TEXT("---UGameUIManager FindOrCreateUIPanel, IN Widget Class is none"));
+		EXUMG_LOG(Error, TEXT("---UUIManager FindOrCreateUIPanel, IN Widget Class is none"));
 		return nullptr;
 	}
 
@@ -102,14 +102,14 @@ UGameUIPanel* UGameUIManager::FindOrCreateUIPanel(TSubclassOf<UUserWidget> widge
 	
 	if (widget == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Error, TEXT("---UGameUIManager CreateUIPanel, CreateWidget return null"));
+		EXUMG_LOG(Error, TEXT("---UUIManager CreateUIPanel, CreateWidget return null"));
 		return nullptr;
 	}
-	panel = Cast<UGameUIPanel>(widget);
+	panel = Cast<UUIPanel>(widget);
 	if (panel == nullptr)
 	{
 		widget = nullptr;
-		UE_LOG(LogGameUIManager, Error, TEXT("---UGameUIManager CreateUIPanel, template is not a UGameUIPanel"));
+		EXUMG_LOG(Error, TEXT("---UUIManager CreateUIPanel, template is not a UUIPanel"));
 		return nullptr;
 	}
 
@@ -134,9 +134,9 @@ UGameUIPanel* UGameUIManager::FindOrCreateUIPanel(TSubclassOf<UUserWidget> widge
 	return panel;
 }
 
-UGameUIPanel* UGameUIManager::FindUIPanelByContentWidget(UUserWidget* content)
+UUIPanel* UUIManager::FindUIPanelByContentWidget(UUserWidget* content)
 {
-	for (TPair<FName, UGameUIPanel*> item : PanelCache)
+	for (TPair<FName, UUIPanel*> item : PanelCache)
 	{
 		if (item.Value->PanelContent == content)
 		{
@@ -146,13 +146,13 @@ UGameUIPanel* UGameUIManager::FindUIPanelByContentWidget(UUserWidget* content)
 	return nullptr;
 }
 
-UGameUIPanel* UGameUIManager::ShowPanel(TSubclassOf<UUserWidget> widgetCls, FName panelName, EUIPaneCacheType cacheType)
+UUIPanel* UUIManager::ShowPanel(TSubclassOf<UUserWidget> widgetCls, FName panelName, EUIPaneCacheType cacheType)
 {
-	UGameUIPanel* panel = FindOrCreateUIPanel(widgetCls, panelName, cacheType);
+	UUIPanel* panel = FindOrCreateUIPanel(widgetCls, panelName, cacheType);
 	return ShowPanelObject(panel);
 }
 
-UGameUIPanel* UGameUIManager::ShowPanelObject(UGameUIPanel* panel)
+UUIPanel* UUIManager::ShowPanelObject(UUIPanel* panel)
 {
 	if (panel == nullptr)
 	{
@@ -178,7 +178,7 @@ UGameUIPanel* UGameUIManager::ShowPanelObject(UGameUIPanel* panel)
 	return panel;
 }
 
-void UGameUIManager::RemovePanelObject(UGameUIPanel* panel)
+void UUIManager::RemovePanelObject(UUIPanel* panel)
 {
 	if (panel == nullptr)
 	{
@@ -192,7 +192,7 @@ void UGameUIManager::RemovePanelObject(UGameUIPanel* panel)
 
 	//在cache中找到，删掉它
 	FName panelName = "";
-	for (TPair<FName, UGameUIPanel*> item : PanelCache)
+	for (TPair<FName, UUIPanel*> item : PanelCache)
 	{
 		if (item.Value->PanelContent == panel)
 		{
@@ -207,7 +207,7 @@ void UGameUIManager::RemovePanelObject(UGameUIPanel* panel)
 	}
 }
 
-void UGameUIManager::RemoveCurrentPanel()
+void UUIManager::RemoveCurrentPanel()
 {
 	if (CurrentPanel != nullptr)
 	{
@@ -217,7 +217,7 @@ void UGameUIManager::RemoveCurrentPanel()
 	}
 }
 
-void UGameUIManager::HideCurrentPanel()
+void UUIManager::HideCurrentPanel()
 {
 	if (CurrentPanel != nullptr)
 	{
@@ -226,7 +226,7 @@ void UGameUIManager::HideCurrentPanel()
 	}
 }
 
-void UGameUIManager::ShowCurrentPanel()
+void UUIManager::ShowCurrentPanel()
 {
 	if (CurrentPanel != nullptr && !CurrentPanel->GetParent())
 	{
@@ -234,7 +234,7 @@ void UGameUIManager::ShowCurrentPanel()
 	}
 }
 
-bool UGameUIManager::HasPreviousPanel()
+bool UUIManager::HasPreviousPanel()
 {
 	if (CurrentPanel != nullptr
 		&& CurrentPanel->PreviousPanelClass != nullptr)
@@ -244,7 +244,7 @@ bool UGameUIManager::HasPreviousPanel()
 	return false;
 }
 
-UGameUIPanel* UGameUIManager::ShowPrevioursPanel()
+UUIPanel* UUIManager::ShowPrevioursPanel()
 {
 	if (HasPreviousPanel())
 	{
@@ -253,7 +253,7 @@ UGameUIPanel* UGameUIManager::ShowPrevioursPanel()
 	return nullptr;
 }
 
-UGameUIPopLayout* UGameUIManager::ShowPopLayout(TSubclassOf<UUserWidget> widgetCls, FPopLayoutParam popParam)
+UUIPopLayout* UUIManager::ShowPopLayout(TSubclassOf<UUserWidget> widgetCls, FPopLayoutParam popParam)
 {
 	if (CurrentPanel != nullptr)
 	{

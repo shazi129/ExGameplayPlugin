@@ -1,95 +1,95 @@
-#include "GameUIPopLayout.h"
-#include "GameUIPanel.h"
+#include "UI/UIPopLayout.h"
+#include "UI/UIPanel.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/CanvasPanelSlot.h"
-#include "GameUIManagerModule.h"
+#include "ExUMGModule.h"
 
-UGameUIPopLayout::UGameUIPopLayout(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+UUIPopLayout::UUIPopLayout(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PopName = "";
 }
 
-void UGameUIPopLayout::InitPopLayout(const FPopLayoutParam& PopLayoutParam)
+void UUIPopLayout::InitPopLayout(const FPopLayoutParam& PopLayoutParam)
 {
 	PopName = PopLayoutParam.PopName;
 }
 
-UGameUIPanel* UGameUIPopLayout::GetParentPanel()
+UUIPanel* UUIPopLayout::GetParentPanel()
 {
 	return ParentPanel;
 }
 
-void UGameUIPopLayout::SetParentPanel(UGameUIPanel* Panel)
+void UUIPopLayout::SetParentPanel(UUIPanel* Panel)
 {
 	ParentPanel = Panel;
 }
 
-void UGameUIPopLayout::Dispose()
+void UUIPopLayout::Dispose()
 {
 	this->RemoveFromParent();
 }
 
-UUserWidget* UGameUIPopLayout::SetContent(TSubclassOf<UUserWidget> ContentWidgetClass)
+UUserWidget* UUIPopLayout::SetContent(TSubclassOf<UUserWidget> ContentWidgetClass)
 {
 	if (ContentWidgetClass == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIPopLayout SetContent Error, ContentWidgetClass is NULL"));
+		EXUMG_LOG(Warning, TEXT("---UUIPopLayout SetContent Error, ContentWidgetClass is NULL"));
 		return nullptr;
 	}
 
 	UPanelWidget* ContentPanel = Cast<UPanelWidget>(this->WidgetTree->FindWidget("ContentPanel"));
 	if (ContentPanel == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIPopLayout SetContent Error, Cannot find ContentPanel"));
+		EXUMG_LOG(Warning, TEXT("---UUIPopLayout SetContent Error, Cannot find ContentPanel"));
 		return nullptr;
 	}
 
 	ContentWidget = CreateWidget(GetWorld(), ContentWidgetClass);
 	if (ContentWidget == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIPopLayout SetContent Error, Create PopLayout Content Widget return NULL"));
+		EXUMG_LOG(Warning, TEXT("---UUIPopLayout SetContent Error, Create PopLayout Content Widget return NULL"));
 		return nullptr;
 	}
 
 	ContentPanel->AddChild(ContentWidget);
-	UGameUIPanel::FullFillWidget(ContentWidget);
+	UUIPanel::FullFillWidget(ContentWidget);
 
 	return ContentWidget;
 }
 
-UUserWidget* UGameUIPopLayout::GetContent()
+UUserWidget* UUIPopLayout::GetContent()
 {
 	return ContentWidget;
 }
 
-UGameUIPopLayout* UGameUIPopLayout::GetPopLayoutByContent(UUserWidget* ContentWidget)
+UUIPopLayout* UUIPopLayout::GetPopLayoutByContent(UUserWidget* ContentWidget)
 {
 	if (ContentWidget == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIPopLayout GetPopLayoutByContent Error, ContentWidget is NULL"));
+		EXUMG_LOG(Warning, TEXT("---UUIPopLayout GetPopLayoutByContent Error, ContentWidget is NULL"));
 		return nullptr;
 	}
 
 	UPanelWidget* PanelWidget = ContentWidget->GetParent();
 	if (PanelWidget == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIPopLayout GetPopLayoutByContent Error, ContentWidget has no Panrent"));
+		EXUMG_LOG(Warning, TEXT("---UUIPopLayout GetPopLayoutByContent Error, ContentWidget has no Panrent"));
 		return nullptr;
 	}
 
 	UObject* WidgetTreeObject = PanelWidget->GetOuter();
 	if (WidgetTreeObject == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIPopLayout GetPopLayoutByContent Error, Cannot get WidgetTree"));
+		EXUMG_LOG(Warning, TEXT("---UUIPopLayout GetPopLayoutByContent Error, Cannot get WidgetTree"));
 		return nullptr;
 	}
 
 	UObject* PopLayoutObject = WidgetTreeObject->GetOuter();
 	if (PopLayoutObject == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIPopLayout GetPopLayoutByContent Error, Cannot Get PopLayoutObject"));
+		EXUMG_LOG(Warning, TEXT("---UUIPopLayout GetPopLayoutByContent Error, Cannot Get PopLayoutObject"));
 		return nullptr;
 	}
 
-	return  Cast<UGameUIPopLayout>(PopLayoutObject);
+	return  Cast<UUIPopLayout>(PopLayoutObject);
 }

@@ -1,14 +1,14 @@
-#include "GameUIPanel.h"
+#include "UI/UIPanel.h"
 #include "Blueprint/WidgetTree.h"
 #include "Components/CanvasPanelSlot.h"
-#include "GameUIManagerModule.h"
+#include "ExUMGModule.h"
 
-UGameUIPanel::UGameUIPanel(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+UUIPanel::UUIPanel(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PanelName = "";
 }
 
-void UGameUIPanel::FullFillWidget(UUserWidget* Widget)
+void UUIPanel::FullFillWidget(UUserWidget* Widget)
 {
 	if (Widget && Widget->Slot != nullptr)
 	{
@@ -24,7 +24,7 @@ void UGameUIPanel::FullFillWidget(UUserWidget* Widget)
 	}
 }
 
-int UGameUIPanel::SetPanel(TSubclassOf<UUserWidget> contentCls)
+int UUIPanel::SetPanel(TSubclassOf<UUserWidget> contentCls)
 {
 	UWidget* panel = this->WidgetTree->FindWidget("UIPanel");
 	if (panel == nullptr)
@@ -62,18 +62,18 @@ int UGameUIPanel::SetPanel(TSubclassOf<UUserWidget> contentCls)
 	return 0;
 }
 
-UGameUIPopLayout* UGameUIPanel::ShowPopLayout(TSubclassOf<UUserWidget> PopClass, UPARAM(ref) FPopLayoutParam& PopParam)
+UUIPopLayout* UUIPanel::ShowPopLayout(TSubclassOf<UUserWidget> PopClass, UPARAM(ref) FPopLayoutParam& PopParam)
 {
 	if (PopClass == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIPanel ShowPopLayout Error, Pop Class is NULL"));
+		EXUMG_LOG(Warning, TEXT("---UUIPanel ShowPopLayout Error, Pop Class is NULL"));
 		return nullptr;
 	}
 
 	UPanelWidget* LayoutPanel = GetPopLayoutPanel();
 	if (LayoutPanel == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIPanel ShowPopLayout Error, Tempalte[%s] has no UIPoplayout Layer"), *this->GetName());
+		EXUMG_LOG(Warning, TEXT("---UUIPanel ShowPopLayout Error, Tempalte[%s] has no UIPoplayout Layer"), *this->GetName());
 		return nullptr;
 	}
 
@@ -81,14 +81,14 @@ UGameUIPopLayout* UGameUIPanel::ShowPopLayout(TSubclassOf<UUserWidget> PopClass,
 	if (PopTemplateClass == nullptr)
 	{
 		FString defaultPath = TEXT("Blueprint'/ExGameplayPlugin/Template/WB_PopTemplate.WB_PopTemplate_C'");
-		UClass* defaultCls = LoadClass<UGameUIPopLayout>(this, *defaultPath);
+		UClass* defaultCls = LoadClass<UUIPopLayout>(this, *defaultPath);
 		if (defaultCls != nullptr)
 		{
 			PopTemplateClass = defaultCls;
 		}
 		else
 		{
-			UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIPanel ShowPopLayout Error, Pop Template Class is NULL"));
+			EXUMG_LOG(Warning, TEXT("---UUIPanel ShowPopLayout Error, Pop Template Class is NULL"));
 			return nullptr;
 		}
 	}
@@ -101,14 +101,14 @@ UGameUIPopLayout* UGameUIPanel::ShowPopLayout(TSubclassOf<UUserWidget> PopClass,
 	UUserWidget* Widget = CreateWidget(GetWorld(), PopTemplateClass);
 	if (Widget == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIPanel ShowPopLayout Error, Create PopLayout Widget return NULL"));
+		EXUMG_LOG(Warning, TEXT("---UUIPanel ShowPopLayout Error, Create PopLayout Widget return NULL"));
 		return nullptr;
 	}
 
-	UGameUIPopLayout* PoplayoutWidget = Cast<UGameUIPopLayout>(Widget);
+	UUIPopLayout* PoplayoutWidget = Cast<UUIPopLayout>(Widget);
 	if (PoplayoutWidget == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIPanel ShowPopLayout Error, PopTemplateClass is not a UGameUIPopLayout"));
+		EXUMG_LOG(Warning, TEXT("---UUIPanel ShowPopLayout Error, PopTemplateClass is not a UUIPopLayout"));
 		return nullptr;
 	}
 
@@ -121,7 +121,7 @@ UGameUIPopLayout* UGameUIPanel::ShowPopLayout(TSubclassOf<UUserWidget> PopClass,
 	return PoplayoutWidget;
 }
 
-UPanelWidget* UGameUIPanel::GetPopLayoutPanel()
+UPanelWidget* UUIPanel::GetPopLayoutPanel()
 {
 	if (PopLayoutPanel == nullptr)
 	{
@@ -130,12 +130,12 @@ UPanelWidget* UGameUIPanel::GetPopLayoutPanel()
 	return PopLayoutPanel;
 }
 
-void UGameUIPanel::RemoveAllPop()
+void UUIPanel::RemoveAllPop()
 {
 	UPanelWidget* LayoutPanel = GetPopLayoutPanel();
 	if (LayoutPanel == nullptr)
 	{
-		UE_LOG(LogGameUIManager, Warning, TEXT("---UGameUIPanel RemoveAllPop Error, Tempalte[%s] has no UIPoplayout Layer"), *this->GetName());
+		EXUMG_LOG(Warning, TEXT("---UUIPanel RemoveAllPop Error, Tempalte[%s] has no UIPoplayout Layer"), *this->GetName());
 		return;
 	}
 

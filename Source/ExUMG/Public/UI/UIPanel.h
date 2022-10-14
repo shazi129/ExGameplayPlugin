@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Blueprint/UserWidget.h"
-#include "GameUIPopLayout.h"
-#include "GameUIPanel.generated.h"
+#include "UI/UIPopLayout.h"
+#include "UIPanel.generated.h"
 
 //交互行为类型
 UENUM(BlueprintType)
@@ -13,14 +13,14 @@ enum EUIPaneCacheType
 };
 
 UCLASS(BlueprintType)
-class UGameUIPanel : public UUserWidget
+class EXUMG_API UUIPanel : public UUserWidget
 {
 	GENERATED_UCLASS_BODY()
 
 public:
 	int SetPanel(TSubclassOf<UUserWidget> contentCls);
 
-	UGameUIPopLayout* ShowPopLayout(TSubclassOf<UUserWidget> PopClass, UPARAM(ref) FPopLayoutParam& PopParam);
+	UUIPopLayout* ShowPopLayout(TSubclassOf<UUserWidget> PopClass, UPARAM(ref) FPopLayoutParam& PopParam);
 
 	void RemoveAllPop();
 
@@ -29,7 +29,7 @@ public:
 public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		TSubclassOf<UGameUIPopLayout> PopTemplateClass;
+		TSubclassOf<UUIPopLayout> PopTemplateClass;
 
 	UPROPERTY(BlueprintReadOnly)
 		FName PanelName;

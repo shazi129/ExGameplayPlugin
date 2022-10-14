@@ -1,13 +1,13 @@
 #pragma once
 
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "GameUIPanel.h"
-#include "GameUIPopLayout.h"
-#include "GameUIManager.generated.h"
+#include "UIPanel.h"
+#include "UIPopLayout.h"
+#include "UIManager.generated.h"
 
 
 UCLASS(BlueprintType)
-class GAMEUIMANAGER_API UGameUIManager : public UGameInstanceSubsystem
+class EXUMG_API UUIManager : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 
@@ -21,25 +21,25 @@ public:
 public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (WorldContext = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
-		static UGameUIManager* GetGameUIManager(const UObject* WorldContextObject);
+		static UUIManager* GetUIManager(const UObject* WorldContextObject);
 
 	UFUNCTION(BlueprintCallable)
-		void SetPanelTemplate(TSubclassOf<UGameUIPanel> panelTemplate);
+		void SetPanelTemplate(TSubclassOf<UUIPanel> panelTemplate);
 
 	UFUNCTION(BlueprintCallable)
-		UGameUIPanel* FindOrCreateUIPanel(TSubclassOf<UUserWidget> widgetClass, FName panelName, EUIPaneCacheType cacheType = E_FOREVER_CACHE);
+		UUIPanel* FindOrCreateUIPanel(TSubclassOf<UUserWidget> widgetClass, FName panelName, EUIPaneCacheType cacheType = E_FOREVER_CACHE);
 
 	UFUNCTION(BlueprintCallable)
-		UGameUIPanel* FindUIPanelByContentWidget(UUserWidget* content);
+		UUIPanel* FindUIPanelByContentWidget(UUserWidget* content);
 
 	UFUNCTION(BlueprintCallable)
-		UGameUIPanel* ShowPanel(TSubclassOf<UUserWidget> widgetCls, FName panelName, EUIPaneCacheType cacheType = E_FOREVER_CACHE);
+		UUIPanel* ShowPanel(TSubclassOf<UUserWidget> widgetCls, FName panelName, EUIPaneCacheType cacheType = E_FOREVER_CACHE);
 
 	UFUNCTION(BlueprintCallable)
-		UGameUIPanel* ShowPanelObject(UGameUIPanel* panel);
+		UUIPanel* ShowPanelObject(UUIPanel* panel);
 
 	UFUNCTION(BlueprintCallable)
-		void RemovePanelObject(UGameUIPanel* panel);
+		void RemovePanelObject(UUIPanel* panel);
 
 	UFUNCTION(BlueprintCallable)
 		void RemoveCurrentPanel();
@@ -54,19 +54,19 @@ public:
 		bool HasPreviousPanel();
 
 	UFUNCTION(BlueprintCallable)
-		UGameUIPanel* ShowPrevioursPanel();
+		UUIPanel* ShowPrevioursPanel();
 
 	UFUNCTION(BlueprintCallable)
-		UGameUIPopLayout* ShowPopLayout(TSubclassOf<UUserWidget> widgetCls, FPopLayoutParam PopParam);
+		UUIPopLayout* ShowPopLayout(TSubclassOf<UUserWidget> widgetCls, FPopLayoutParam PopParam);
 
 private:
-	UGameUIPanel* CurrentPanel;
+	UUIPanel* CurrentPanel;
 
 	UPROPERTY()
-	TMap<FName, UGameUIPanel*> PanelCache;
+	TMap<FName, UUIPanel*> PanelCache;
 
 	UPROPERTY()
-		TMap<UWorld*, UGameUIPanel*> PanelCache2; 
+		TMap<UWorld*, UUIPanel*> PanelCache2; 
 
-	TSubclassOf<UGameUIPanel> PanelTemplateCls;
+	TSubclassOf<UUIPanel> PanelTemplateCls;
 };

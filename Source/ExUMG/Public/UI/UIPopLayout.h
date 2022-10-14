@@ -1,10 +1,10 @@
 #pragma once
 
 #include "Blueprint/UserWidget.h"
-#include "GameUIPopLayout.generated.h"
+#include "UIPopLayout.generated.h"
 
 USTRUCT(BlueprintType)
-struct FPopLayoutParam
+struct EXUMG_API FPopLayoutParam
 {
 	GENERATED_BODY()
 
@@ -18,20 +18,20 @@ struct FPopLayoutParam
 		bool HideWhenNewPop;
 };
 
-class UGameUIPanel;
+class UUIPanel;
 
 UCLASS(BlueprintType)
-class UGameUIPopLayout : public UUserWidget
+class EXUMG_API UUIPopLayout : public UUserWidget
 {
 	GENERATED_UCLASS_BODY()
 
 public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		static UGameUIPopLayout* GetPopLayoutByContent(UUserWidget* ContentWidget);
+		static UUIPopLayout* GetPopLayoutByContent(UUserWidget* ContentWidget);
 
 public:
 	UFUNCTION(BlueprintCallable)
-		UGameUIPanel* GetParentPanel();
+		UUIPanel* GetParentPanel();
 
 	UFUNCTION(BlueprintCallable)
 		void Dispose();
@@ -42,7 +42,7 @@ public:
 public:
 	void InitPopLayout(const FPopLayoutParam& PopLayoutParam);
 
-	void SetParentPanel(UGameUIPanel* Panel);
+	void SetParentPanel(UUIPanel* Panel);
 
 	UUserWidget* SetContent(TSubclassOf<UUserWidget> ContentWidgetClass);
 
@@ -51,7 +51,7 @@ public:
 		FName PopName;
 
 private:
-	UGameUIPanel* ParentPanel;
+	UUIPanel* ParentPanel;
 
 	UUserWidget* ContentWidget;
 };

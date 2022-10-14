@@ -21,11 +21,6 @@
 			"LoadingPhase": "Default"
 		},
 		{
-			"Name": "GameUIManager",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		},
-		{
 			"Name": "ExGameplayAbilities",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
