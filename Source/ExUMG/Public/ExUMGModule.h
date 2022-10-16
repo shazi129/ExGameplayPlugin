@@ -14,6 +14,9 @@ public:
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+
+	void RegisterSettings();
+	void UnregisterSettings();
 };
 
 #define EXUMG_LOG(Verbosity, Format, ...) \
