@@ -21,19 +21,19 @@ struct EXGAMEPLAYLIBRARY_API FScalabilityInfo
 		int PostProcess = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		int Shadows = 1;
+		int Shadow = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		int GlobalIllumination = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		int Reflections = 1;
+		int Reflection = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		int Textures = 1;
+		int Texture = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		int Effects = 1;
+		int Effect = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		int Foliage = 1;
@@ -48,6 +48,8 @@ class EXGAMEPLAYLIBRARY_API UPerformanceLibrary : public UBlueprintFunctionLibra
 	GENERATED_BODY()
 
 	UFUNCTION(BlueprintCallable, Category = "PerformanceLibrary")
-	static void SetScalability(FScalabilityInfo ScalabilityInfo);
+		static void SetScalability(FScalabilityInfo ScalabilityInfo);
 
+	UFUNCTION(BlueprintCallable, Category = "PerformanceLibrary")
+		static FScalabilityInfo GetScalability();
 };
