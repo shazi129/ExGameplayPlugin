@@ -33,6 +33,6 @@ public:
 	UPROPERTY(Config, EditAnywhere, Category = "Development")
 		TArray<FDevelopModule> DevelopModules;
 
-	UPROPERTY(config, EditAnywhere, Category = "Cheat", meta = (MetaClass = "CheatManagerExtension", DisplayName = "Cheat Manager Extension", ConfigRestartRequired = true))
+	UPROPERTY(config, EditAnywhere, Category = "Development", meta = (MetaClass = "CheatManagerExtension", DisplayName = "Cheat Manager Extension", ConfigRestartRequired = true))
 		TArray<FSoftClassPath> CheatExtensionClasses;
 };

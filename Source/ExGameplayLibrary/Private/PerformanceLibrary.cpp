@@ -4,17 +4,17 @@
 
 void UPerformanceLibrary::SetScalability(FScalabilityInfo ScalabilityInfo)
 {
-	UExGameplayLibrary::ExecCommand("sg.ResolutionQuality " + ScalabilityInfo.ResolutionScale);
-	UExGameplayLibrary::ExecCommand("sg.ViewDistanceQuality " + ScalabilityInfo.ViewDistance);
-	UExGameplayLibrary::ExecCommand("sg.AntiAliasingQuality " + ScalabilityInfo.AntiAliasing);
-	UExGameplayLibrary::ExecCommand("sg.PostProcessQuality " + ScalabilityInfo.PostProcess);
-	UExGameplayLibrary::ExecCommand("sg.ShadowQuality " + ScalabilityInfo.Shadow);
-	UExGameplayLibrary::ExecCommand("sg.GlobalIlluminationQuality " + ScalabilityInfo.GlobalIllumination);
-	UExGameplayLibrary::ExecCommand("sg.ReflectionQuality " + ScalabilityInfo.Reflection);
-	UExGameplayLibrary::ExecCommand("sg.TextureQuality " + ScalabilityInfo.Texture);
-	UExGameplayLibrary::ExecCommand("sg.EffectsQuality " + ScalabilityInfo.Effect);
-	UExGameplayLibrary::ExecCommand("sg.FoliageQuality " + ScalabilityInfo.Foliage);
-	UExGameplayLibrary::ExecCommand("sg.ShadingQuality " + ScalabilityInfo.Shading);
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.ResolutionQuality %d"), ScalabilityInfo.ResolutionScale));
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.ViewDistanceQuality %d"), ScalabilityInfo.ViewDistance));
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.AntiAliasingQuality %d"), ScalabilityInfo.AntiAliasing));
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.PostProcessQuality %d"), ScalabilityInfo.PostProcess));
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.ShadowQuality %d"), ScalabilityInfo.Shadow));
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.GlobalIlluminationQuality %d"), ScalabilityInfo.GlobalIllumination));
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.ReflectionQuality %d"), ScalabilityInfo.Reflection));
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.TextureQuality %d"), ScalabilityInfo.Texture));
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.EffectsQuality %d"), ScalabilityInfo.Effect));
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.FoliageQuality %d"), ScalabilityInfo.Foliage));
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.ShadingQuality %d"), ScalabilityInfo.Shading));
 }
 
 FScalabilityInfo UPerformanceLibrary::GetScalability()
