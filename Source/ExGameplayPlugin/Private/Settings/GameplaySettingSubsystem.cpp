@@ -48,6 +48,8 @@ void UGameplaySettingSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	ActivatedGameFeaturesNames.Empty();
 	ConfigFilePath = FPaths::Combine(FPaths::SourceConfigDir(), TEXT("DefaultGameplay.ini"));
 
+	ParseCommandLine();
+
 	HandleSettings();
 	LoadAndAcitvateDefaultFeatures();
 
@@ -140,5 +142,15 @@ void UGameplaySettingSubsystem::OnCheatManagerCreate(UCheatManager* CheatManager
 
 			CheatManager->AddCheatManagerExtension(NewObject<UCheatManagerExtension>(CheatManager, ExtensionClass));
 		}
+	}
+}
+
+void UGameplaySettingSubsystem::ParseCommandLine()
+{
+	FString CommandLine = UKismetSystemLibrary::GetCommandLine();
+
+	bool AutoPlayEnable = UKismetSystemLibrary::ParseParam(CommandLine, "skipcompile");
+	if (AutoPlayEnable)
+	{
 	}
 }

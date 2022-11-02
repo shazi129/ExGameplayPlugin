@@ -46,6 +46,11 @@
 			"LoadingPhase": "Default"
 		},
 		{
+			"Name": "ExNetworking",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
 			"Name": "ExEditorTools",
 			"Type": "Editor",
 			"LoadingPhase": "Default"

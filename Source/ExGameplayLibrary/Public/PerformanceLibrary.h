@@ -4,7 +4,7 @@
 #include "PerformanceLibrary.generated.h"
 
 USTRUCT(BlueprintType)
-struct EXGAMEPLAYLIBRARY_API FScalabilityInfo
+struct EXGAMEPLAYLIBRARY_API FScalabilityInfo : public FTableRowBase
 {
 	GENERATED_BODY()
 

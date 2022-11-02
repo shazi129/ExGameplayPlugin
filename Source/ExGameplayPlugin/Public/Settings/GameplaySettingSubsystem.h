@@ -35,6 +35,8 @@ private:
 
 	void OnCheatManagerCreate(UCheatManager* CheatManager);
 
+	void ParseCommandLine();
+
 private:
 
 	TArray<FString> ActivatedGameFeaturesNames;
