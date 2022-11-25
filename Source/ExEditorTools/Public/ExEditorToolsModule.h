@@ -34,3 +34,8 @@ private:
 private:
 	TSharedPtr<class FUICommandList> PluginCommands;
 };
+
+#define EXEDITORTOOLS_LOG(Verbosity, Format, ...) \
+{ \
+	UE_LOG(LogExEditorTools, Verbosity, Format, ##__VA_ARGS__); \
+}

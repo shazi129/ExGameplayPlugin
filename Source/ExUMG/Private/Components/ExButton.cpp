@@ -3,6 +3,20 @@
 TSharedRef<SWidget> UExButton::RebuildWidget()
 {
 	TSharedRef<SWidget> Widget = Super::RebuildWidget();
-	OnRebuildWidget();
+
+	OnClicked.RemoveDynamic(this, &UExButton::HandleClickActions);
+	OnClicked.AddDynamic(this, &UExButton::HandleClickActions);
+
 	return Widget;
+}
+
+void UExButton::HandleClickActions()
+{
+	for (int i = 0; i < ClickActions.Num(); i++)
+	{
+		if (ClickActions[i] != nullptr)
+		{
+			ClickActions[i]->NativeExecute(this);
+		}
+	}
 }

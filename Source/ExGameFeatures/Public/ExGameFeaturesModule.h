@@ -15,3 +15,8 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 };
+
+#define EXIGAMEFEATURE_LOG(Verbosity, Format, ...) \
+{ \
+	UE_LOG(LogExGameFeatures, Verbosity, Format, ##__VA_ARGS__); \
+}

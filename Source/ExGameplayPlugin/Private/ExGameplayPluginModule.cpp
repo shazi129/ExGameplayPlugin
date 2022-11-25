@@ -2,11 +2,6 @@
 
 #include "ExGameplayPluginModule.h"
 
-#if WITH_EDITOR
-#include "ISettingsModule.h"
-#include "Settings/GameplaySettings.h"
-#endif
-
 DEFINE_LOG_CATEGORY(LogExGameplayPlugin);
 #define LOCTEXT_NAMESPACE "FExGameplayPluginModule"
 

@@ -60,4 +60,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary")
 	static UObject* StaticLoadObject(UClass* Class, UObject* InOuter, const FString& Name);
+
+	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary")
+	static bool IsRunning(AActor* Actor);
 };

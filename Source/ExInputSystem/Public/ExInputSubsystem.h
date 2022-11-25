@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "ExInputTypes.h"
+#include "InputReceiverComponent.h"
 #include "GameplayTags.h"
 #include "ExInputSubsystem.generated.h"
 

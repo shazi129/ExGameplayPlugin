@@ -30,11 +30,7 @@ public class ExGameplayPlugin : ModuleRules
 				"EnhancedInput",
 				"ModularGameplay",
 				"Niagara",
-				"ExGameplayLibrary",
-				"ExInputSystem",
 				"GameplayTags",
-				"GameFeatures",
-				"GameplayAbilities",
 				"DeveloperSettings"
 				// ... add other public dependencies that you statically link with here ...
 			}

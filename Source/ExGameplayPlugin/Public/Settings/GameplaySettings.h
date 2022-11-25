@@ -16,7 +16,7 @@ struct EXGAMEPLAYPLUGIN_API FDevelopModule
 		TArray<FString> SubModuleNames;
 };
 
-UCLASS(Config = Gameplay, defaultconfig, meta = (DisplayName = "Gameplay Setting"))
+UCLASS(Config = Gameplay, defaultconfig, meta = (DisplayName = "Gameplay"))
 class EXGAMEPLAYPLUGIN_API UGameplaySettings : public UDeveloperSettings
 {
 	GENERATED_BODY()
@@ -24,7 +24,7 @@ class EXGAMEPLAYPLUGIN_API UGameplaySettings : public UDeveloperSettings
 public:
 	UGameplaySettings()
 	{
-		CategoryName = "Game";
+		CategoryName = "Extension Gameplay";
 	}
 
 	UPROPERTY(Config, EditAnywhere, Category = "GameFeatures")

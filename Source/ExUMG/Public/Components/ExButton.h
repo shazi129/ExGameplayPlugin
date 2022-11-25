@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/Button.h"
+#include "WidgetInteractActions/WidgetInteractAction.h"
 #include "ExButton.generated.h"
 
 UCLASS()
@@ -14,4 +15,11 @@ public:
 
 	UFUNCTION(BlueprintImplementableEvent)
 		void OnRebuildWidget();
+
+	UFUNCTION(BlueprintCallable)
+	void HandleClickActions();
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Instanced, Category="Interact Actions")
+		TArray<UWidgetInteractAction*> ClickActions;
 };

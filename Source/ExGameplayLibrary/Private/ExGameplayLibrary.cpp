@@ -339,3 +339,9 @@ UObject* UExGameplayLibrary::StaticLoadObject(UClass* Class, UObject* InOuter, c
 {
 	return ::StaticLoadObject(Class, InOuter, *Name);
 }
+
+bool UExGameplayLibrary::IsRunning(AActor* Actor)
+{
+	UWorld* World = Actor->GetWorld();
+	return World->HasBegunPlay();
+}

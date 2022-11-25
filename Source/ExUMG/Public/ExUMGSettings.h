@@ -6,7 +6,7 @@
 #include "ExUMGSettings.generated.h"
 
 
-UCLASS(Config = Gameplay, defaultconfig, meta = (DisplayName = "Extension UMG"))
+UCLASS(Config = Gameplay, defaultconfig, meta = (DisplayName = "UMG"))
 class EXUMG_API UExUMGSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()
@@ -15,9 +15,9 @@ public:
 
 	UExUMGSettings()
 	{
-		CategoryName = "Game";
+		CategoryName = "Extension Gameplay";
 	}
 
-	UPROPERTY(Config, EditAnywhere, Category = "Extension UMG")
+	UPROPERTY(Config, EditAnywhere)
 	FString Desc;
 };

@@ -13,6 +13,7 @@ FInputHandleEvent UExInputSubsystem::CreateInputEvent(const FGameplayTag& Gamepl
 	FInputHandleEvent NewInputHandleEvent;
 	NewInputHandleEvent.InputTag = GameplayTag;
 	NewInputHandleEvent.InputHandleDelegate = Delegate;
+	NewInputHandleEvent.EventID = (int64) &NewInputHandleEvent;
 	return NewInputHandleEvent;
 }
 
@@ -22,13 +23,16 @@ void UExInputSubsystem::AddInputEvent(const FInputHandleEvent& InputHandleEvent)
 	FInputHandleEvent* NewInputHandleEvent = new(InputHandleEvents) FInputHandleEvent();
 	NewInputHandleEvent->InputTag = InputHandleEvent.InputTag;
 	NewInputHandleEvent->InputHandleDelegate = InputHandleEvent.InputHandleDelegate;
+	NewInputHandleEvent->EventID = InputHandleEvent.EventID;
+
+	InputHandleEvents.Sort([](const FInputHandleEvent& A, const FInputHandleEvent& B) { return A.Priority > B.Priority; });
 }
 
 void UExInputSubsystem::RemoveInputEvent(const FInputHandleEvent& InputHandleEvent)
 {
 	for (int i = InputHandleEvents.Num() - 1; i >= 0; i--)
 	{
-		if (InputHandleEvents[i].InputHandleDelegate == InputHandleEvent.InputHandleDelegate
+		if (InputHandleEvents[i].EventID == InputHandleEvent.EventID
 			&& InputHandleEvents[i].InputTag == InputHandleEvent.InputTag)
 		{
 			InputHandleEvents.RemoveAt(i);

@@ -2,7 +2,7 @@
 #include "Subsystems/SubsystemBlueprintLibrary.h"
 #include "ExInputSystemModule.h"
 #include "GameFramework/InputSettings.h"
-#include "InputActionHandler.h"
+#include "InputBindingAction.h"
 
 UExLocalPlayerInputSubsystem* UExLocalPlayerInputSubsystem::GetSubsystem( UObject* WorldContextObject)
 {

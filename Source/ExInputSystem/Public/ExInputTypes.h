@@ -2,8 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "InputAction.h"
-#include "InputActionHandler.h"
-#include "GameplayTagContainer.h"
+#include "InputBindingAction.h"
 #include "ExInputTypes.generated.h"
 
 
@@ -23,7 +22,7 @@ public:
 
 	//响应逻辑
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Instanced)
-		UInputActionHandler* InputHandler;
+		UInputBindingActionHandler* InputHandler;
 };
 
 USTRUCT(BlueprintType)
@@ -54,31 +53,4 @@ public:
 
 	UPROPERTY(BlueprintReadWrite)
 		TArray<int> InputBindHandlers;
-};
-
-
-USTRUCT(BlueprintType)
-struct EXINPUTSYSTEM_API FInputHandleResult
-{
-	GENERATED_BODY()
-
-		UPROPERTY(BlueprintReadWrite)
-		bool IsHandled = false;
-};
-
-DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(FInputHandleResult, FInputHandleDelegate, const FGameplayTag&, InputTag);
-
-USTRUCT(BlueprintType)
-struct EXINPUTSYSTEM_API FInputHandleEvent
-{
-	GENERATED_BODY()
-
-		UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		FGameplayTag InputTag;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		FInputHandleDelegate InputHandleDelegate;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		int Priority = 0;
 };

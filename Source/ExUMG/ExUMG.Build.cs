@@ -29,8 +29,7 @@ public class ExUMG : ModuleRules
 			{
 				"Core",
 				"GameplayTags",
-				"UMG",
-				"DeveloperSettings"
+				"UMG"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
