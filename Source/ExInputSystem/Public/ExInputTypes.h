@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "InputAction.h"
-#include "InputBindingAction.h"
+#include "InputActionHandler.h"
 #include "ExInputTypes.generated.h"
 
 
@@ -22,7 +22,7 @@ public:
 
 	//响应逻辑
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Instanced)
-		UInputBindingActionHandler* InputHandler;
+		UInputActionHandler* InputHandler;
 };
 
 USTRUCT(BlueprintType)
@@ -54,3 +54,6 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 		TArray<int> InputBindHandlers;
 };
+
+
+

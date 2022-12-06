@@ -31,7 +31,10 @@ public class ExGameplayPlugin : ModuleRules
 				"ModularGameplay",
 				"Niagara",
 				"GameplayTags",
-				"DeveloperSettings"
+				"DeveloperSettings",
+				"ExGameplayLibrary",
+				"GameplayAbilities",
+				"GameFeatures"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

@@ -13,7 +13,7 @@ FInputHandleEvent UExInputSubsystem::CreateInputEvent(const FGameplayTag& Gamepl
 	FInputHandleEvent NewInputHandleEvent;
 	NewInputHandleEvent.InputTag = GameplayTag;
 	NewInputHandleEvent.InputHandleDelegate = Delegate;
-	NewInputHandleEvent.EventID = (int64) &NewInputHandleEvent;
+	NewInputHandleEvent.EventID = (int64)&NewInputHandleEvent;
 	return NewInputHandleEvent;
 }
 

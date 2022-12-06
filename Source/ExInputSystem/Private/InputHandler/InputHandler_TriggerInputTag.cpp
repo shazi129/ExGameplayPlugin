@@ -2,7 +2,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
 #include "ExInputSystemModule.h"
-#include "InputReceiverComponent.h"
+#include "Components/InteractManagerComponent.h"
 
 void UInputHandler_TriggerInptutTag::NativeExecute(const FInputActionValue& inputValue)
 {
@@ -18,7 +18,7 @@ void UInputHandler_TriggerInptutTag::NativeExecute(const FInputActionValue& inpu
 		return;
 	}
 
-	UInputReceiverComponent* InteractManager = Cast<UInputReceiverComponent>(Character->GetComponentByClass(UInputReceiverComponent::StaticClass()));
+	UInteractManagerComponent* InteractManager = Cast<UInteractManagerComponent>(Character->GetComponentByClass(UInteractManagerComponent::StaticClass()));
 	if (!InteractManager)
 	{
 		EXINPUTSYSTEM_LOG(Error, TEXT("UInputHandler_TriggerInptuTag::Execute error, character has no UInteractManagerComponent"));

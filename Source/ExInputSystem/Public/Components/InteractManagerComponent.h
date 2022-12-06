@@ -12,7 +12,7 @@
 *  挂在Character身上，管理交互数据
 */
 UCLASS(Blueprintable, ClassGroup = (Interact), meta = (BlueprintSpawnableComponent))
-class EXGAMEPLAYPLUGIN_API UInteractManagerComponent : public UActorComponent
+class EXINPUTSYSTEM_API UInteractManagerComponent : public UActorComponent
 {
 	GENERATED_BODY()
 

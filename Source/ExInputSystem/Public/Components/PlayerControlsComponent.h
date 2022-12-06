@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InputBindingAction.h"
+#include "InputActionHandler.h"
 #include "EnhancedInputComponent.h"
 #include "InputTriggers.h"
 #include "ExInputTypes.h"

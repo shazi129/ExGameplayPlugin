@@ -35,7 +35,7 @@ FInputMappingResult UExInputLibrary::AddInputMappingConfig(FInputMappingConfig I
 				BindingConfig.InputAction,
 				BindingConfig.TriggerEvent,
 				BindingConfig.InputHandler,
-				&UInputBindingActionHandler::NativeExecute);
+				&UInputActionHandler::NativeExecute);
 
 			int BindingHandle = Binding.GetHandle();
 			Result.InputBindHandlers.AddUnique(BindingHandle);

@@ -1,13 +1,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "InputBindingAction.h"
+#include "InputActionHandler.h"
 #include "GameplayTags.h"
 #include "Abilities/GameplayAbility.h"
 #include "InputHandler_TriggerGameAbility.generated.h"
 
 UCLASS()
-class EXINPUTSYSTEM_API UInputHandler_TriggerGameAbility : public UInputBindingActionHandler
+class EXINPUTSYSTEM_API UInputHandler_TriggerGameAbility : public UInputActionHandler
 {
 	GENERATED_BODY()
 

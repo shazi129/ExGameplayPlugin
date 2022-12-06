@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "PlayerControlsComponent.h"
+#include "Components/PlayerControlsComponent.h"
 #include "GameplayAbilitySpec.h" // for FGameplayAbilitySpecHandle
 #include "EnhancedInputComponent.h" // for FInputBindingHandle
 #include "AbilityInputBindingComponent.generated.h"
