@@ -7,6 +7,11 @@ TSharedRef<SWidget> UExButton::RebuildWidget()
 	OnClicked.RemoveDynamic(this, &UExButton::HandleClickActions);
 	OnClicked.AddDynamic(this, &UExButton::HandleClickActions);
 
+	for (int i = 0; i < ClickActions.Num(); i++)
+	{
+		ClickActions[i]->Initialize(this);
+	}
+
 	return Widget;
 }
 
@@ -16,7 +21,7 @@ void UExButton::HandleClickActions()
 	{
 		if (ClickActions[i] != nullptr)
 		{
-			ClickActions[i]->NativeExecute(this);
+			ClickActions[i]->NativeExecute();
 		}
 	}
 }

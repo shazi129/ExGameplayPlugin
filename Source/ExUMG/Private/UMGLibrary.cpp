@@ -5,6 +5,43 @@
 #include "ExUMGModule.h"
 #include "Math/UnrealMathUtility.h"
 
+UWidget* UUMGLibrary::ClearWidget(UWidgetTree* WidgetTree, FString RootName)
+{
+	if (RootName.IsEmpty() || !WidgetTree)
+	{
+		return nullptr;
+	}
+
+	TArray<UWidget*> Widgets;
+	WidgetTree->GetAllWidgets(Widgets);
+
+	UWidget* RootWidget = nullptr;
+
+	for (int i = 0; i < Widgets.Num(); i++)
+	{
+		UWidget* Widget = Widgets[i];
+
+		if (RootWidget == nullptr && Widget->GetName() == RootName)
+		{
+			RootWidget = Widget;
+			continue;
+		}
+
+		if (!Widget->Slot || !Widget->Slot->Parent)
+		{
+			continue;
+		}
+
+		TObjectPtr<UWidget> Parent = Widget->Slot->Parent;
+		if (Parent->GetName() == RootName)
+		{
+			WidgetTree->RemoveWidget(Widget);
+		}
+	}
+
+	return RootWidget;
+}
+
 UUserWidget* UUMGLibrary::CreateSubWidgetForPanel(UPanelWidget* Panel, TSubclassOf<UUserWidget> SubWidgetClass, FName SubWidgetName)
 {
 	if (Panel == nullptr)
@@ -135,4 +172,27 @@ FVector2D UUMGLibrary::ConvertLocalPositionToScreen(APlayerController* PlayerCon
 	FVector2D Scale = FVector2D(ScreenSizeX / ScreenLocalSize.X, ScreenSizeY / ScreenLocalSize.Y);
 
 	return LocalPosition * Scale;
+}
+
+UUserWidget* UUMGLibrary::GetOwningUserWidget(UWidget* Widget)
+{
+	if (UUserWidget* Result = Cast<UUserWidget>(Widget))
+	{
+		return Result;
+	}
+	UPanelWidget* PanelWidget = Cast<UPanelWidget>(Widget);
+	if (!PanelWidget)
+	{
+		PanelWidget = Widget->GetParent();
+	}
+
+	if (PanelWidget)
+	{
+		if (UWidgetTree* WidgetTree = Cast<UWidgetTree>(PanelWidget->GetOuter()))
+		{
+			return Cast<UUserWidget>(WidgetTree->GetOuter());
+		}
+		
+	}
+	return nullptr;
 }

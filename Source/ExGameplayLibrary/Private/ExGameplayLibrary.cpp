@@ -31,7 +31,13 @@ bool UExGameplayLibrary::IsClient(const UObject* WorldContextObject)
 
 int64 UExGameplayLibrary::GetTimestamp()
 {
-	return FDateTime::Now().ToUnixTimestamp();
+	return FDateTime::UtcNow().ToUnixTimestamp();
+}
+
+int UExGameplayLibrary::GetTimeZone()
+{
+	//本地时间与Utc时间差的小时数
+	return (FDateTime::Now().ToUnixTimestamp() - FDateTime::UtcNow().ToUnixTimestamp()) / 3600;
 }
 
 EBPNetMode UExGameplayLibrary::GetWorldNetMode(UWorld* World)
@@ -103,6 +109,8 @@ bool UExGameplayLibrary::ExecCommand(const FString& Command)
 		UE_LOG(LogExGameplayLibrary, Error, TEXT("UExGameplayLibrary::ExecCommand error, GEngine is Null"));
 		return false;
 	}
+
+	UE_LOG(LogExGameplayLibrary, Log, TEXT("UExGameplayLibrary::ExecCommand[%s]"), *Command);
 
 	UWorld* World = nullptr;
 
@@ -339,9 +347,25 @@ UObject* UExGameplayLibrary::StaticLoadObject(UClass* Class, UObject* InOuter, c
 {
 	return ::StaticLoadObject(Class, InOuter, *Name);
 }
-
-bool UExGameplayLibrary::IsRunning(AActor* Actor)
+bool UExGameplayLibrary::PawnInputEanbled(APawn* Pawn)
 {
-	UWorld* World = Actor->GetWorld();
-	return World->HasBegunPlay();
+	return Pawn ? Pawn->InputEnabled() : false;
+}
+
+FString UExGameplayLibrary::GetComputerName()
+{
+	auto ComputerName = FPlatformProcess::ComputerName();
+	return FString(ComputerName);
+}
+
+bool UExGameplayLibrary::IsRunning(UObject* WorldContextObject)
+{
+	if (WorldContextObject)
+	{
+		if (UWorld* World = WorldContextObject->GetWorld())
+		{
+			return World->HasBegunPlay();
+		}
+	}
+	return false;
 }

@@ -13,4 +13,7 @@ class EXGAMEPLAYLIBRARY_API UFileHelperLibrary : public UBlueprintFunctionLibrar
 public:
 	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
 	static bool LoadFileToArray(TArray<uint8>& Result, const FString& FileName, int Flags);
+
+	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
+	static void OpenFolder(const FString& FolderPath);
 };

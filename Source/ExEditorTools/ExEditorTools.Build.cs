@@ -29,7 +29,20 @@ public class ExEditorTools : ModuleRules
 				"UnrealEd",
 				"UMG",
                 "ContentBrowserAssetDataSource",
-                "ContentBrowserData"
+                "ContentBrowserData",
+				"WorldBrowser",
+				"ApplicationCore",
+				"AssetTools",
+				"ExGameplayLibrary",
+				"MeshReductionInterface",
+				"Landscape",
+				"MeshMergeUtilities",
+				"MeshDescription",
+				"MaterialUtilities",
+				"StaticMeshDescription",
+				"Foliage",
+				"TerrainEditor",
+				"Foliage",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

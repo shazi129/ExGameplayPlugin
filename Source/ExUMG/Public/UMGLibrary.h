@@ -10,6 +10,9 @@ class EXUMG_API UUMGLibrary : public UBlueprintFunctionLibrary
 	GENERATED_BODY()
 
 public:
+
+	static UWidget* ClearWidget(UWidgetTree* WidgetTree, FString RootName);
+
 	UFUNCTION(BlueprintCallable, Category = "UMGLibrary")
 	static UUserWidget* CreateSubWidgetForPanel(UPanelWidget* Panel, TSubclassOf<UUserWidget> SubWidgetClass, FName SubWidgetName=NAME_None);
 
@@ -38,4 +41,7 @@ public:
 	//
 	UFUNCTION(BlueprintPure, Category = "UMGLibrary", meta = (DefaultToSelf = "WorldContextObject"))
 	static FVector2D ConvertLocalPositionToScreen(APlayerController* PlayerController, const FVector2D& LocalPosition, const FVector2D& ScreenLocalSize);
+
+	UFUNCTION(BlueprintPure, Category = "UMGLibrary")
+	static UUserWidget* GetOwningUserWidget(UWidget* Widget);
 };

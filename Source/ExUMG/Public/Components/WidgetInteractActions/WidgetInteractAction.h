@@ -1,20 +1,23 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/Widget.h"
 #include "WidgetInteractAction.generated.h"
 
-UCLASS(BlueprintType, Blueprintable, EditInlineNew)
+UCLASS(BlueprintType, Blueprintable, EditInlineNew, abstract)
 class EXUMG_API UWidgetInteractAction : public UObject
 {
 	GENERATED_BODY()
 
 public:
-	virtual void NativeExecute(UWidget* Widget)
+
+	virtual void Initialize(UWidget* Widget) {};
+
+	virtual void NativeExecute()
 	{
-		Execute(Widget);
+		Execute();
 	}
 
 	UFUNCTION(BlueprintImplementableEvent)
-		void Execute(const UWidget* Widget);
-
+		void Execute();
 };

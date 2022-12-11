@@ -4,7 +4,7 @@
 #include "PerformanceLibrary.generated.h"
 
 USTRUCT(BlueprintType)
-struct EXGAMEPLAYLIBRARY_API FScalabilityInfo : public FTableRowBase
+struct EXGAMEPLAYLIBRARY_API FScalabilityInfo
 {
 	GENERATED_BODY()
 
@@ -33,7 +33,7 @@ struct EXGAMEPLAYLIBRARY_API FScalabilityInfo : public FTableRowBase
 		int Texture = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		int Effect = 1;
+		int Effects = 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		int Foliage = 1;
@@ -52,4 +52,10 @@ class EXGAMEPLAYLIBRARY_API UPerformanceLibrary : public UBlueprintFunctionLibra
 
 	UFUNCTION(BlueprintCallable, Category = "PerformanceLibrary")
 		static FScalabilityInfo GetScalability();
+
+	UFUNCTION(BlueprintCallable, Category = "PerformanceLibrary")
+		static void StartTrace(const FName Name);
+
+	UFUNCTION(BlueprintCallable, Category = "PerformanceLibrary")
+		static void StopTrace();
 };

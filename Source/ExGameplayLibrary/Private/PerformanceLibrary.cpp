@@ -1,6 +1,8 @@
 #include "PerformanceLibrary.h"
 #include "ExGameplayLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
+#include "GameFramework/GameUserSettings.h"
+
 
 void UPerformanceLibrary::SetScalability(FScalabilityInfo ScalabilityInfo)
 {
@@ -12,7 +14,7 @@ void UPerformanceLibrary::SetScalability(FScalabilityInfo ScalabilityInfo)
 	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.GlobalIlluminationQuality %d"), ScalabilityInfo.GlobalIllumination));
 	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.ReflectionQuality %d"), ScalabilityInfo.Reflection));
 	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.TextureQuality %d"), ScalabilityInfo.Texture));
-	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.EffectsQuality %d"), ScalabilityInfo.Effect));
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.EffectsQuality %d"), ScalabilityInfo.Effects));
 	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.FoliageQuality %d"), ScalabilityInfo.Foliage));
 	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.ShadingQuality %d"), ScalabilityInfo.Shading));
 }
@@ -28,8 +30,25 @@ FScalabilityInfo UPerformanceLibrary::GetScalability()
 	ScalabilityInfo.GlobalIllumination = UKismetSystemLibrary::GetConsoleVariableIntValue("sg.GlobalIlluminationQuality");
 	ScalabilityInfo.Reflection = UKismetSystemLibrary::GetConsoleVariableIntValue("sg.ReflectionQuality");
 	ScalabilityInfo.Texture = UKismetSystemLibrary::GetConsoleVariableIntValue("sg.TextureQuality");
-	ScalabilityInfo.Effect = UKismetSystemLibrary::GetConsoleVariableIntValue("sg.EffectsQuality");
+	ScalabilityInfo.Effects = UKismetSystemLibrary::GetConsoleVariableIntValue("sg.EffectsQuality");
 	ScalabilityInfo.Foliage = UKismetSystemLibrary::GetConsoleVariableIntValue("sg.FoliageQuality");
 	ScalabilityInfo.Shading = UKismetSystemLibrary::GetConsoleVariableIntValue("sg.ShadingQuality");
 	return ScalabilityInfo;
+}
+
+void UPerformanceLibrary::StartTrace(const FName Name)
+{
+#if CPUPROFILERTRACE_ENABLED
+	if (UE_TRACE_CHANNELEXPR_IS_ENABLED(CpuChannel))
+	{
+		FCpuProfilerTrace::OutputBeginDynamicEvent(Name);
+	}
+#endif
+}
+
+void UPerformanceLibrary::StopTrace()
+{
+#if CPUPROFILERTRACE_ENABLED
+		FCpuProfilerTrace::OutputEndEvent();
+#endif
 }

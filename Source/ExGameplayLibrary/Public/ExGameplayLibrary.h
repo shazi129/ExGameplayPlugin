@@ -14,7 +14,10 @@ public:
 		static bool IsClient(const UObject* WorldContextObject);
 
 	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
-		static int64 GetTimestamp();
+		static int64 GetTimestamp(); //统一用的UTC时间
+
+	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
+		static int GetTimeZone(); //当地时区
 
 	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary", meta = (DefaultToSelf = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
 		static FString GetLogPrefix(const UObject* WorldContextObject);
@@ -61,6 +64,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary")
 	static UObject* StaticLoadObject(UClass* Class, UObject* InOuter, const FString& Name);
 
-	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary")
-	static bool IsRunning(AActor* Actor);
+	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
+	static bool PawnInputEanbled(APawn* Pawn);
+
+	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
+	static FString GetComputerName();
+
+	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary", meta = (DefaultToSelf = "WorldContextObject"))
+	static bool IsRunning(UObject* WorldContextObject);
 };

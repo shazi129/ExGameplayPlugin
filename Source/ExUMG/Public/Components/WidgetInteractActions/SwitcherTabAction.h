@@ -11,18 +11,16 @@ class EXUMG_API USwitcherTabAction : public UWidgetInteractAction
 	GENERATED_BODY()
 
 public:
-	virtual void NativeExecute(UWidget* Widget) override
-	{
-		if (Switcher)
-		{
-			Switcher->SetActiveWidgetIndex(WidgetIndex);
-		}
-	}
+	virtual void Initialize(UWidget* Widget) override;
+	virtual void NativeExecute() override;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-		UWidgetSwitcher* Switcher;
+		FName SwitcherName;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		int WidgetIndex;
+		
+private:
+	UWidgetSwitcher* Switcher;
 };
