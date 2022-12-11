@@ -52,3 +52,12 @@ class EXINPUTSYSTEM_API UInputHandler_PawnMoveUp : public UInputActionHandler
 public:
 	virtual void NativeExecute(const FInputActionValue& inputValue) override;
 };
+
+UCLASS()
+class EXINPUTSYSTEM_API UInputHandler_PawnJump : public UInputActionHandler
+{
+	GENERATED_BODY()
+
+public:
+	virtual void NativeExecute(const FInputActionValue& inputValue) override;
+};

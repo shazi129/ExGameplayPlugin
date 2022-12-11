@@ -1,9 +1,24 @@
 #include "InputHandler/InputHandler_PawnBasicControl.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/Character.h"
+
+APawn* GetPawnFromSourceObject(UObject* SourceObject)
+{
+	if (APawn* Pawn = Cast<APawn>(SourceObject))
+	{
+		return Pawn;
+	}
+	if (UActorComponent* Component = Cast<UActorComponent>(SourceObject))
+	{
+		AActor* SouceOwner = Component->GetOwner();
+		return Cast<APawn>(SouceOwner);
+	}
+	return nullptr;
+}
 
 void UInputHandler_PawnMoveForward::NativeExecute(const FInputActionValue& inputValue)
 {
-	if (APawn* Pawn = Cast<APawn>(GetSourceObject()))
+	if (APawn* Pawn = GetPawnFromSourceObject(GetSourceObject()))
 	{
 		if ((Pawn->Controller != nullptr) && (inputValue.GetMagnitude() != 0.0f))
 		{
@@ -20,7 +35,7 @@ void UInputHandler_PawnMoveForward::NativeExecute(const FInputActionValue& input
 
 void UInputHandler_PawnMoveRight::NativeExecute(const FInputActionValue& inputValue)
 {
-	if (APawn* Pawn = Cast<APawn>(GetSourceObject()))
+	if (APawn* Pawn = GetPawnFromSourceObject(GetSourceObject()))
 	{
 		if ((Pawn->Controller != nullptr) && (inputValue.GetMagnitude() != 0.0f))
 		{
@@ -39,7 +54,7 @@ void UInputHandler_PawnMoveRight::NativeExecute(const FInputActionValue& inputVa
 void UInputHandler_PawnMoveUp::NativeExecute(const FInputActionValue& inputValue)
 {
 
-	if (APawn* Pawn = Cast<APawn>(GetSourceObject()))
+	if (APawn* Pawn = GetPawnFromSourceObject(GetSourceObject()))
 	{
 		if ((Pawn->Controller != nullptr) && (inputValue.GetMagnitude() != 0.0f))
 		{
@@ -57,7 +72,7 @@ void UInputHandler_PawnMoveUp::NativeExecute(const FInputActionValue& inputValue
 
 void UInputHandler_PawnYawInput::NativeExecute(const FInputActionValue& inputValue)
 {
-	if (APawn* Pawn = Cast<APawn>(GetSourceObject()))
+	if (APawn* Pawn = GetPawnFromSourceObject(GetSourceObject()))
 	{
 		Pawn->AddControllerYawInput(inputValue.GetMagnitude());
 	}
@@ -65,12 +80,22 @@ void UInputHandler_PawnYawInput::NativeExecute(const FInputActionValue& inputVal
 
 void UInputHandler_PawnPitchInput::NativeExecute(const FInputActionValue& inputValue)
 {
-	if (APawn* Pawn = Cast<APawn>(GetSourceObject()))
+	if (APawn* Pawn = GetPawnFromSourceObject(GetSourceObject()))
 	{
 		Pawn->AddControllerPitchInput(inputValue.GetMagnitude());
 	}
 }
 
+void UInputHandler_PawnJump::NativeExecute(const FInputActionValue& inputValue)
+{
+	if (APawn* Pawn = GetPawnFromSourceObject(GetSourceObject()))
+	{
+		if (ACharacter* Character = Cast<ACharacter>(Pawn))
+		{
+			Character->Jump();
+		}
+	}
+}
 
 
 
