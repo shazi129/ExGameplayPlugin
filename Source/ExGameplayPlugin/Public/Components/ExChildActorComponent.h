@@ -10,7 +10,7 @@ class EXGAMEPLAYPLUGIN_API UExChildActorComponent : public UChildActorComponent
 	GENERATED_BODY()
 
 public:
-	virtual void CreateChildActor() override;
+	virtual void CreateChildActor(TFunction<void(AActor*)> CustomizerFunc = nullptr) override;
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

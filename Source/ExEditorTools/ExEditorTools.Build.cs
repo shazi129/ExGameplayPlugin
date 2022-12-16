@@ -41,8 +41,6 @@ public class ExEditorTools : ModuleRules
 				"MaterialUtilities",
 				"StaticMeshDescription",
 				"Foliage",
-				"TerrainEditor",
-				"Foliage",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

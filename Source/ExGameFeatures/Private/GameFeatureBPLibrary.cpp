@@ -96,9 +96,9 @@ void UGameFeatureBPLibrary::DeactivateGameFeature(const FString& PluginURL)
 
 void UGameFeatureBPLibrary::OnStatus(const UE::GameFeatures::FResult& InStatus)
 {
-	if(InStatus.IsValid() && InStatus.HasError())
+	if(InStatus.HasValue() && InStatus.HasError())
 	{
-		UE_LOG(LogTemp,Log,TEXT("Load Status %s"),**InStatus.TryGetError());
+		UE_LOG(LogTemp,Log,TEXT("Load Status %s"),**InStatus.GetError());
 	}	
 }
 

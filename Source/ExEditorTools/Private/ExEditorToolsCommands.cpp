@@ -24,7 +24,7 @@ void FExEditorToolsCommands::RegisterConfigCommands()
 	}
 	else
 	{
-		UE_LOG(LogExEditorTools, Error, TEXT("FExEditorToolsCommands::RegisterConfigCommands error, Cannot find Editor tool Context"));
+		UE_LOG(LogExEditorTools, Warning, TEXT("FExEditorToolsCommands::RegisterConfigCommands, Cannot find Editor tool Context"));
 	}
 }
 

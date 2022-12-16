@@ -1,6 +1,6 @@
 #include "Components/ExChildActorComponent.h"
 
-void UExChildActorComponent::CreateChildActor()
+void UExChildActorComponent::CreateChildActor(TFunction<void(AActor*)> CustomizerFunc)
 {
 	if (UWorld* World = this->GetWorld())
 	{
@@ -10,5 +10,5 @@ void UExChildActorComponent::CreateChildActor()
 		}
 	}
 
-	Super::CreateChildActor();
+	Super::CreateChildActor(CustomizerFunc);
 }

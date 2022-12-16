@@ -25,7 +25,6 @@
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
 #include "ExGameplayLibrary.h"
 #include "InstancedFoliageActor.h"
-#include "TerrainEditorUtils.h"
 #include "StaticMeshAttributes.h"
 #include "Engine/StaticMeshActor.h"
 #include "FileHelpers.h"
@@ -299,8 +298,8 @@ bool UExEditorEngineLibrary::LoadAssetsIfNeeded(const TArray<FString>& ObjectPat
 			SlowTask.EnterProgressFrame(1, FText::Format(LOCTEXT("LoadingObjectf", "Loading {0}..."), FText::FromString(ObjectPath)));
 
 			// Load up the object
-			TUniquePtr<FScopedLoadAllExternalObjects> Scope(bLoadAllExternalObjects ? new FScopedLoadAllExternalObjects(*FEditorFileUtils::ExtractPackageName(ObjectPath)) : nullptr);
-			UObject* LoadedObject = LoadObject<UObject>(NULL, *ObjectPath, NULL, LoadFlags, NULL);
+			FLinkerInstancingContext InstancingContext(bLoadAllExternalObjects ? TSet<FName>{ ULevel::LoadAllExternalObjectsTag } : TSet<FName>());
+			UObject* LoadedObject = LoadObject<UObject>(NULL, *ObjectPath, NULL, LoadFlags, NULL, &InstancingContext);
 			if (LoadedObject)
 			{
 				LoadedObjects.Add(LoadedObject);
@@ -661,13 +660,6 @@ bool UExEditorEngineLibrary::GenerateLODLevels(UWorld* MainWorld, TArray<ULevel*
 				Landscape->UpdateGrass(Cameras, NumCompsCreated, true);
 			}
 
-#if WITH_PHOTON_LANDSCAPE
-			// Use terrain actor instead of landscape proxy to export flatten material
-			FTerrainEditorUtils TerrainEditorUtils;
-			UMaterialInterface* LandscapeMaterial = Landscape->GetLandscapeMaterial(LandscapeLOD);
-			ATerrainActor* TerrainActor = TerrainEditorUtils.GenerateTerrainFromLandscapeProxy(MainWorld, Landscape, LandscapeMaterial, LandscapeLOD + 1);
-#endif
-
 			// This is texture resolution for a landscape mesh, probably needs to be calculated using landscape size
 			LandscapeFlattenMaterial.SetPropertySize(EFlattenMaterialProperties::Diffuse, SimplificationDetails.LandscapeMaterialSettings.TextureSize);
 			LandscapeFlattenMaterial.SetPropertySize(EFlattenMaterialProperties::Normal, SimplificationDetails.LandscapeMaterialSettings.bNormalMap ? SimplificationDetails.LandscapeMaterialSettings.TextureSize : FIntPoint::ZeroValue);
@@ -726,12 +718,7 @@ bool UExEditorEngineLibrary::GenerateLODLevels(UWorld* MainWorld, TArray<ULevel*
 			FMeshDescription* LandscapeRawMesh = StaticMesh->CreateMeshDescription(0);
 			FStaticMeshAttributes Attributes(*LandscapeRawMesh);
 
-#if WITH_PHOTON_LANDSCAPE
-			// Export mesh description from terrain actor
-			TerrainEditorUtils.ExportToRawMesh(TerrainActor, LandscapeLOD, *LandscapeRawMesh);
-#else
 			Landscape->ExportToRawMesh(LandscapeLOD, *LandscapeRawMesh);
-#endif
 
 			TVertexAttributesRef<FVector3f> VertexPositions = Attributes.GetVertexPositions();
 			for (const FVertexID VertexID : LandscapeRawMesh->Vertices().GetElementIDs())

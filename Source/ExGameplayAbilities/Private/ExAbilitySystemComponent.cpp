@@ -6,6 +6,7 @@
 #include "ExAbilityProvider.h"
 #include "AbilitySystemGlobals.h"
 #include "GameplayCueManager.h"
+#include "ExGameplayAbilitiesModule.h"
 
 void UExAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
 {
@@ -141,7 +142,7 @@ FGameplayAbilitySpecHandle UExAbilitySystemComponent::GiveAbilityByCaseInternal(
 
 	if (AbilityCase.IsValid() == false)
 	{
-		ABILITY_LOG(Error, TEXT("UExAbilitySystemComponent::GiveAbilityByCaseInternal error, AbilityCase Invalid"));
+		UE_LOG(LogTemp, Error, TEXT("UExAbilitySystemComponent::GiveAbilityByCaseInternal error, AbilityCase Invalid"));
 		return FGameplayAbilitySpecHandle();
 	}
 
