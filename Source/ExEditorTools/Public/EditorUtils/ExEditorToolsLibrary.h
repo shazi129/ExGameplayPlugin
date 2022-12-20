@@ -71,29 +71,5 @@ public:
 
 #pragma endregion
 
-//关卡操作相关工具函数
-#pragma region World & Level Tools
-	UFUNCTION(BlueprintCallable, Category = "External Editor Tools")
-	static bool CopyWorldActors(const FString& SrcWorldPath, const FString& DescWorldPath);
 
-	UFUNCTION(BlueprintCallable, Category = "External Editor Tools")
-	static UWorld* CreateWorld(FString WorldPath, FString WorldName);
-	
-	UFUNCTION(BlueprintPure, Category="External Editor Tools")
-	static UWorld* LoadWorldFromPath(const FString& PackagePath);
-
-	static TMap<FName, FWorldCompositionTile*> GetWorldCompsitionTile(UWorld* World);
-
-	UFUNCTION(BlueprintPure, Category = "External Editor Tools")
-	static TArray<ULevel*> FindSubLevel(UWorld* World, TArray<FName> LevelPackageName);
-
-	UFUNCTION(BlueprintCallable, Category = "External Editor Tools")
-	static bool UpdateLevelTileInfo(UWorld* World, TArray<FName> LevelPackageName,  FBPTiledWorldInfo TileInfo);
-#pragma endregion
-
-//引擎API修改、扩展相关
-#pragma region Engine API Extension
-
-	
-#pragma endregion
 };

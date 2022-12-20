@@ -1,16 +1,14 @@
-#include "ExEditorToolsLibrary.h"
-#include "Kismet2/BlueprintEditorUtils.h"
-#include "Kismet2/KismetEditorUtilities.h"
-#include "ExEditorToolsModule.h"
+#include "EditorUtils/ExEditorToolsLibrary.h"
+#include "EditorUtils/ExEditorEngineLibrary.h"
+
+
 #include "ContentBrowserAssetDataCore.h"
 #include "ContentBrowserAssetDataSource.h"
 #include "EditorLevelUtils.h"
-#include "Factories/WorldFactory.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "FileHelpers.h"
 #include "InstancedFoliageActor.h"
-#include "ExEditorEngineLibrary.h"
-#include "Engine/LevelBounds.h"
+
 
 
 #define LOCTEXT_NAMESPACE "ExEditorToolsLibrary"
@@ -337,194 +335,7 @@ bool UExEditorToolsLibrary::DeleteFolder(const FName& InPath)
 
 //关卡操作相关工具函数
 #pragma region World & Level Tools
-bool UExEditorToolsLibrary::CopyWorldActors(const FString& SrcWorldPath, const FString& DestWorldPath)
-{
-	UWorld* SrcWorld = nullptr;
 
-	UPackage* SrcLevelPackage = LoadPackage(NULL, *SrcWorldPath, LOAD_EditorOnly);
-	if (SrcLevelPackage)
-	{
-		SrcWorld = UWorld::FindWorldInPackage(SrcLevelPackage);
-	}
-	if (!SrcWorld)
-	{
-		return false;
-	}
-
-	FString PathName = SrcWorld->GetPathName();
-	FString ObjectName = FPackageName::ObjectPathToObjectName(PathName);
-	FString LongPackageName = FPackageName::GetLongPackagePath(PathName);
-
-	UWorld* DestWorld = CreateWorld(DestWorldPath, "LevelC");
-	if (!DestWorld)
-	{
-		return false;
-	}
-	SaveAsset(FName(DestWorldPath), EContentBrowserItemSaveFlags::SaveOnlyIfLoaded);
-
-
-	ULevel* DestLevel = DestWorld->PersistentLevel;
-	ULevel* SrcLevel = SrcWorld->PersistentLevel;
-	TArray<AActor*> SrcActors = SrcWorld->PersistentLevel->Actors;
-
-//	UEditorLevelUtils::MakeLevelCurrent(DestLevel);
-	UExEditorEngineLibrary::CopyOrMoveActorsToLevel(SrcLevel, SrcActors, DestLevel, false);
-
-	FString DestWorldPathName = DestLevel->OwningWorld->GetPathName();
-	SaveAsset(FName(DestWorldPathName), EContentBrowserItemSaveFlags::SaveOnlyIfLoaded);
-	SaveAsset(FName(SrcWorld->GetPathName()), EContentBrowserItemSaveFlags::SaveOnlyIfLoaded);
-
-	//ULevel* CurrentEditorLevel = GEditor->GetEditorWorldContext().World()->PersistentLevel;
-	//UEditorLevelUtils::MakeLevelCurrent(CurrentEditorLevel);
-	UEditorLevelUtils::MakeLevelCurrent(SrcWorld->PersistentLevel);
-
-	TArray<UPackage*> LoadedPackage;
-	LoadedPackage.Add(DestWorld->GetPackage());
-	FText ErrorMsg;
-	UPackageTools::UnloadPackages(LoadedPackage, ErrorMsg);
-
-	return true;
-}
-
-UWorld* UExEditorToolsLibrary::CreateWorld(const FString WorldPath, const FString WorldName)
-{
-	UPackage* Package = CreatePackage(*FString::Printf(TEXT("%s/%s"), *WorldPath, *WorldName));
-
-	// 使用工厂类初始化 UWorld
-	UWorldFactory* WorldFactory = NewObject<UWorldFactory>();
-	UObject* ObjectWorld = WorldFactory->FactoryCreateNew(WorldFactory->SupportedClass, Package, *WorldName, EObjectFlags::RF_Standalone | EObjectFlags::RF_Public, nullptr, GWarn);
-	UWorld* World = Cast<UWorld>(ObjectWorld);
-
-	// 创建 UWorld
-	FAssetRegistryModule::AssetCreated(ObjectWorld);
-
-	//创建LevelBounds
-	ALevelBounds* LevelBoundsActor =	Cast<ALevelBounds>(World->SpawnActor(ALevelBounds::StaticClass()));
-	World->PersistentLevel->LevelBoundsActor = LevelBoundsActor;
-
-	// Save
-	if (World->MarkPackageDirty())
-	{
-		EXEDITORTOOLS_LOG(Warning, TEXT("[[ TiledWorld ]] << bIsDirtyMarked >> Successed "));
-		FEditorFileUtils::SaveDirtyPackages(false, true, true);
-	}
-	else
-	{
-		EXEDITORTOOLS_LOG(Error, TEXT("[[ TiledWorld ]] << bIsDirtyMarked >> Suppressed by the editor"));
-	}
-	return World;
-}
-
-UWorld* UExEditorToolsLibrary::LoadWorldFromPath(const FString& PackagePath)
-{
-	UPackage* LevelPackage = LoadPackage(NULL, *PackagePath, LOAD_EditorOnly);
-	if (LevelPackage)
-	{
-		return UWorld::FindWorldInPackage(LevelPackage);
-	}
-	return nullptr;
-}
-
-TMap<FName, FWorldCompositionTile*> UExEditorToolsLibrary::GetWorldCompsitionTile(UWorld* World)
-{
-	TMap<FName, FWorldCompositionTile*> Result;
-	if (!World || !World->WorldComposition)
-	{
-		EXEDITORTOOLS_LOG(Error, TEXT("%s error, World Must Be World Composition"), *FString(__FUNCTION__));
-		return Result;
-	}
-
-	UWorldComposition::FTilesList& TilesList = World->WorldComposition->GetTilesList();
-	for (FWorldCompositionTile& Tile : TilesList)
-	{
-		Result.Add(Tile.PackageName, &Tile);
-	}
-
-	return Result;
-}
-
-TArray<ULevel*> UExEditorToolsLibrary::FindSubLevel(UWorld* World, TArray<FName> LevelPackageName)
-{
-	TArray<ULevel*> SubLevels;
-
-	if (!World || !World->WorldComposition)
-	{
-		EXEDITORTOOLS_LOG(Error, TEXT("%s error, World Must Be World Composition"), *FString(__FUNCTION__));
-		return SubLevels;
-	}
-
-	UWorldComposition::FTilesList& TilesList = World->WorldComposition->GetTilesList();
-	for (FWorldCompositionTile& Tile : TilesList)
-	{
-		if (LevelPackageName.Contains(Tile.PackageName))
-		{
-			UWorld* SubLevelWorld = LoadWorldFromPath(Tile.PackageName.ToString());
-			if (SubLevelWorld)
-			{
-				SubLevels.Add(SubLevelWorld->PersistentLevel);
-			}
-		}
-	}
-
-	return SubLevels;
-}
-
-bool UExEditorToolsLibrary::UpdateLevelTileInfo(UWorld* World, TArray<FName> LevelPackageNames, FBPTiledWorldInfo TileInfo)
-{
-	if (!World || !World->WorldComposition)
-	{
-		EXEDITORTOOLS_LOG(Error, TEXT("%s error, World Must Be World Composition"), *FString(__FUNCTION__));
-		return false;
-	}
-
-	TMap<FName, FWorldCompositionTile*> TileMap = UExEditorToolsLibrary::GetWorldCompsitionTile(World);
-
-	FScopedSlowTask UpdateProgress(LevelPackageNames.Num(), LOCTEXT("UpdateLevelTileInfo", "Update Level TileInfo"));
-	UpdateProgress.MakeDialog();
-
-	for (const FName& PackageName: LevelPackageNames)
-	{
-		UpdateProgress.EnterProgressFrame(1, FText::FromString(FString::Printf(TEXT("Update %s"), *PackageName.ToString())));
-		if (!TileMap.Contains(PackageName))
-		{
-			continue;
-		}
-
-		FWorldCompositionTile* Tile = TileMap[PackageName];
-		UWorld* SubLevelWorld = LoadWorldFromPath(Tile->PackageName.ToString());
-		if (SubLevelWorld)
-		{
-			FWorldTileInfo NewTileInfo = Tile->Info;
-
-			if (TileInfo.Layer.IsValid())
-			{
-				NewTileInfo.Layer.Name = TileInfo.Layer.Name;
-				NewTileInfo.Layer.StreamingDistance = TileInfo.Layer.StreamingDistance;
-				NewTileInfo.Layer.DistanceStreamingEnabled = true;
-				NewTileInfo.ParentTilePackageName = FName(NAME_None).ToString();
-
-				if (SubLevelWorld->PersistentLevel->LevelBoundsActor.IsValid())
-				{
-					NewTileInfo.Bounds = SubLevelWorld->PersistentLevel->LevelBoundsActor->GetComponentsBoundingBox();
-				}
-			}
-
-			NewTileInfo.LODList.Reset();
-			for (auto& LODItem : TileInfo.LODList)
-			{
-				if (LODItem.IsValid())
-				{
-					FWorldTileLODInfo* LODInfo = new (NewTileInfo.LODList)FWorldTileLODInfo();
-					LODInfo->RelativeStreamingDistance = LODItem.RelativeStreamingDistance;
-				}
-			}
-
-			World->WorldComposition->OnTileInfoUpdated(Tile->PackageName, NewTileInfo);
-		}
-	}
-
-	return true;
-}
 #pragma endregion
 
 #undef LOCTEXT_NAMESPACE

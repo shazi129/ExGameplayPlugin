@@ -16,6 +16,18 @@ struct EXGAMEPLAYPLUGIN_API FDevelopModule
 		TArray<FString> SubModuleNames;
 };
 
+USTRUCT(BlueprintType)
+struct EXGAMEPLAYPLUGIN_API FStreamingLevelPriority
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+		TSoftObjectPtr<UWorld> MainWorld;
+
+	UPROPERTY(EditAnywhere)
+		TMap<FName, int> LoadPriority;
+};
+
 UCLASS(Config = Gameplay, defaultconfig, meta = (DisplayName = "Gameplay"))
 class EXGAMEPLAYPLUGIN_API UGameplaySettings : public UDeveloperSettings
 {
@@ -35,4 +47,7 @@ public:
 
 	UPROPERTY(config, EditAnywhere, Category = "Development", meta = (MetaClass = "CheatManagerExtension", DisplayName = "Cheat Manager Extension", ConfigRestartRequired = true))
 		TArray<FSoftClassPath> CheatExtensionClasses;
+
+	UPROPERTY(Config, EditAnywhere, Category = "Streaming Level")
+		TArray<FStreamingLevelPriority> StreamingLevelPriorities;
 };

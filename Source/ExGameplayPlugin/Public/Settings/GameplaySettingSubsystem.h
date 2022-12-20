@@ -37,6 +37,8 @@ private:
 
 	void ParseCommandLine();
 
+	void OnPostWorldInit(UWorld* World, const UWorld::InitializationValues IVS);
+
 private:
 
 	TArray<FString> ActivatedGameFeaturesNames;
@@ -44,4 +46,6 @@ private:
 	FString ConfigFilePath;
 
 	FDelegateHandle CheatManagerCreateHandle;
+
+	FDelegateHandle PostWorldInitHandle;
 };

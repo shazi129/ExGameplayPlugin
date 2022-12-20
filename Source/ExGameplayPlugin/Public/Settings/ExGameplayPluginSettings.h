@@ -12,7 +12,7 @@ class EXGAMEPLAYPLUGIN_API UExGameplayPluginSettings : public UDeveloperSettings
 public:
 	UExGameplayPluginSettings() 
 	{
-		CategoryName = "Game";
+		CategoryName = "Extension Gameplay";
 	}
 
 	UPROPERTY(Config, EditAnywhere, Category = "Development")

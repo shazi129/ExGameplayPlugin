@@ -2,6 +2,7 @@
 #include "Settings/GameplaySettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFeaturesSubsystem.h"
+#include "Engine/LevelStreaming.h"
 
 UGameplaySettingSubsystem* UGameplaySettingSubsystem::GetGameplaySettingSubsystem(const UObject* WorldContextObject)
 {
@@ -53,6 +54,8 @@ void UGameplaySettingSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	HandleSettings();
 	LoadAndAcitvateDefaultFeatures();
 
+	PostWorldInitHandle = FWorldDelegates::OnPostWorldInitialization.AddUObject(this, &UGameplaySettingSubsystem::OnPostWorldInit);
+
 #if UE_WITH_CHEAT_MANAGER
 	CheatManagerCreateHandle = UCheatManager::RegisterForOnCheatManagerCreated(
 			FOnCheatManagerCreated::FDelegate::CreateUObject(this, &UGameplaySettingSubsystem::OnCheatManagerCreate));
@@ -82,6 +85,8 @@ void UGameplaySettingSubsystem::Deinitialize()
 		}
 	}
 	ActivatedGameFeaturesNames.Empty();
+
+	FWorldDelegates::OnPostWorldInitialization.Remove(PostWorldInitHandle);
 
 	if (CheatManagerCreateHandle.IsValid())
 	{
@@ -152,5 +157,41 @@ void UGameplaySettingSubsystem::ParseCommandLine()
 	bool AutoPlayEnable = UKismetSystemLibrary::ParseParam(CommandLine, "skipcompile");
 	if (AutoPlayEnable)
 	{
+	}
+}
+
+void UGameplaySettingSubsystem::OnPostWorldInit(UWorld* World, const UWorld::InitializationValues IVS)
+{
+	if (World == nullptr) return;
+
+	for (const FStreamingLevelPriority& PrioriyInfo : GetDefault<UGameplaySettings>()->StreamingLevelPriorities)
+	{
+		if (PrioriyInfo.MainWorld.IsNull())
+		{
+			continue;
+		}
+
+		FName MainWorldPackageName = FName(PrioriyInfo.MainWorld.GetLongPackageName());
+		if (World->GetPackage()->GetFName() != MainWorldPackageName)
+		{
+			continue;
+		}
+
+		TArray<ULevelStreaming*> StreamingLevels = World->GetStreamingLevels();
+		StreamingLevels.Sort([&](const ULevelStreaming& A, const ULevelStreaming& B) 
+		{
+			FName ALevelName = FPackageName::GetShortFName(A.PackageNameToLoad);
+			FName BLevelName = FPackageName::GetShortFName(B.PackageNameToLoad);
+
+			int APriority = PrioriyInfo.LoadPriority.Contains(ALevelName) ? PrioriyInfo.LoadPriority[ALevelName] : 0;
+			int BPriority = PrioriyInfo.LoadPriority.Contains(BLevelName) ? PrioriyInfo.LoadPriority[BLevelName] : 0;
+
+			return APriority > BPriority;
+			
+		});
+
+		World->SetStreamingLevels(StreamingLevels);
+
+		break;
 	}
 }

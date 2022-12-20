@@ -1,5 +1,5 @@
-#include "ExEditorEngineLibrary.h"
-#include "ExEditorToolsModule.h"
+#include "EditorUtils/ExEditorEngineLibrary.h"
+#include "ExEditorToolTypes.h"
 #include "HAL/PlatformApplicationMisc.h"
 #include "LevelUtils.h"
 #include "Engine/LevelStreaming.h"
@@ -7,12 +7,6 @@
 #include "IAssetTools.h"
 #include "AssetToolsModule.h"
 #include "Settings/ContentBrowserSettings.h"
-#include "Misc/Paths.h"
-#include "Misc/NamePermissionList.h"
-#include "Misc/ConfigCacheIni.h"
-#include "Misc/FeedbackContext.h"
-#include "Misc/ScopedSlowTask.h"
-#include "Misc/WorldCompositionUtility.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Widgets/Notifications/SNotificationList.h"
 #include "EditorLevelUtils.h"
@@ -30,7 +24,6 @@
 #include "FileHelpers.h"
 #include "AssetViewUtils.h"
 #include "AssetRegistry/AssetRegistryModule.h"
-#include "ExEditorToolsLibrary.h"
 #include "BusyCursor.h"
 #include "AssetDeleteModel.h"
 #include "Dialogs/SDeleteAssetsDialog.h"
@@ -468,7 +461,7 @@ bool UExEditorEngineLibrary::GenerateLODLevels(UWorld* MainWorld, TArray<ULevel*
 		return false;
 	}
 
-	TMap<FName, FWorldCompositionTile*> WorldCompsitionTileMap = UExEditorToolsLibrary::GetWorldCompsitionTile(MainWorld);
+	TMap<FName, FWorldCompositionTile*> WorldCompsitionTileMap = UExEditorLevelLibrary::GetWorldCompsitionTile(MainWorld);
 
 	IMeshReductionModule& ReductionModule = FModuleManager::Get().LoadModuleChecked<IMeshReductionModule>("MeshReductionInterface");
 
