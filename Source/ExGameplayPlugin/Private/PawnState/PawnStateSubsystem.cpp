@@ -10,38 +10,46 @@ UPawnStateSubsystem* UPawnStateSubsystem::GetPawnStateSubsystem(const UObject* W
 	return GameInstance->GetSubsystem<UPawnStateSubsystem>();
 }
 
+UPawnStateComponent* UPawnStateSubsystem::GetPawnStateComponent(AActor* Actor)
+{
+	if (Actor == nullptr)
+	{
+		return nullptr;
+	}
+	UPawnStateComponent* Component = Cast<UPawnStateComponent>(Actor->GetComponentByClass(UPawnStateComponent::StaticClass()));
+	return Component;
+}
+
 UPawnStateComponent* UPawnStateSubsystem::GetLocalPawnStateComponent(const UObject* WorldContextObject)
 {
 	if (ACharacter* Character = UGameplayStatics::GetPlayerCharacter(WorldContextObject, 0))
 	{
-		UPawnStateComponent* Component = Cast<UPawnStateComponent>(Character->GetComponentByClass(UPawnStateComponent::StaticClass()));
-		return Component;
+		return  UPawnStateSubsystem::GetPawnStateComponent(Character);
 	}
-
 	return nullptr;
 }
 
-bool UPawnStateSubsystem::LocalCanEnterState(const UObject* WorldContextObject, const FGameplayTag& NewPawnState)
+bool UPawnStateSubsystem::CanEnterState(AActor* Actor, const FGameplayTag& NewPawnState)
 {
-	if (UPawnStateComponent* Component = UPawnStateSubsystem::GetLocalPawnStateComponent(WorldContextObject))
+	if (UPawnStateComponent* Component = UPawnStateSubsystem::GetPawnStateComponent(Actor))
 	{
 		return Component->CanEnterState(NewPawnState);
 	}
 	return false;
 }
 
-bool UPawnStateSubsystem::LocalEnterState(const UObject* WorldContextObject, const FGameplayTag& NewPawnState)
+bool UPawnStateSubsystem::EnterState(AActor* Actor, const FGameplayTag& NewPawnState)
 {
-	if (UPawnStateComponent* Component = UPawnStateSubsystem::GetLocalPawnStateComponent(WorldContextObject))
+	if (UPawnStateComponent* Component = UPawnStateSubsystem::GetPawnStateComponent(Actor))
 	{
 		return Component->EnterState(NewPawnState);
 	}
 	return false;
 }
 
-bool UPawnStateSubsystem::LocalLeaveState(const UObject* WorldContextObject, const FGameplayTag& PawnState)
+bool UPawnStateSubsystem::LeaveState(AActor* Actor, const FGameplayTag& PawnState)
 {
-	if (UPawnStateComponent* Component = UPawnStateSubsystem::GetLocalPawnStateComponent(WorldContextObject))
+	if (UPawnStateComponent* Component = UPawnStateSubsystem::UPawnStateSubsystem::GetPawnStateComponent(Actor))
 	{
 		return Component->LeaveState(PawnState);
 	}
@@ -82,7 +90,7 @@ void UPawnStateSubsystem::LoadDefaultConfig()
 	}
 }
 
-EPawnStateRelation UPawnStateSubsystem::GetRelation(const FGameplayTag& From, const FGameplayTag& To)
+EPawnStateRelation UPawnStateSubsystem::GetStateRelation(const FGameplayTag& From, const FGameplayTag& To)
 {
 	if (PawnStateConfig.Contains(From) && PawnStateConfig[From].Data.Contains(To))
 	{

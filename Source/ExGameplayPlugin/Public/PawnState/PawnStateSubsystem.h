@@ -21,17 +21,23 @@ public:
 	UFUNCTION(BlueprintPure, meta = (WorldContext = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
 		static class UPawnStateComponent* GetLocalPawnStateComponent(const UObject* WorldContextObject);
 
-	UFUNCTION(BlueprintPure, meta = (WorldContext = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
-		static bool LocalCanEnterState(const UObject* WorldContextObject, const FGameplayTag& NewPawnState);
+	UFUNCTION(BlueprintPure)
+		static class UPawnStateComponent* GetPawnStateComponent(AActor* Actor);
 
-	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
-		static bool LocalEnterState(const UObject* WorldContextObject, const FGameplayTag& NewPawnState);
-
-	UFUNCTION(BlueprintCallable, meta = (WorldContext = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
-		static bool LocalLeaveState(const UObject* WorldContextObject, const FGameplayTag& PawnState);
+	
+		
 
 	UFUNCTION(BlueprintPure)
-		EPawnStateRelation GetRelation(const FGameplayTag& From, const FGameplayTag& To);
+		static bool CanEnterState(AActor* Actor, const FGameplayTag& NewPawnState);
+
+	UFUNCTION(BlueprintCallable)
+		static bool EnterState(AActor* Actor, const FGameplayTag& NewPawnState);
+
+	UFUNCTION(BlueprintCallable)
+		static bool LeaveState(AActor* Actor, const FGameplayTag& PawnState);
+
+	UFUNCTION(BlueprintPure)
+		EPawnStateRelation GetStateRelation(const FGameplayTag& From, const FGameplayTag& To);
 
 private:
 	void LoadDefaultConfig();
