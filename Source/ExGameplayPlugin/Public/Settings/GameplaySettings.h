@@ -25,6 +25,9 @@ struct EXGAMEPLAYPLUGIN_API FStreamingLevelPriority
 		TSoftObjectPtr<UWorld> MainWorld;
 
 	UPROPERTY(EditAnywhere)
+		bool OnlyInClient = false;
+	
+	UPROPERTY(EditAnywhere)
 		TMap<FName, int> LoadPriority;
 };
 

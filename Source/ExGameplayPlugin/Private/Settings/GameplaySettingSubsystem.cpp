@@ -3,6 +3,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "GameFeaturesSubsystem.h"
 #include "Engine/LevelStreaming.h"
+#include "Engine/WorldComposition.h"
 
 UGameplaySettingSubsystem* UGameplaySettingSubsystem::GetGameplaySettingSubsystem(const UObject* WorldContextObject)
 {
@@ -54,7 +55,7 @@ void UGameplaySettingSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	HandleSettings();
 	LoadAndAcitvateDefaultFeatures();
 
-	PostWorldInitHandle = FWorldDelegates::OnPostWorldInitialization.AddUObject(this, &UGameplaySettingSubsystem::OnPostWorldInit);
+	RegisterPostWorldInitHandler();
 
 #if UE_WITH_CHEAT_MANAGER
 	CheatManagerCreateHandle = UCheatManager::RegisterForOnCheatManagerCreated(
@@ -86,7 +87,7 @@ void UGameplaySettingSubsystem::Deinitialize()
 	}
 	ActivatedGameFeaturesNames.Empty();
 
-	FWorldDelegates::OnPostWorldInitialization.Remove(PostWorldInitHandle);
+	UnregisterPostWorldInitHandler();
 
 	if (CheatManagerCreateHandle.IsValid())
 	{
@@ -160,25 +161,80 @@ void UGameplaySettingSubsystem::ParseCommandLine()
 	}
 }
 
+void UGameplaySettingSubsystem::RegisterPostWorldInitHandler()
+{
+	const TIndirectArray<FWorldContext>& WorldContextList = GEngine->GetWorldContexts();
+	for (const FWorldContext& WorldContext : WorldContextList)
+	{
+		UWorld* World = WorldContext.World();
+		if (World && World->IsGameWorld())
+		{
+			OnPostWorldInit(World, UWorld::InitializationValues());
+		}
+	}
+	PostWorldInitHandle = FWorldDelegates::OnPostWorldInitialization.AddUObject(this, &UGameplaySettingSubsystem::OnPostWorldInit);
+}
+
+void UGameplaySettingSubsystem::UnregisterPostWorldInitHandler()
+{
+	FWorldDelegates::OnPostWorldInitialization.Remove(PostWorldInitHandle);
+}
+
 void UGameplaySettingSubsystem::OnPostWorldInit(UWorld* World, const UWorld::InitializationValues IVS)
 {
-	if (World == nullptr) return;
+	if (World == nullptr || World->WorldComposition == nullptr) return;
 
-	for (const FStreamingLevelPriority& PrioriyInfo : GetDefault<UGameplaySettings>()->StreamingLevelPriorities)
+	for (const FStreamingLevelPriority& PriorityInfo : GetDefault<UGameplaySettings>()->StreamingLevelPriorities)
 	{
-		if (PrioriyInfo.MainWorld.IsNull())
+		if (PriorityInfo.OnlyInClient && World->GetNetMode() == ENetMode::NM_DedicatedServer)
 		{
 			continue;
 		}
 
-		FName MainWorldPackageName = FName(PrioriyInfo.MainWorld.GetLongPackageName());
-		if (World->GetPackage()->GetFName() != MainWorldPackageName)
+		if (PriorityInfo.MainWorld.IsNull())
 		{
 			continue;
 		}
 
-		TArray<ULevelStreaming*> StreamingLevels = World->GetStreamingLevels();
-		StreamingLevels.Sort([&](const ULevelStreaming& A, const ULevelStreaming& B) 
+		//获得去除前缀后的真实包名
+		FString WorldPackageFullName = World->GetPackage()->GetName();
+		FString WorldPackagePath = FPackageName::GetLongPackagePath(WorldPackageFullName);
+		FString WorldPackageShortName = FPackageName::GetShortName(WorldPackageFullName);
+		WorldPackageShortName.RemoveFromStart(World->StreamingLevelsPrefix);
+
+		WorldPackageFullName = FString::Printf(TEXT("%s/%s"), *WorldPackagePath, *WorldPackageShortName);
+		if (WorldPackageFullName != PriorityInfo.MainWorld.GetLongPackageName())
+		{
+			continue;
+		}
+
+		for (TObjectPtr<ULevelStreaming>& LevelStreaming : World->WorldComposition->TilesStreaming)
+		{
+			FName SubLevelName = FPackageName::GetShortFName(LevelStreaming->PackageNameToLoad);
+			if (PriorityInfo.LoadPriority.Contains(SubLevelName))
+			{
+				LevelStreaming->SetPriority(PriorityInfo.LoadPriority[SubLevelName]);
+			}
+		}
+		/*
+		UWorldComposition::FTilesList& TilesList = World->WorldComposition->GetTilesList();
+		TilesList.Sort([&](const FWorldCompositionTile& A, const FWorldCompositionTile& B)
+		{
+			FString TempName = FPackageName::GetShortName(A.PackageName);
+			TempName.RemoveFromStart(World->StreamingLevelsPrefix);
+			FName ALevelName = FName(TempName);
+
+			TempName = FPackageName::GetShortName(B.PackageName);
+			TempName.RemoveFromStart(World->StreamingLevelsPrefix);
+			FName BLevelName = FName(TempName);
+
+			int APriority = PrioriyInfo.LoadPriority.Contains(ALevelName) ? PrioriyInfo.LoadPriority[ALevelName] : 0;
+			int BPriority = PrioriyInfo.LoadPriority.Contains(BLevelName) ? PrioriyInfo.LoadPriority[BLevelName] : 0;
+
+			return APriority >= BPriority;
+		});
+
+		World->WorldComposition->TilesStreaming.Sort([&](const ULevelStreaming& A, const ULevelStreaming& B)
 		{
 			FName ALevelName = FPackageName::GetShortFName(A.PackageNameToLoad);
 			FName BLevelName = FPackageName::GetShortFName(B.PackageNameToLoad);
@@ -186,12 +242,10 @@ void UGameplaySettingSubsystem::OnPostWorldInit(UWorld* World, const UWorld::Ini
 			int APriority = PrioriyInfo.LoadPriority.Contains(ALevelName) ? PrioriyInfo.LoadPriority[ALevelName] : 0;
 			int BPriority = PrioriyInfo.LoadPriority.Contains(BLevelName) ? PrioriyInfo.LoadPriority[BLevelName] : 0;
 
-			return APriority > BPriority;
+			return APriority >= BPriority;
 			
 		});
-
-		World->SetStreamingLevels(StreamingLevels);
-
 		break;
+		*/
 	}
 }

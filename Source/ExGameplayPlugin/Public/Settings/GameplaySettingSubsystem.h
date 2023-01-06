@@ -37,6 +37,8 @@ private:
 
 	void ParseCommandLine();
 
+	void RegisterPostWorldInitHandler();
+	void UnregisterPostWorldInitHandler();
 	void OnPostWorldInit(UWorld* World, const UWorld::InitializationValues IVS);
 
 private:
