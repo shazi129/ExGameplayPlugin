@@ -369,3 +369,20 @@ bool UExGameplayLibrary::IsRunning(UObject* WorldContextObject)
 	}
 	return false;
 }
+
+FString UExGameplayLibrary::GetWorldPackageFullName(UWorld* World)
+{
+	if (World)
+	{
+#if UE_EDITOR
+		FString WorldPackageFullName = World->GetPackage()->GetName();
+		FString WorldPackagePath = FPackageName::GetLongPackagePath(WorldPackageFullName);
+		FString WorldPackageShortName = FPackageName::GetShortName(WorldPackageFullName);
+		WorldPackageShortName.RemoveFromStart(World->StreamingLevelsPrefix);
+		return FString::Printf(TEXT("%s/%s"), *WorldPackagePath, *WorldPackageShortName);
+#else
+		return World->GetPackage()->GetName();
+#endif
+	}
+	return "";
+}

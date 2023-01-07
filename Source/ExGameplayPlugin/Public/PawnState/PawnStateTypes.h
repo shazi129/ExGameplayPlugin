@@ -51,12 +51,10 @@ class EXGAMEPLAYPLUGIN_API UPawnState : public UDataAsset
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
-		FName PawnStateName;
 
 	//本State持有的tag
 	UPROPERTY(EditAnywhere)
-		FGameplayTagContainer OwnedTags;
+		FGameplayTag PawnStateTag;
 
 	//本State激活所需要的tag
 	UPROPERTY(EditAnywhere)
@@ -76,7 +74,7 @@ public:
 
 	//如果持有这些tag的State激活， 本State会退出
 	UPROPERTY(EditAnywhere)
-		FGameplayTagContainer CancelActionTags;
+		FGameplayTagContainer CancelledTags;
 };
 
 USTRUCT(BlueprintType)
@@ -84,9 +82,52 @@ struct EXGAMEPLAYPLUGIN_API FPawnStateInstance
 {
 	GENERATED_BODY()
 
+	//PawnState持有者，炸弹(SouceObject)会使人受伤害(PawnState)
 	UPROPERTY(BlueprintReadOnly)
 	UObject* SourceObject;
 
+	//PawnState出发这，玩家(Instigator)扔炸弹使人受伤害(PawnState)
 	UPROPERTY(BlueprintReadOnly)
-	TArray<UPawnState*> PawnStates;
+	UObject* Instigator;
+
+	UPROPERTY(BlueprintReadOnly)
+	UPawnState* PawnState;
+
+	FPawnStateInstance()
+	{
+		PawnState = nullptr;
+		SourceObject = nullptr;
+		Instigator = nullptr;
+	}
+
+	FPawnStateInstance(const FPawnStateInstance& Other)
+	{
+		PawnState = Other.PawnState;
+		SourceObject = Other.SourceObject;
+		Instigator = Other.Instigator;
+	}
+
+	FPawnStateInstance(UPawnState* InPawnState, UObject* InSourceObject, UObject* InInstigator=nullptr)
+	{
+		PawnState = InPawnState;
+		SourceObject = InSourceObject;
+		Instigator = InInstigator;
+	}
+
+	bool operator==(const FPawnStateInstance& Other) const
+	{
+		return PawnState == Other.PawnState
+			&& SourceObject == Other.SourceObject
+			&& Instigator == Other.Instigator;
+	}
+
+	FString ToString() const
+	{
+		return FString::Printf(TEXT("[%s_%s_%s]"), *PawnState->PawnStateTag.ToString(), *GetNameSafe(SourceObject), *GetNameSafe(Instigator));
+	}
+
+	bool IsValid() const
+	{
+		return PawnState != nullptr && SourceObject != nullptr;
+	}
 };

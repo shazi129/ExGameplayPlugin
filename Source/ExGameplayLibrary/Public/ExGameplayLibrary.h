@@ -72,4 +72,6 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary", meta = (DefaultToSelf = "WorldContextObject"))
 	static bool IsRunning(UObject* WorldContextObject);
+
+	static FString GetWorldPackageFullName(UWorld* World);
 };

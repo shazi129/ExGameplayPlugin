@@ -4,7 +4,7 @@
 #include "PawnStateTypes.h"
 #include "PawnStateComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPawnStateDelegate, const FGameplayTag&, PawnState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPawnStateDelegate, const FPawnStateInstance&, PawnStateInstance);
 
 USTRUCT(BlueprintType)
 struct EXGAMEPLAYPLUGIN_API FPawnStateEvent
@@ -21,32 +21,36 @@ class EXGAMEPLAYPLUGIN_API UPawnStateComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintCallable)
-	bool CanEnterState(const FGameplayTag& NewPawnState);
-
-	UFUNCTION(BlueprintCallable)
-	bool EnterState(const FGameplayTag& NewPawnState);
-
-	UFUNCTION(BlueprintCallable)
-	bool LeaveState(const FGameplayTag& PawnState);
-
-	UFUNCTION(BlueprintCallable)
-	bool HasState(const FGameplayTag& PawnState, bool Exactly=true);
-
-	UFUNCTION(BlueprintCallable)
-		FPawnStateEvent& GetEnterEvent(const FGameplayTag& PawnState);
-
-	UFUNCTION(BlueprintCallable)
-		FPawnStateEvent& GetLeaveEvent(const FGameplayTag& PawnState);
-
 	UFUNCTION(BlueprintPure)
 		FString ToString();
 
+	UFUNCTION(BlueprintCallable)
+		bool CanEnterPawnState(const FPawnStateInstance& PawnStateInstance);
+
+	UFUNCTION(BlueprintCallable)
+		bool EnterPawnState(const FPawnStateInstance& PawnStateInstance);
+
+	UFUNCTION(BlueprintCallable)
+		bool LeavePawnState(const FPawnStateInstance& PawnStateInstance);
+
+	UFUNCTION(BlueprintCallable)
+		bool HasPawnState(const FPawnStateInstance& PawnStateInstance);
+
+	UFUNCTION(BlueprintCallable)
+		FPawnStateEvent& GetEnterEvent(const UPawnState* PawnState);
+
+	UFUNCTION(BlueprintCallable)
+		FPawnStateEvent& GetLeaveEvent(const UPawnState* PawnState);
+
 private:
-	FGameplayTagContainer CurrentPawnStates;
+	void RebuildCurrentTag();
+	bool InternalCanEnterPawnState(const FPawnStateInstance& PawnStateInstance, FString* ErrMsg);
+	bool InternalLeavePawnState(const FPawnStateInstance& PawnStateInstance, UObject* Instigator=nullptr);
 
+private:
 	TArray<FPawnStateInstance> PawnStateInstances;
+	FGameplayTagContainer CurrentPawnStateTags;
 
-	TMap<FGameplayTag, FPawnStateEvent> PawnStateEnterEvent;
-	TMap<FGameplayTag, FPawnStateEvent> PawnStateLeaveEvent;
+	TMap<const UPawnState*, FPawnStateEvent> PawnStateEnterEvent;
+	TMap<const UPawnState*, FPawnStateEvent> PawnStateLeaveEvent;
 };

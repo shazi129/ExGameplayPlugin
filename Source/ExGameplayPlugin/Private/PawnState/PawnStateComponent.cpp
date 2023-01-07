@@ -1,108 +1,162 @@
 #include "PawnState/PawnStateComponent.h"
-#include "PawnState/PawnStateSubsystem.h"
+#include "ExGameplayPluginModule.h"
 
-bool UPawnStateComponent::CanEnterState(const FGameplayTag& NewPawnState)
+FString UPawnStateComponent::ToString()
 {
-	if (!NewPawnState.IsValid())
+	return CurrentPawnStateTags.ToString();
+}
+
+bool UPawnStateComponent::CanEnterPawnState(const FPawnStateInstance& PawnStateInstance)
+{
+	return InternalCanEnterPawnState(PawnStateInstance, nullptr);
+}
+
+bool UPawnStateComponent::InternalCanEnterPawnState(const FPawnStateInstance& PawnStateInstance, FString* ErrMsg)
+{
+	if (!PawnStateInstance.IsValid())
 	{
+		if (ErrMsg)
+		{
+			*ErrMsg = FString::Printf(TEXT("Invalidate PawnStateInstance"));
+		}
 		return false;
 	}
 
-	UPawnStateSubsystem* PawnStateSubsystem = UPawnStateSubsystem::GetPawnStateSubsystem(this);
-	for (const FGameplayTag& PawnState : CurrentPawnStates)
+	//看有没有block的
+	if (CurrentPawnStateTags.HasAnyExact(PawnStateInstance.PawnState->ActivateBlockedTags))
 	{
-		if (PawnState == NewPawnState)
+		if (ErrMsg)
 		{
-			return true;
+			*ErrMsg = FString::Printf(TEXT("%s is blocked by current state"), *PawnStateInstance.ToString());
 		}
-		EPawnStateRelation Relation = PawnStateSubsystem->GetStateRelation(PawnState, NewPawnState);
-		if (Relation == EPawnStateRelation::E_FORBID_ENTER)
-		{
-			return false;
-		}
+		return false;
 	}
+
+	//检查require
+	if (!CurrentPawnStateTags.HasAllExact(PawnStateInstance.PawnState->RequiredTags))
+	{
+		if (ErrMsg)
+		{
+			*ErrMsg = FString::Printf(TEXT("%s miss required state"), *PawnStateInstance.ToString());
+		}
+		return false;
+	}
+
 	return true;
 }
 
-
-bool UPawnStateComponent::EnterState(const FGameplayTag& NewPawnState)
+void UPawnStateComponent::RebuildCurrentTag()
 {
-	//重复进入
-	if (CurrentPawnStates.HasTagExact(NewPawnState))
+	CurrentPawnStateTags.Reset();
+	for (const FPawnStateInstance& Instance : PawnStateInstances)
 	{
+		CurrentPawnStateTags.AddTag(Instance.PawnState->PawnStateTag);
+	}
+}
+
+bool UPawnStateComponent::EnterPawnState(const FPawnStateInstance& NewPawnStateInstance)
+{
+	if (!NewPawnStateInstance.IsValid())
+	{
+		EXGAMEPLAY_LOG(Error, TEXT("%s Error: Paramter error"), *FString(__FUNCTION__));
+		return false;
+	}
+
+	if (HasPawnState(NewPawnStateInstance))
+	{
+		EXGAMEPLAY_LOG(Warning, TEXT("%s warning: enter a exist state %s"), *FString(__FUNCTION__), *NewPawnStateInstance.ToString());
 		return true;
 	}
 
-	//是否被其他state限制之类的
-	if (!CanEnterState(NewPawnState))
+	FString ErrMsg;
+	if (!InternalCanEnterPawnState(NewPawnStateInstance, &ErrMsg))
 	{
+		EXGAMEPLAY_LOG(Error, TEXT("%s Error: %s"), *FString(__FUNCTION__), *ErrMsg);
 		return false;
 	}
 
-	//处理互斥state
-	FGameplayTagContainer NeedRemoveStates;
-	for (const FGameplayTag& PawnState : CurrentPawnStates)
+	EXGAMEPLAY_LOG(Log, TEXT("%s: %s"), *FString(__FUNCTION__), *NewPawnStateInstance.ToString());
+
+	//使互斥的PawnState退出
+	TArray<FPawnStateInstance*> RemovedInstance;
+	for (FPawnStateInstance& Instance : PawnStateInstances)
 	{
-		EPawnStateRelation Relation = UPawnStateSubsystem::GetPawnStateSubsystem(this)->GetStateRelation(NewPawnState, PawnState);
-		if (Relation == EPawnStateRelation::E_MUTEX)
+		if (Instance.PawnState->CancelledTags.HasTagExact(NewPawnStateInstance.PawnState->PawnStateTag))
 		{
-			NeedRemoveStates.AddTag(PawnState);
+			RemovedInstance.Add(&Instance);
+		}
+		else if (NewPawnStateInstance.PawnState->CancelOtherTags.HasTagExact(Instance.PawnState->PawnStateTag))
+		{
+			RemovedInstance.Add(&Instance);
 		}
 	}
-	//移除state
-	for (const FGameplayTag& PawnState : NeedRemoveStates)
+
+	UObject* Instigator = NewPawnStateInstance.Instigator ? NewPawnStateInstance.Instigator : NewPawnStateInstance.SourceObject;
+	for (FPawnStateInstance* Instance : RemovedInstance)
 	{
-		LeaveState(PawnState);
+		InternalLeavePawnState(*Instance, Instigator);
 	}
 
-	//添加state
-	CurrentPawnStates.AddTag(NewPawnState);
-	FPawnStateEvent& Event = GetEnterEvent(NewPawnState);
+	//加入新的PawnState
+	PawnStateInstances.Add(NewPawnStateInstance);
+	RebuildCurrentTag();
+
+	FPawnStateEvent& Event = GetEnterEvent(NewPawnStateInstance.PawnState);
 	if (Event.Delegate.IsBound())
 	{
-		Event.Delegate.Broadcast(NewPawnState);
+		Event.Delegate.Broadcast(NewPawnStateInstance);
 	}
+
 	return true;
 }
 
-
-bool UPawnStateComponent::LeaveState(const FGameplayTag& PawnState)
+bool UPawnStateComponent::LeavePawnState(const FPawnStateInstance& PawnStateInstance)
 {
-	if (CurrentPawnStates.HasTagExact(PawnState))
+	return InternalLeavePawnState(PawnStateInstance);
+}
+
+bool UPawnStateComponent::InternalLeavePawnState(const FPawnStateInstance& PawnStateInstance, UObject* Instigator)
+{
+	for (int i = PawnStateInstances.Num() - 1; i >= 0; i--)
 	{
-		CurrentPawnStates.RemoveTag(PawnState);
-		FPawnStateEvent& Event = GetLeaveEvent(PawnState);
-		if (Event.Delegate.IsBound())
+		if (PawnStateInstances[i] == PawnStateInstance)
 		{
-			Event.Delegate.Broadcast(PawnState);
+			FPawnStateInstance Instance(PawnStateInstances[i]);
+			Instance.Instigator = Instigator;
+
+			PawnStateInstances.RemoveAt(i);
+			RebuildCurrentTag();
+
+			FPawnStateEvent& Event = GetEnterEvent(PawnStateInstance.PawnState);
+			if (Event.Delegate.IsBound())
+			{
+				Event.Delegate.Broadcast(Instance);
+			}
+
+			break;
 		}
 	}
 	return true;
 }
 
-bool UPawnStateComponent::HasState(const FGameplayTag& PawnState, bool Exactly)
+bool UPawnStateComponent::HasPawnState(const FPawnStateInstance& PawnStateInstance)
 {
-	if (Exactly)
+	for (const FPawnStateInstance& Instance : PawnStateInstances)
 	{
-		return CurrentPawnStates.HasTagExact(PawnState);
+		if (Instance == PawnStateInstance)
+		{
+			return true;
+		}
 	}
-	else
-	{
-		return CurrentPawnStates.HasTag(PawnState);
-	}
+	return false;
 }
 
-FPawnStateEvent& UPawnStateComponent::GetEnterEvent(const FGameplayTag& PawnState)
+FPawnStateEvent& UPawnStateComponent::GetEnterEvent(const UPawnState* PawnState)
 {
 	return PawnStateEnterEvent.FindOrAdd(PawnState);
 }
 
-FPawnStateEvent& UPawnStateComponent::GetLeaveEvent(const FGameplayTag& PawnState)
+FPawnStateEvent& UPawnStateComponent::GetLeaveEvent(const UPawnState* PawnState)
 {
 	return PawnStateLeaveEvent.FindOrAdd(PawnState);
-}
-
-FString UPawnStateComponent::ToString()
-{
-	return CurrentPawnStates.ToString();
 }
