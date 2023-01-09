@@ -13,6 +13,9 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
+	UFUNCTION(BlueprintPure)
+	const UPawnStateAsset* GetGlobalPawnStateAsset(FGameplayTag PawnStateTag);
+
 	UPawnStateAsset* GetStreamingLevelPawnState(UWorld* World, ULevel* Level);
 	void RegisterLevelChangeHandler();
 	void UnregisterLevelChangeHander();

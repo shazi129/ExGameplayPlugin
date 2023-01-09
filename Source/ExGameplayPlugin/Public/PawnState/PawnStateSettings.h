@@ -17,6 +17,15 @@ struct EXGAMEPLAYPLUGIN_API FStreamingLevelState
 		TMap<FName, UPawnStateAsset*> LevelState;
 };
 
+USTRUCT(BlueprintType)
+struct EXGAMEPLAYPLUGIN_API FPawnStateAssets
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+		TArray<UPawnStateAsset*> Assets;
+};
+
 UCLASS(Config = Gameplay, defaultconfig, meta = (DisplayName = "PawnState"))
 class EXGAMEPLAYPLUGIN_API UPawnStateSettings : public UDeveloperSettings
 {
@@ -30,4 +39,7 @@ public:
 
 	UPROPERTY(Config, EditAnywhere, Category = "StreamingLevel")
 		TArray<FStreamingLevelState> SteamingLevelState;
+
+	UPROPERTY(Config, EditAnywhere, Category = "Basic")
+		FPawnStateAssets GlobalPawnStateAssets;
 };

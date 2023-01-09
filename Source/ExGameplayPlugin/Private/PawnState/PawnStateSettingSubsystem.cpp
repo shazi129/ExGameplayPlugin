@@ -94,3 +94,15 @@ void UPawnStateSettingSubsystem::OnLevelRemoved(ULevel* Level, UWorld* World)
 		UPawnStateLibrary::LeavePawnState(Character, FPawnStateInstance(PawnState, Level, nullptr));
 	}
 }
+
+const UPawnStateAsset* UPawnStateSettingSubsystem::GetGlobalPawnStateAsset(FGameplayTag PawnStateTag)
+{
+	for (const UPawnStateAsset* Asset : GetDefault<UPawnStateSettings>()->GlobalPawnStateAssets.Assets)
+	{
+		if (Asset->PawnState.PawnStateTag == PawnStateTag)
+		{
+			return Asset;
+		}
+	}
+	return nullptr;
+}
