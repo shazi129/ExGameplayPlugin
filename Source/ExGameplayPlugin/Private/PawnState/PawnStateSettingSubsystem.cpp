@@ -9,12 +9,26 @@
 
 void UPawnStateSettingSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
-
+	Super::Initialize(Collection);
+	if (UWorld* World = GetGameInstance()->GetWorld())
+	{
+		if (UExGameplayLibrary::IsClient(World))
+		{
+			RegisterLevelChangeHandler();
+		}
+	}
 }
 
 void UPawnStateSettingSubsystem::Deinitialize()
 {
-
+	Super::Deinitialize();
+	if (UWorld* World = GetGameInstance()->GetWorld())
+	{
+		if (UExGameplayLibrary::IsClient(World))
+		{
+			UnregisterLevelChangeHander();
+		}
+	}
 }
 
 void UPawnStateSettingSubsystem::RegisterLevelChangeHandler()
@@ -42,7 +56,7 @@ UPawnState* UPawnStateSettingSubsystem::GetStreamingLevelPawnState(UWorld* World
 
 	ACharacter* LocalCharacter = UGameplayStatics::GetPlayerCharacter(World, 0);
 
-	FString WorldPackageFullName = UExGameplayLibrary::GetWorldPackageFullName(World);
+	FString WorldPackageFullName = UExGameplayLibrary::GetPackageFullName(World, World);
 	for (const FStreamingLevelState& StateInfo : GetDefault<UPawnStateSettings>()->SteamingLevelState)
 	{
 		if (WorldPackageFullName != StateInfo.MainWorld.GetLongPackageName())
@@ -50,14 +64,11 @@ UPawnState* UPawnStateSettingSubsystem::GetStreamingLevelPawnState(UWorld* World
 			continue;
 		}
 
-		for (TObjectPtr<ULevelStreaming>& LevelStreaming : World->WorldComposition->TilesStreaming)
+		FString LevelPackageFullName = UExGameplayLibrary::GetPackageFullName(World, Level);
+		FName LevelPackageShortName = FPackageName::GetShortFName(LevelPackageFullName);
+		if (StateInfo.LevelState.Contains(LevelPackageShortName))
 		{
-			FName SubLevelName = FPackageName::GetShortFName(LevelStreaming->PackageNameToLoad);
-			if (StateInfo.LevelState.Contains(SubLevelName))
-			{
-				return StateInfo.LevelState[SubLevelName];
-			}
-			return nullptr;
+			return StateInfo.LevelState[LevelPackageShortName];
 		}
 	}
 

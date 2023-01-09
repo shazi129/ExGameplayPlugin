@@ -6,11 +6,12 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPawnStateDelegate, const FPawnStateInstance&, PawnStateInstance);
 
-USTRUCT(BlueprintType)
-struct EXGAMEPLAYPLUGIN_API FPawnStateEvent
+UCLASS(BlueprintType)
+class EXGAMEPLAYPLUGIN_API UPawnStateEvent : public UObject
 {
 	GENERATED_BODY()
 
+public:
 	UPROPERTY(BlueprintAssignable)
 	FPawnStateDelegate Delegate;
 };
@@ -19,6 +20,10 @@ UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent))
 class EXGAMEPLAYPLUGIN_API UPawnStateComponent : public UActorComponent
 {
 	GENERATED_BODY()
+
+public:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
 	UFUNCTION(BlueprintPure)
@@ -37,10 +42,15 @@ public:
 		bool HasPawnState(const FPawnStateInstance& PawnStateInstance);
 
 	UFUNCTION(BlueprintCallable)
-		FPawnStateEvent& GetEnterEvent(const UPawnState* PawnState);
+		UPawnStateEvent* GetEnterEvent(const FGameplayTag& PawnStateTag);
 
 	UFUNCTION(BlueprintCallable)
-		FPawnStateEvent& GetLeaveEvent(const UPawnState* PawnState);
+		UPawnStateEvent* GetLeaveEvent(const FGameplayTag& PawnStateTag);
+
+	UPROPERTY(BlueprintAssignable)
+		FPawnStateDelegate ChangeDelegate;
+
+	const TArray<FPawnStateInstance>& GetPawnStateInstances();
 
 private:
 	void RebuildCurrentTag();
@@ -51,6 +61,6 @@ private:
 	TArray<FPawnStateInstance> PawnStateInstances;
 	FGameplayTagContainer CurrentPawnStateTags;
 
-	TMap<const UPawnState*, FPawnStateEvent> PawnStateEnterEvent;
-	TMap<const UPawnState*, FPawnStateEvent> PawnStateLeaveEvent;
+	TMap<FGameplayTag, UPawnStateEvent*> PawnStateEnterEvent;
+	TMap<FGameplayTag, UPawnStateEvent*> PawnStateLeaveEvent;
 };

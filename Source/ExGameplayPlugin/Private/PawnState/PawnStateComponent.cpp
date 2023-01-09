@@ -1,6 +1,28 @@
 #include "PawnState/PawnStateComponent.h"
 #include "ExGameplayPluginModule.h"
 
+void UPawnStateComponent::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+void UPawnStateComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	for (auto& EnterEventItem : PawnStateEnterEvent)
+	{
+		EnterEventItem.Value->RemoveFromRoot();
+	}
+	PawnStateEnterEvent.Empty();
+
+	for (auto& LeaveEventItem : PawnStateLeaveEvent)
+	{
+		LeaveEventItem.Value->RemoveFromRoot();
+	}
+	PawnStateLeaveEvent.Empty();
+}
+
 FString UPawnStateComponent::ToString()
 {
 	return CurrentPawnStateTags.ToString();
@@ -101,10 +123,10 @@ bool UPawnStateComponent::EnterPawnState(const FPawnStateInstance& NewPawnStateI
 	PawnStateInstances.Add(NewPawnStateInstance);
 	RebuildCurrentTag();
 
-	FPawnStateEvent& Event = GetEnterEvent(NewPawnStateInstance.PawnState);
-	if (Event.Delegate.IsBound())
+	UPawnStateEvent* Event = GetEnterEvent(NewPawnStateInstance.PawnState->PawnStateTag);
+	if (Event && Event->Delegate.IsBound())
 	{
-		Event.Delegate.Broadcast(NewPawnStateInstance);
+		Event->Delegate.Broadcast(NewPawnStateInstance);
 	}
 
 	return true;
@@ -127,10 +149,10 @@ bool UPawnStateComponent::InternalLeavePawnState(const FPawnStateInstance& PawnS
 			PawnStateInstances.RemoveAt(i);
 			RebuildCurrentTag();
 
-			FPawnStateEvent& Event = GetEnterEvent(PawnStateInstance.PawnState);
-			if (Event.Delegate.IsBound())
+			UPawnStateEvent* Event = GetLeaveEvent(PawnStateInstance.PawnState->PawnStateTag);
+			if (Event && Event->Delegate.IsBound())
 			{
-				Event.Delegate.Broadcast(Instance);
+				Event->Delegate.Broadcast(Instance);
 			}
 
 			break;
@@ -151,12 +173,29 @@ bool UPawnStateComponent::HasPawnState(const FPawnStateInstance& PawnStateInstan
 	return false;
 }
 
-FPawnStateEvent& UPawnStateComponent::GetEnterEvent(const UPawnState* PawnState)
+UPawnStateEvent* UPawnStateComponent::GetEnterEvent(const FGameplayTag& PawnStateTag)
 {
-	return PawnStateEnterEvent.FindOrAdd(PawnState);
+	if (!PawnStateEnterEvent.Contains(PawnStateTag))
+	{
+		UPawnStateEvent* Event = NewObject<UPawnStateEvent>(this);
+		Event->AddToRoot();
+		PawnStateEnterEvent.Add(PawnStateTag, Event);
+	}
+	return PawnStateEnterEvent[PawnStateTag];
 }
 
-FPawnStateEvent& UPawnStateComponent::GetLeaveEvent(const UPawnState* PawnState)
+UPawnStateEvent* UPawnStateComponent::GetLeaveEvent(const FGameplayTag& PawnStateTag)
 {
-	return PawnStateLeaveEvent.FindOrAdd(PawnState);
+	if (!PawnStateLeaveEvent.Contains(PawnStateTag))
+	{
+		UPawnStateEvent* Event = NewObject<UPawnStateEvent>(this);
+		Event->AddToRoot();
+		PawnStateLeaveEvent.Add(PawnStateTag, Event);
+	}
+	return PawnStateLeaveEvent[PawnStateTag];
+}
+
+const TArray<FPawnStateInstance>& UPawnStateComponent::GetPawnStateInstances()
+{
+	return PawnStateInstances;
 }

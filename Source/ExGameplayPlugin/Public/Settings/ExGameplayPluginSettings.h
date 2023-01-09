@@ -15,6 +15,4 @@ public:
 		CategoryName = "Extension Gameplay";
 	}
 
-	UPROPERTY(Config, EditAnywhere, Category = "Development")
-		TArray<FPawnStateConfigItem> PawnStateConfig;
 };

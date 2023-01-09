@@ -370,18 +370,31 @@ bool UExGameplayLibrary::IsRunning(UObject* WorldContextObject)
 	return false;
 }
 
-FString UExGameplayLibrary::GetWorldPackageFullName(UWorld* World)
+FString UExGameplayLibrary::GetPackageFullName(UObject* WorldContextObject, UObject* Object)
 {
-	if (World)
+	if (WorldContextObject == nullptr || Object == nullptr)
+	{
+		return "";
+	}
+
+	if (UPackage* Package = Object->GetPackage())
 	{
 #if UE_EDITOR
-		FString WorldPackageFullName = World->GetPackage()->GetName();
-		FString WorldPackagePath = FPackageName::GetLongPackagePath(WorldPackageFullName);
-		FString WorldPackageShortName = FPackageName::GetShortName(WorldPackageFullName);
-		WorldPackageShortName.RemoveFromStart(World->StreamingLevelsPrefix);
-		return FString::Printf(TEXT("%s/%s"), *WorldPackagePath, *WorldPackageShortName);
+		if (Object->IsA(UWorld::StaticClass()) || Object->IsA(ULevel::StaticClass()))
+		{
+			if (UWorld* World = WorldContextObject->GetWorld())
+			{
+				FString PackageFullName = Package->GetName();
+				FString PackagePath = FPackageName::GetLongPackagePath(PackageFullName);
+				FString PackageShortName = FPackageName::GetShortName(PackageFullName);
+				PackageShortName.RemoveFromStart(World->StreamingLevelsPrefix);
+				return FString::Printf(TEXT("%s/%s"), *PackagePath, *PackageShortName);
+			}
+			
+		}
+		return Package->GetName();
 #else
-		return World->GetPackage()->GetName();
+		return Package->GetName();
 #endif
 	}
 	return "";
