@@ -13,7 +13,7 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
-	UPawnState* GetStreamingLevelPawnState(UWorld* World, ULevel* Level);
+	UPawnStateAsset* GetStreamingLevelPawnState(UWorld* World, ULevel* Level);
 	void RegisterLevelChangeHandler();
 	void UnregisterLevelChangeHander();
 	void OnLevelAdded(ULevel* Level, UWorld* World);

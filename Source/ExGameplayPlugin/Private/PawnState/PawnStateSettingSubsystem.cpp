@@ -42,7 +42,7 @@ void UPawnStateSettingSubsystem::UnregisterLevelChangeHander()
 	FWorldDelegates::LevelRemovedFromWorld.Remove(LevelRemovedHandle);
 }
 
-UPawnState* UPawnStateSettingSubsystem::GetStreamingLevelPawnState(UWorld* World, ULevel* Level)
+UPawnStateAsset* UPawnStateSettingSubsystem::GetStreamingLevelPawnState(UWorld* World, ULevel* Level)
 {
 	//只在客户端生效
 	if (UExGameplayLibrary::IsClient(World) == false)
@@ -77,7 +77,7 @@ UPawnState* UPawnStateSettingSubsystem::GetStreamingLevelPawnState(UWorld* World
 
 void UPawnStateSettingSubsystem::OnLevelAdded(ULevel* Level, UWorld* World)
 {
-	UPawnState* PawnState = GetStreamingLevelPawnState(World, Level);
+	UPawnStateAsset* PawnState = GetStreamingLevelPawnState(World, Level);
 	if (PawnState)
 	{
 		ACharacter* Character = UGameplayStatics::GetPlayerCharacter(World, 0);
@@ -87,7 +87,7 @@ void UPawnStateSettingSubsystem::OnLevelAdded(ULevel* Level, UWorld* World)
 
 void UPawnStateSettingSubsystem::OnLevelRemoved(ULevel* Level, UWorld* World)
 {
-	UPawnState* PawnState = GetStreamingLevelPawnState(World, Level);
+	UPawnStateAsset* PawnState = GetStreamingLevelPawnState(World, Level);
 	if (PawnState)
 	{
 		ACharacter* Character = UGameplayStatics::GetPlayerCharacter(World, 0);

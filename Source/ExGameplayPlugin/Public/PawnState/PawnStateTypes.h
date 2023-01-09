@@ -3,12 +3,10 @@
 #include "GameplayTags.h"
 #include "PawnStateTypes.generated.h"
 
-UCLASS(BlueprintType)
-class EXGAMEPLAYPLUGIN_API UPawnState : public UDataAsset
+USTRUCT(BlueprintType)
+struct EXGAMEPLAYPLUGIN_API FPawnState
 {
 	GENERATED_BODY()
-
-public:
 
 	//本State持有的tag
 	UPROPERTY(EditAnywhere)
@@ -33,6 +31,34 @@ public:
 	//如果持有这些tag的State激活， 本State会退出
 	UPROPERTY(EditAnywhere)
 		FGameplayTagContainer CancelledTags;
+
+	FPawnState() {}
+
+	FPawnState(FGameplayTag InPawnStateTag)
+		: PawnStateTag(InPawnStateTag)
+	{
+
+	}
+
+	bool IsValid() const
+	{
+		return PawnStateTag.IsValid();
+	}
+
+	bool operator==(const FPawnState& Other) const
+	{
+		return PawnStateTag == Other.PawnStateTag;
+	}
+};
+
+UCLASS(BlueprintType)
+class EXGAMEPLAYPLUGIN_API UPawnStateAsset : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere)
+		FPawnState PawnState;
 };
 
 USTRUCT(BlueprintType)
@@ -42,20 +68,20 @@ struct EXGAMEPLAYPLUGIN_API FPawnStateInstance
 
 	//PawnState持有者，炸弹(SouceObject)会使人受伤害(PawnState)
 	UPROPERTY(BlueprintReadOnly)
-	UObject* SourceObject;
+	UObject* SourceObject = nullptr;
 
 	//PawnState出发这，玩家(Instigator)扔炸弹使人受伤害(PawnState)
 	UPROPERTY(BlueprintReadOnly)
-	UObject* Instigator;
+	UObject* Instigator = nullptr;
 
 	UPROPERTY(BlueprintReadOnly)
-	UPawnState* PawnState;
+	FPawnState PawnState;
+
+	UPROPERTY(BlueprintReadOnly)
+		bool bFromAsset = false;
 
 	FPawnStateInstance()
 	{
-		PawnState = nullptr;
-		SourceObject = nullptr;
-		Instigator = nullptr;
 	}
 
 	FPawnStateInstance(const FPawnStateInstance& Other)
@@ -65,9 +91,17 @@ struct EXGAMEPLAYPLUGIN_API FPawnStateInstance
 		Instigator = Other.Instigator;
 	}
 
-	FPawnStateInstance(UPawnState* InPawnState, UObject* InSourceObject, UObject* InInstigator=nullptr)
+	FPawnStateInstance(UPawnStateAsset* InPawnStateAsset, UObject* InSourceObject, UObject* InInstigator=nullptr)
 	{
-		PawnState = InPawnState;
+		bFromAsset = true;
+		PawnState = InPawnStateAsset->PawnState;
+		SourceObject = InSourceObject;
+		Instigator = InInstigator;
+	}
+
+	FPawnStateInstance(FGameplayTag PawnStateTag, UObject* InSourceObject, UObject* InInstigator = nullptr)
+	{
+		PawnState.PawnStateTag = PawnStateTag;
 		SourceObject = InSourceObject;
 		Instigator = InInstigator;
 	}
@@ -81,11 +115,11 @@ struct EXGAMEPLAYPLUGIN_API FPawnStateInstance
 
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("[%s|%s|%s]"), *PawnState->PawnStateTag.ToString(), *GetNameSafe(SourceObject), *GetNameSafe(Instigator));
+		return FString::Printf(TEXT("[%s|%s|%s]"), *PawnState.PawnStateTag.ToString(), *GetNameSafe(SourceObject), *GetNameSafe(Instigator));
 	}
 
 	bool IsValid() const
 	{
-		return PawnState != nullptr && SourceObject != nullptr;
+		return PawnState.IsValid() && SourceObject != nullptr;
 	}
 };

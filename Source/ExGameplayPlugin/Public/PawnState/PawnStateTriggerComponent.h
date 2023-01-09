@@ -11,5 +11,5 @@ class EXGAMEPLAYPLUGIN_API UPawnStateTriggerComponent : public UActorComponent
 
 private:
 	UPROPERTY(EditAnywhere, Category="PawnState")
-	TArray<UPawnState*> PawnStates;
+	TArray<UPawnStateAsset*> PawnStateAssets;
 };

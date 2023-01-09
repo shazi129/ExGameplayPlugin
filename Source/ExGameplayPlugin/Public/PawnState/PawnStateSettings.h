@@ -14,7 +14,7 @@ struct EXGAMEPLAYPLUGIN_API FStreamingLevelState
 		TSoftObjectPtr<UWorld> MainWorld;
 
 	UPROPERTY(EditAnywhere)
-		TMap<FName, UPawnState*> LevelState;
+		TMap<FName, UPawnStateAsset*> LevelState;
 };
 
 UCLASS(Config = Gameplay, defaultconfig, meta = (DisplayName = "PawnState"))

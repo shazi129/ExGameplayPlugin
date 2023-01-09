@@ -48,10 +48,10 @@ public:
 		UPawnStateEvent* GetLeaveEventByTag(FGameplayTag PawnStateTag);
 
 	UFUNCTION(BlueprintCallable)
-		UPawnStateEvent* GetEnterEvent(const UPawnState* PawnStateTag);
+		UPawnStateEvent* GetEnterEvent(const UPawnStateAsset* PawnStateAsset);
 
 	UFUNCTION(BlueprintCallable)
-		UPawnStateEvent* GetLeaveEvent(const UPawnState* PawnStateTag);
+		UPawnStateEvent* GetLeaveEvent(const UPawnStateAsset* PawnStateAsset);
 
 	UPROPERTY(BlueprintAssignable)
 		FPawnStateDelegate ChangeDelegate;

@@ -45,7 +45,7 @@ bool UPawnStateComponent::InternalCanEnterPawnState(const FPawnStateInstance& Pa
 	}
 
 	//看有没有block的
-	if (CurrentPawnStateTags.HasAnyExact(PawnStateInstance.PawnState->ActivateBlockedTags))
+	if (CurrentPawnStateTags.HasAnyExact(PawnStateInstance.PawnState.ActivateBlockedTags))
 	{
 		if (ErrMsg)
 		{
@@ -55,7 +55,7 @@ bool UPawnStateComponent::InternalCanEnterPawnState(const FPawnStateInstance& Pa
 	}
 
 	//检查require
-	if (!CurrentPawnStateTags.HasAllExact(PawnStateInstance.PawnState->RequiredTags))
+	if (!CurrentPawnStateTags.HasAllExact(PawnStateInstance.PawnState.RequiredTags))
 	{
 		if (ErrMsg)
 		{
@@ -72,7 +72,7 @@ void UPawnStateComponent::RebuildCurrentTag()
 	CurrentPawnStateTags.Reset();
 	for (const FPawnStateInstance& Instance : PawnStateInstances)
 	{
-		CurrentPawnStateTags.AddTag(Instance.PawnState->PawnStateTag);
+		CurrentPawnStateTags.AddTag(Instance.PawnState.PawnStateTag);
 	}
 }
 
@@ -103,11 +103,11 @@ bool UPawnStateComponent::EnterPawnState(const FPawnStateInstance& NewPawnStateI
 	TArray<FPawnStateInstance*> RemovedInstance;
 	for (FPawnStateInstance& Instance : PawnStateInstances)
 	{
-		if (Instance.PawnState->CancelledTags.HasTagExact(NewPawnStateInstance.PawnState->PawnStateTag))
+		if (Instance.PawnState.CancelledTags.HasTagExact(NewPawnStateInstance.PawnState.PawnStateTag))
 		{
 			RemovedInstance.Add(&Instance);
 		}
-		else if (NewPawnStateInstance.PawnState->CancelOtherTags.HasTagExact(Instance.PawnState->PawnStateTag))
+		else if (NewPawnStateInstance.PawnState.CancelOtherTags.HasTagExact(Instance.PawnState.PawnStateTag))
 		{
 			RemovedInstance.Add(&Instance);
 		}
@@ -123,7 +123,7 @@ bool UPawnStateComponent::EnterPawnState(const FPawnStateInstance& NewPawnStateI
 	PawnStateInstances.Add(NewPawnStateInstance);
 	RebuildCurrentTag();
 
-	UPawnStateEvent* Event = GetEnterEventByTag(NewPawnStateInstance.PawnState->PawnStateTag);
+	UPawnStateEvent* Event = GetEnterEventByTag(NewPawnStateInstance.PawnState.PawnStateTag);
 	if (Event && Event->Delegate.IsBound())
 	{
 		Event->Delegate.Broadcast(NewPawnStateInstance);
@@ -149,7 +149,7 @@ bool UPawnStateComponent::InternalLeavePawnState(const FPawnStateInstance& PawnS
 			PawnStateInstances.RemoveAt(i);
 			RebuildCurrentTag();
 
-			UPawnStateEvent* Event = GetLeaveEventByTag(PawnStateInstance.PawnState->PawnStateTag);
+			UPawnStateEvent* Event = GetLeaveEventByTag(PawnStateInstance.PawnState.PawnStateTag);
 			if (Event && Event->Delegate.IsBound())
 			{
 				Event->Delegate.Broadcast(Instance);
@@ -173,25 +173,25 @@ bool UPawnStateComponent::HasPawnState(const FPawnStateInstance& PawnStateInstan
 	return false;
 }
 
-UPawnStateEvent* UPawnStateComponent::GetEnterEvent(const UPawnState* PawnState)
+UPawnStateEvent* UPawnStateComponent::GetEnterEvent(const UPawnStateAsset* PawnStateAsset)
 {
-	if (!PawnState)
+	if (!PawnStateAsset)
 	{
 		EXGAMEPLAY_LOG(Error, TEXT("%s Error: PawnState is null"), *FString(__FUNCTION__));
 		return nullptr;
 	}
-	return GetEnterEventByTag(PawnState->PawnStateTag);
+	return GetEnterEventByTag(PawnStateAsset->PawnState.PawnStateTag);
 	
 }
 
-UPawnStateEvent* UPawnStateComponent::GetLeaveEvent(const UPawnState* PawnState)
+UPawnStateEvent* UPawnStateComponent::GetLeaveEvent(const UPawnStateAsset* PawnStateAsset)
 {
-	if (!PawnState)
+	if (!PawnStateAsset)
 	{
 		EXGAMEPLAY_LOG(Error, TEXT("%s Error: PawnState is null"), *FString(__FUNCTION__));
 		return nullptr;
 	}
-	return GetLeaveEventByTag(PawnState->PawnStateTag);
+	return GetLeaveEventByTag(PawnStateAsset->PawnState.PawnStateTag);
 }
 
 UPawnStateEvent* UPawnStateComponent::GetEnterEventByTag(FGameplayTag PawnStateTag)
