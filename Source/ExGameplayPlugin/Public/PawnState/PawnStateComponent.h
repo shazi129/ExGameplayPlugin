@@ -42,10 +42,16 @@ public:
 		bool HasPawnState(const FPawnStateInstance& PawnStateInstance);
 
 	UFUNCTION(BlueprintCallable)
-		UPawnStateEvent* GetEnterEvent(const FGameplayTag& PawnStateTag);
+		UPawnStateEvent* GetEnterEventByTag(FGameplayTag PawnStateTag);
 
 	UFUNCTION(BlueprintCallable)
-		UPawnStateEvent* GetLeaveEvent(const FGameplayTag& PawnStateTag);
+		UPawnStateEvent* GetLeaveEventByTag(FGameplayTag PawnStateTag);
+
+	UFUNCTION(BlueprintCallable)
+		UPawnStateEvent* GetEnterEvent(const UPawnState* PawnStateTag);
+
+	UFUNCTION(BlueprintCallable)
+		UPawnStateEvent* GetLeaveEvent(const UPawnState* PawnStateTag);
 
 	UPROPERTY(BlueprintAssignable)
 		FPawnStateDelegate ChangeDelegate;

@@ -123,7 +123,7 @@ bool UPawnStateComponent::EnterPawnState(const FPawnStateInstance& NewPawnStateI
 	PawnStateInstances.Add(NewPawnStateInstance);
 	RebuildCurrentTag();
 
-	UPawnStateEvent* Event = GetEnterEvent(NewPawnStateInstance.PawnState->PawnStateTag);
+	UPawnStateEvent* Event = GetEnterEventByTag(NewPawnStateInstance.PawnState->PawnStateTag);
 	if (Event && Event->Delegate.IsBound())
 	{
 		Event->Delegate.Broadcast(NewPawnStateInstance);
@@ -149,7 +149,7 @@ bool UPawnStateComponent::InternalLeavePawnState(const FPawnStateInstance& PawnS
 			PawnStateInstances.RemoveAt(i);
 			RebuildCurrentTag();
 
-			UPawnStateEvent* Event = GetLeaveEvent(PawnStateInstance.PawnState->PawnStateTag);
+			UPawnStateEvent* Event = GetLeaveEventByTag(PawnStateInstance.PawnState->PawnStateTag);
 			if (Event && Event->Delegate.IsBound())
 			{
 				Event->Delegate.Broadcast(Instance);
@@ -173,8 +173,35 @@ bool UPawnStateComponent::HasPawnState(const FPawnStateInstance& PawnStateInstan
 	return false;
 }
 
-UPawnStateEvent* UPawnStateComponent::GetEnterEvent(const FGameplayTag& PawnStateTag)
+UPawnStateEvent* UPawnStateComponent::GetEnterEvent(const UPawnState* PawnState)
 {
+	if (!PawnState)
+	{
+		EXGAMEPLAY_LOG(Error, TEXT("%s Error: PawnState is null"), *FString(__FUNCTION__));
+		return nullptr;
+	}
+	return GetEnterEventByTag(PawnState->PawnStateTag);
+	
+}
+
+UPawnStateEvent* UPawnStateComponent::GetLeaveEvent(const UPawnState* PawnState)
+{
+	if (!PawnState)
+	{
+		EXGAMEPLAY_LOG(Error, TEXT("%s Error: PawnState is null"), *FString(__FUNCTION__));
+		return nullptr;
+	}
+	return GetLeaveEventByTag(PawnState->PawnStateTag);
+}
+
+UPawnStateEvent* UPawnStateComponent::GetEnterEventByTag(FGameplayTag PawnStateTag)
+{
+	if (!PawnStateTag.IsValid())
+	{
+		EXGAMEPLAY_LOG(Error, TEXT("%s Error: Invalid PawnStateTag[%s]"), *FString(__FUNCTION__), *PawnStateTag.ToString());
+		return nullptr;
+	}
+
 	if (!PawnStateEnterEvent.Contains(PawnStateTag))
 	{
 		UPawnStateEvent* Event = NewObject<UPawnStateEvent>(this);
@@ -184,8 +211,13 @@ UPawnStateEvent* UPawnStateComponent::GetEnterEvent(const FGameplayTag& PawnStat
 	return PawnStateEnterEvent[PawnStateTag];
 }
 
-UPawnStateEvent* UPawnStateComponent::GetLeaveEvent(const FGameplayTag& PawnStateTag)
+UPawnStateEvent* UPawnStateComponent::GetLeaveEventByTag(FGameplayTag PawnStateTag)
 {
+	if (!PawnStateTag.IsValid())
+	{
+		EXGAMEPLAY_LOG(Error, TEXT("%s Error: Invalid PawnStateTag[%s]"), *FString(__FUNCTION__), *PawnStateTag.ToString());
+		return nullptr;
+	}
 	if (!PawnStateLeaveEvent.Contains(PawnStateTag))
 	{
 		UPawnStateEvent* Event = NewObject<UPawnStateEvent>(this);
