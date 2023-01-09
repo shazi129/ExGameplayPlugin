@@ -29,7 +29,9 @@ public class ExGameplayLibrary : ModuleRules
 			{
 				"Core",
 				"UMG",
-				"GameplayTags"
+				"GameplayTags",
+				"MeshDescription",
+				"StaticMeshDescription"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

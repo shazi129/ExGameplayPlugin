@@ -8,6 +8,11 @@ bool UFileHelperLibrary::LoadFileToArray(TArray<uint8>& Result, const FString& F
 	return FFileHelper::LoadFileToArray(Result, *FileName, Flags);
 }
 
+bool UFileHelperLibrary::SaveArrayToFile(TArray<uint8>& Result, const FString& FileName)
+{
+	return FFileHelper::SaveArrayToFile(Result, *FileName);
+}
+
 void UFileHelperLibrary::OpenFolder(const FString& FolderPath)
 {
 	if (FolderPath.IsEmpty())
