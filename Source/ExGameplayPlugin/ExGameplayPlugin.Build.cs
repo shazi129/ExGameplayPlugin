@@ -26,6 +26,7 @@ public class ExGameplayPlugin : ModuleRules
 		PublicDependencyModuleNames.AddRange(
 			new string[]
 			{
+				"Engine",
 				"Core",
 				"EnhancedInput",
 				"ModularGameplay",
@@ -44,7 +45,6 @@ public class ExGameplayPlugin : ModuleRules
 			new string[]
 			{
 				"CoreUObject",
-				"Engine",
 				"Slate",
 				"SlateCore",
 				// ... add private dependencies that you statically link with here ...	

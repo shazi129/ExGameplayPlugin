@@ -12,4 +12,8 @@ void UPawnStateCheatExtension::DebugPawnState()
 			EXGAMEPLAY_LOG(Log, TEXT("%s"), *Instance.ToString());
 		}
 	}
+	else
+	{
+		EXGAMEPLAY_LOG(Error, TEXT("%s, cannot get local pawn state component"), *FString(__FUNCTION__));
+	}
 }

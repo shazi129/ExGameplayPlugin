@@ -1,6 +1,10 @@
 #include "PawnState/PawnStateLibrary.h"
+#include "PawnState/PawnStateSettingSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
+#include "ExGameplayPluginModule.h"
+#include "ExGameplayLibrary.h"
+
 
 UPawnStateComponent* UPawnStateLibrary::GetLocalPawnStateComponent(const UObject* WorldContextObject)
 {
@@ -27,6 +31,11 @@ bool UPawnStateLibrary::CanEnterPawnState(AActor* Actor, const FPawnStateInstanc
 	{
 		return Component->CanEnterPawnState(PawnStateInstance);
 	}
+	else
+	{
+		EXGAMEPLAY_LOG(Error, TEXT("%s[%s], cannot get pawn state component for actor[%s]"), *FString(__FUNCTION__), *PawnStateInstance.ToString(), *GetNameSafe(Actor));
+	}
+
 	return false;
 }
 
@@ -35,6 +44,10 @@ bool UPawnStateLibrary::EnterPawnState(AActor* Actor, const FPawnStateInstance& 
 	if (UPawnStateComponent* Component = UPawnStateLibrary::GetPawnStateComponent(Actor))
 	{
 		return Component->EnterPawnState(PawnStateInstance);
+	}
+	else
+	{
+		EXGAMEPLAY_LOG(Error, TEXT("%s[%s], cannot get pawn state component for actor[%s]"), *FString(__FUNCTION__), *PawnStateInstance.ToString(), *GetNameSafe(Actor));
 	}
 	return false;
 }
@@ -45,5 +58,52 @@ bool UPawnStateLibrary::LeavePawnState(AActor* Actor, const FPawnStateInstance& 
 	{
 		return Component->LeavePawnState(PawnStateInstance);
 	}
+	else
+	{
+		EXGAMEPLAY_LOG(Error, TEXT("%s[%s], cannot get pawn state component for actor[%s]"), *FString(__FUNCTION__), *PawnStateInstance.ToString(), *GetNameSafe(Actor));
+	}
 	return false;
+}
+
+UPawnStateEvent* UPawnStateLibrary::GetEnterEventByTag(AActor* Actor, FGameplayTag PawnStateTag)
+{
+	if (UPawnStateComponent* Component = UPawnStateLibrary::GetPawnStateComponent(Actor))
+	{
+		return Component->GetEnterEventByTag(PawnStateTag);
+	}
+	else
+	{
+		EXGAMEPLAY_LOG(Error, TEXT("%s[%s], cannot get pawn state component for actor[%s]"), *FString(__FUNCTION__), *PawnStateTag.ToString(), *GetNameSafe(Actor));
+	}
+	return nullptr;
+}
+
+UPawnStateEvent* UPawnStateLibrary::GetLeaveEventByTag(AActor* Actor, FGameplayTag PawnStateTag)
+{
+	if (UPawnStateComponent* Component = UPawnStateLibrary::GetPawnStateComponent(Actor))
+	{
+		return Component->GetLeaveEventByTag(PawnStateTag);
+	}
+	else
+	{
+		EXGAMEPLAY_LOG(Error, TEXT("%s[%s], cannot get pawn state component for actor[%s]"), *FString(__FUNCTION__), *PawnStateTag.ToString(), *GetNameSafe(Actor));
+	}
+	return nullptr;
+}
+
+FPawnStateInstance UPawnStateLibrary::GetGlobalPawnStateInstance(FName PawnStateTagName, UObject* SourceObject)
+{
+	UPawnStateSettingSubsystem* SubSystem = UPawnStateSettingSubsystem::GetSubsystem(SourceObject);
+	if (SubSystem == nullptr)
+	{
+		EXGAMEPLAY_LOG(Error, TEXT("%s error, cannot get subsystem by object[%s]"), *FString(__FUNCTION__), *GetNameSafe(SourceObject));
+		return FPawnStateInstance();
+	}
+
+	FGameplayTag PawnStateTag = UExGameplayLibrary::RequestGameplayTag(PawnStateTagName);
+	if (const UPawnStateAsset* Asset = SubSystem->GetGlobalPawnStateAsset(PawnStateTag))
+	{
+		return FPawnStateInstance(Asset, SourceObject);
+	}
+	return FPawnStateInstance();
 }

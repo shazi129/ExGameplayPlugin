@@ -6,12 +6,15 @@
 
 
 USTRUCT(BlueprintType)
-struct EXGAMEPLAYPLUGIN_API FStreamingLevelState
+struct EXGAMEPLAYPLUGIN_API FWorldPawnStateInfo
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
 		TSoftObjectPtr<UWorld> MainWorld;
+
+	UPROPERTY(EditAnywhere)
+		UPawnStateAsset* WorldState;
 
 	UPROPERTY(EditAnywhere)
 		TMap<FName, UPawnStateAsset*> LevelState;
@@ -37,8 +40,8 @@ public:
 		CategoryName = "Extension Gameplay";
 	}
 
-	UPROPERTY(Config, EditAnywhere, Category = "StreamingLevel")
-		TArray<FStreamingLevelState> SteamingLevelState;
+	UPROPERTY(Config, EditAnywhere, Category = "World")
+		TArray<FWorldPawnStateInfo> WorldPawnStates;
 
 	UPROPERTY(Config, EditAnywhere, Category = "Basic")
 		FPawnStateAssets GlobalPawnStateAssets;

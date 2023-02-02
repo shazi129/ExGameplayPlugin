@@ -1,9 +1,28 @@
 #include "PawnState/PawnStateComponent.h"
+#include "PawnState/PawnStateSettingSubsystem.h"
+#include "ExGameplayLibrary.h"
 #include "ExGameplayPluginModule.h"
 
 void UPawnStateComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//加入World的PawnState
+	UWorld* World = this->GetWorld();
+	if (World && UExGameplayLibrary::IsClient(this))
+	{
+		if (const FWorldPawnStateInfo* WorldPawnStateInfo = UPawnStateSettingSubsystem::GetSubsystem(this)->GetWorldStateInfo(this->GetWorld()))
+		{
+			if (WorldPawnStateInfo->WorldState != nullptr)
+			{
+				const FGameplayTag& PawnStateTag = WorldPawnStateInfo->WorldState->PawnState.PawnStateTag;
+				if (PawnStateTag.IsValid())
+				{
+					EnterPawnState(FPawnStateInstance(WorldPawnStateInfo->WorldState, World, nullptr));
+				}
+			}
+		}
+	}
 }
 
 void UPawnStateComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -143,6 +162,8 @@ bool UPawnStateComponent::InternalLeavePawnState(const FPawnStateInstance& PawnS
 	{
 		if (PawnStateInstances[i] == PawnStateInstance)
 		{
+			EXGAMEPLAY_LOG(Log, TEXT("%s: %s"), *FString(__FUNCTION__), *PawnStateInstances[i].ToString());
+
 			FPawnStateInstance Instance(PawnStateInstances[i]);
 			Instance.Instigator = Instigator;
 

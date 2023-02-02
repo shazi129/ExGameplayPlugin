@@ -26,4 +26,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 		static bool LeavePawnState(AActor* Actor, const FPawnStateInstance& PawnStateInstance);
 
-	};
+	UFUNCTION(BlueprintPure)
+		static UPawnStateEvent* GetEnterEventByTag(AActor* Actor, FGameplayTag PawnStateTag);
+
+	UFUNCTION(BlueprintPure)
+		static UPawnStateEvent* GetLeaveEventByTag(AActor* Actor, FGameplayTag PawnStateTag);
+
+	UFUNCTION(BlueprintPure)
+		static FPawnStateInstance GetGlobalPawnStateInstance(FName PawnStateTagName, UObject* SourceObject);
+
+};

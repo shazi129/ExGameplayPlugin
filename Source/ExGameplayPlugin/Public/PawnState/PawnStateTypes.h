@@ -59,6 +59,12 @@ class EXGAMEPLAYPLUGIN_API UPawnStateAsset : public UDataAsset
 public:
 	UPROPERTY(EditAnywhere)
 		FPawnState PawnState;
+
+	UFUNCTION(BlueprintCallable)
+	FString ToString()
+	{
+		return PawnState.PawnStateTag.ToString();
+	}
 };
 
 USTRUCT(BlueprintType)
@@ -91,7 +97,7 @@ struct EXGAMEPLAYPLUGIN_API FPawnStateInstance
 		Instigator = Other.Instigator;
 	}
 
-	FPawnStateInstance(UPawnStateAsset* InPawnStateAsset, UObject* InSourceObject, UObject* InInstigator=nullptr)
+	FPawnStateInstance(const UPawnStateAsset* InPawnStateAsset, UObject* InSourceObject, UObject* InInstigator=nullptr)
 	{
 		bFromAsset = true;
 		PawnState = InPawnStateAsset->PawnState;
