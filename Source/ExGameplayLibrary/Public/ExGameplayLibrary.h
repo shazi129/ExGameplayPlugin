@@ -43,6 +43,9 @@ public:
 	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary", meta = (DefaultToSelf = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
 		static FGameplayTag RequestGameplayTag(FName TagName, bool ErrorIfNotFound = true);
 
+	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary", meta = (DefaultToSelf = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
+		static bool IsGameplayTagValid(FGameplayTag GameplayTag);
+
 	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary", meta = (DefaultToSelf = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
 	static void SetDynamicGlobalIlluminationLevel(const UObject* WorldContextObject, int Level);
 

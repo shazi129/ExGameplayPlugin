@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/WorldComposition.h"
+#include "ExTypes.h"
 #include "ExEditorLevelLibrary.generated.h"
 
 /*

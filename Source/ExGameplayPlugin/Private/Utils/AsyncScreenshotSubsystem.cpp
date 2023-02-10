@@ -8,18 +8,27 @@ void UAsyncScreenshotSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	UExGameplayLibrary::ExecCommand("r.HighResScreenshotDelay 1");
 
-	Working = true;
-	WorkThreadResult = Async(EAsyncExecution::Thread, [&]()
+	UseMultiThread = true;
+
+	if (UseMultiThread)
 	{
-		ProcessScreenshotData();
-	});
+		Working = true;
+		WorkThreadResult = Async(EAsyncExecution::Thread, [&]()
+		{
+			ProcessScreenshotData();
+		});
+	}	
 }
 
 void UAsyncScreenshotSubsystem::Deinitialize()
 {
 	Super::Deinitialize();
-	Working = false;
-	WorkThreadResult.Get();
+
+	if (UseMultiThread)
+	{
+		Working = false;
+		WorkThreadResult.Get();
+	}
 }
 
 void UAsyncScreenshotSubsystem::TakeScreenshot(int32 Width, int32 Height, const FString& FileName)
@@ -44,6 +53,11 @@ void UAsyncScreenshotSubsystem::OnScreenshotCompleteToPng(int32 InWidth, int32 I
 		Data->Height = InHeight;
 		Data->FileName = CurrentShotFileName;
 		Data->BitMap = InColors;
+
+		if (!UseMultiThread)
+		{
+			DoProcessScreenshotData();
+		}
 	}
 	CurrentShotFileName.Reset();
 }
@@ -58,15 +72,25 @@ void UAsyncScreenshotSubsystem::ProcessScreenshotData()
 			continue;
 		}
 
-		FScopeLock SetLock(&ScreenshotDataCritical);
-		TArray<FScreenshotData> Datas = MoveTemp(ScreenshotDatas);
-		for (FScreenshotData& Data : Datas)
-		{
-			TArray64<uint8> CompressBitmap;
-			FImageUtils::PNGCompressImageArray(Data.Width, Data.Height, Data.BitMap, CompressBitmap);
-			FFileHelper::SaveArrayToFile(CompressBitmap, *Data.FileName);
+		DoProcessScreenshotData();
+	}
+}
 
-			FString FileName = Data.FileName;
+void UAsyncScreenshotSubsystem::DoProcessScreenshotData()
+{
+	FScopeLock SetLock(&ScreenshotDataCritical);
+	TArray<FScreenshotData> Datas = MoveTemp(ScreenshotDatas);
+	for (FScreenshotData& Data : Datas)
+	{
+		TArray64<uint8> CompressBitmap;
+		FImageUtils::PNGCompressImageArray(Data.Width, Data.Height, Data.BitMap, CompressBitmap);
+		FFileHelper::SaveArrayToFile(CompressBitmap, *Data.FileName);
+
+		FString FileName = Data.FileName;
+
+		//多线程下，通知主线程处理
+		if (UseMultiThread)
+		{
 			Async(EAsyncExecution::TaskGraphMainThread, [&, FileName]()
 			{
 				if (AsyncScreenshotEndDelegate.IsBound())
@@ -74,6 +98,13 @@ void UAsyncScreenshotSubsystem::ProcessScreenshotData()
 					AsyncScreenshotEndDelegate.Broadcast(FileName);
 				}
 			});
+		}
+		else
+		{
+			if (AsyncScreenshotEndDelegate.IsBound())
+			{
+				AsyncScreenshotEndDelegate.Broadcast(FileName);
+			}
 		}
 	}
 }

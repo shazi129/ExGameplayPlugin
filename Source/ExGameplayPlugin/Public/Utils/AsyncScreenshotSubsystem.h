@@ -35,6 +35,9 @@ public:
 
 	void ProcessScreenshotData();
 
+private:
+	void DoProcessScreenshotData();
+
 public:
 	UPROPERTY(BlueprintAssignable)
 		FAsyncScreenshotEndDelegate AsyncScreenshotEndDelegate;
@@ -48,4 +51,6 @@ private:
 	TFuture<void> WorkThreadResult;
 
 	bool Working;
+
+	bool UseMultiThread;
 };

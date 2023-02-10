@@ -56,19 +56,20 @@ UWorld* UExEditorLevelLibrary::CreateWorld(const FString WorldPath, const FStrin
 {
 	UPackage* Package = CreatePackage(*FString::Printf(TEXT("%s/%s"), *WorldPath, *WorldName));
 
-	// 使用工厂类初始化 UWorld
+	//UWorld
 	UWorldFactory* WorldFactory = NewObject<UWorldFactory>();
 	UObject* ObjectWorld = WorldFactory->FactoryCreateNew(WorldFactory->SupportedClass, Package, *WorldName, EObjectFlags::RF_Standalone | EObjectFlags::RF_Public, nullptr, GWarn);
 	UWorld* World = Cast<UWorld>(ObjectWorld);
 
-	// 创建 UWorld
 	FAssetRegistryModule::AssetCreated(ObjectWorld);
 
-	//创建LevelBounds
+	//??LevelBounds
 	ALevelBounds* LevelBoundsActor = Cast<ALevelBounds>(World->SpawnActor(ALevelBounds::StaticClass()));
 	World->PersistentLevel->LevelBoundsActor = LevelBoundsActor;
 
-	// Save
+	//UExEditorToolsLibrary::SaveAsset(FName(WorldPath), EContentBrowserItemSaveFlags::SaveOnlyIfLoaded);
+
+	//??
 	if (World->MarkPackageDirty())
 	{
 		EXEDITORTOOLS_LOG(Warning, TEXT("[[ TiledWorld ]] << bIsDirtyMarked >> Successed "));
@@ -78,6 +79,7 @@ UWorld* UExEditorLevelLibrary::CreateWorld(const FString WorldPath, const FStrin
 	{
 		EXEDITORTOOLS_LOG(Error, TEXT("[[ TiledWorld ]] << bIsDirtyMarked >> Suppressed by the editor"));
 	}
+
 	return World;
 }
 

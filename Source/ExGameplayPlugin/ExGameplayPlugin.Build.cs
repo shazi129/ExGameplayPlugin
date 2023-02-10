@@ -36,6 +36,7 @@ public class ExGameplayPlugin : ModuleRules
 				"ExGameplayLibrary",
 				"GameplayAbilities",
 				"GameFeatures",
+				"Json",
 				"Http"
 				// ... add other public dependencies that you statically link with here ...
 			}

@@ -223,6 +223,8 @@ int32 UExEditorEngineLibrary::CopyOrMoveActorsToLevel(
 					Actor->CopyPasteId = INDEX_NONE;
 				}
 			}
+
+			GEditor->SelectNone(false, true, false);
 		}
 
 		// Restore the original clipboard contents

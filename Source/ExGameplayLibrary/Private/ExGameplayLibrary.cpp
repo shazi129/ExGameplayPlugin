@@ -217,6 +217,11 @@ FGameplayTag UExGameplayLibrary::RequestGameplayTag(FName TagName, bool ErrorIfN
 	return UGameplayTagsManager::Get().RequestGameplayTag(TagName, ErrorIfNotFound);
 }
 
+bool UExGameplayLibrary::IsGameplayTagValid(FGameplayTag GameplayTag)
+{
+	return GameplayTag.IsValid();
+}
+
 void UExGameplayLibrary::SetDynamicGlobalIlluminationLevel(const UObject* WorldContextObject, int Level)
 {
 	TArray<AActor*> PostProcessVolumeActors;
