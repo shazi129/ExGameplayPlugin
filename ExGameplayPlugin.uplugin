@@ -79,6 +79,11 @@
 			"Name": "UIManager",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "AsyncUtility",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
 		}
 	],
 	"Plugins": [
@@ -97,6 +102,10 @@
 		{
 			"Name": "GameFeatures",
 			"Enabled": true
+		},
+		{
+			"Name": "ContentBrowserAssetDataSource",
+			"Enabled":  true
 		}
 	]
 }
