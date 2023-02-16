@@ -37,14 +37,10 @@ struct FGameThreadAsyncTaskGroup
 {
 	GENERATED_BODY()
 
-		TArray<FGameThreadAsyncTask*> Tasks;
+	UPROPERTY(BlueprintReadOnly)
+	FName GroupName;
 
-	float TimeLimit;
-
-	FGameThreadAsyncTaskGroup()
-	{
-		TimeLimit = 0.33f;
-	}
+	TArray<FGameThreadAsyncTask*> Tasks;
 };
 
 UCLASS(BlueprintType)
@@ -56,12 +52,19 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
+	virtual bool IsTickable() const;
 	virtual void Tick(float DeltaTime);
 	virtual TStatId GetStatId() const;
 
+	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (WorldContext = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
+	static UGameThreadAsyncTaskSubsystem* GetSubsystem(const UObject* WorldContextObject);
+
 	UFUNCTION(BlueprintCallable)
-	int64 AddDelegateTask(const FString& GroupName, FGameThreadAsyncTaskDelegate Delegate);
+	int64 AddDelegateTask(const FName& GroupName, FGameThreadAsyncTaskDelegate Delegate);
+
+	UFUNCTION(BlueprintCallable)
+	FGameThreadAsyncTaskGroup& FindOrAddGroup(const FName& GroupName);
 
 private:
-	TMap<FString, FGameThreadAsyncTaskGroup> TaskGroups;
+	TArray<FGameThreadAsyncTaskGroup> TaskGroups;
 };

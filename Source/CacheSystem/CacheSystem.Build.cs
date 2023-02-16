@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class AsyncUtility : ModuleRules
+public class CacheSystem : ModuleRules
 {
-	public AsyncUtility(ReadOnlyTargetRules Target) : base(Target)
+	public CacheSystem(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
