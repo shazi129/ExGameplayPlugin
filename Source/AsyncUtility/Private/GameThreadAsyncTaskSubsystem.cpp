@@ -35,11 +35,13 @@ FGameThreadAsyncTaskGroup& UGameThreadAsyncTaskSubsystem::FindOrAddGroup(const F
 	return *(new (TaskGroups)FGameThreadAsyncTaskGroup());
 }
 
-int64 UGameThreadAsyncTaskSubsystem::AddDelegateTask(const FName& GroupName, FGameThreadAsyncTaskDelegate Delegate)
+int64 UGameThreadAsyncTaskSubsystem::AddDelegateTask(const FName& GroupName, FGameThreadAsyncTaskDelegate Delegate, int Delay)
 {
 	FGameThreadAsyncTaskGroup& TaskGroup = FindOrAddGroup(GroupName);
+
 	FGameThreadAsyncDelegateTask* TaskPtr = new FGameThreadAsyncDelegateTask(Delegate);
 	TaskPtr->TaskID = (int64)TaskPtr;
+	TaskPtr->Delay = Delay;
 	TaskGroup.Tasks.Add(TaskPtr);
 
 	return TaskPtr->TaskID;
@@ -65,18 +67,29 @@ void UGameThreadAsyncTaskSubsystem::Tick(float DeltaTime)
 
 	for (FGameThreadAsyncTaskGroup& Group : TaskGroups)
 	{
-		do 
+		for (int i = Group.Tasks.Num() - 1; !TickTimeout && i >= 0; i--)
 		{
-			FGameThreadAsyncTask* TaskPtr = Group.Tasks[0];
-			if (TaskPtr != nullptr)
+			//非法任务
+			FGameThreadAsyncTask* TaskPtr = Group.Tasks[i];
+			if (TaskPtr == nullptr)
+			{
+				Group.Tasks.RemoveAt(i);
+			}
+			//没到执行时间
+			else if (TaskPtr->Delay > 0)
+			{
+				TaskPtr->Delay--;
+			}
+			//执行任务
+			else
 			{
 				TaskPtr->ExecuteTask();
+				Group.Tasks.RemoveAt(i);
+				delete TaskPtr;
 			}
-			Group.Tasks.RemoveAt(0);
-
+			//是否超时
 			TickTimeout = (FPlatformTime::Seconds() - TickStartTime) >= 0.033f;
 		}
-		while (Group.Tasks.Num() > 0 && TickTimeout);
 
 		if (TickTimeout)
 		{

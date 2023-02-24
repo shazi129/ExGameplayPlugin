@@ -4,15 +4,23 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "GameThreadAsyncTaskSubsystem.generated.h"
 
+//任务的基类
 class FGameThreadAsyncTask
 {
 public:
-	int64 TaskID;
+	//任务ID
+	int64 TaskID = 0;
+
+	//需要推迟的帧数
+	int Delay = 0;
+
+	//任务执行入口
 	virtual void ExecuteTask() {};
 };
 
 DECLARE_DYNAMIC_DELEGATE(FGameThreadAsyncTaskDelegate);
 
+//封装外部回调的任务
 class FGameThreadAsyncDelegateTask: public FGameThreadAsyncTask
 {
 public:
@@ -60,7 +68,7 @@ public:
 	static UGameThreadAsyncTaskSubsystem* GetSubsystem(const UObject* WorldContextObject);
 
 	UFUNCTION(BlueprintCallable)
-	int64 AddDelegateTask(const FName& GroupName, FGameThreadAsyncTaskDelegate Delegate);
+	int64 AddDelegateTask(const FName& GroupName, FGameThreadAsyncTaskDelegate Delegate, int Delay=1);
 
 	UFUNCTION(BlueprintCallable)
 	FGameThreadAsyncTaskGroup& FindOrAddGroup(const FName& GroupName);
