@@ -35,4 +35,7 @@ class EXGAMEPLAYLIBRARY_API UPlatformLibrary : public UBlueprintFunctionLibrary
 
 	UFUNCTION(BlueprintPure, Category = "PlatformLibrary")
 		static FMemoryInfo GetMemoryInfo();
+
+	UFUNCTION(BlueprintPure, Category = "PlatformLibrary")
+		static FORCEINLINE double Seconds() { return FPlatformTime::Seconds(); }
 };
