@@ -163,7 +163,7 @@ void UPawnStateSettingSubsystem::OnLevelAdded(ULevel* Level, UWorld* World)
 {
 	if (!World || !Level)
 	{
-		PAWNSTATE_LOG(Log, TEXT("%s World Or Level is null"), *FString(__FUNCTION__)); 
+		PAWNSTATE_LOG(Log, TEXT("%s World Or Level is null"), *FString(__FUNCTION__));
 		return;
 	}
 

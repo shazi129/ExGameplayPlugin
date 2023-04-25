@@ -1,11 +1,11 @@
 #include "Utils/UserWidgetCacheSubsystem.h"
 #include "ExUMGModule.h"
+#include "ExMacros.h"
 #include "Kismet/GameplayStatics.h"
 
 UUserWidgetCacheSubsystem* UUserWidgetCacheSubsystem::GetSubsystem(const UObject* WorldContextObject)
 {
-	UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(WorldContextObject);
-	return GameInstance->GetSubsystem<UUserWidgetCacheSubsystem>();
+	GET_GAMEINSTANCE_SUBSYSTEM(LogExUMG, UUserWidgetCacheSubsystem, WorldContextObject);
 }
 
 void UUserWidgetCacheSubsystem::Initialize(FSubsystemCollectionBase& Collection)

@@ -5,8 +5,9 @@
 #include "ExGameplayLibrary.h"
 #include "ExAbilityProvider.h"
 #include "AbilitySystemGlobals.h"
+#include "AbilitySystemLog.h"
 #include "GameplayCueManager.h"
-#include "ExGameplayAbilitiesModule.h"
+#include "Engine/ActorChannel.h"
 
 void UExAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
 {
@@ -142,7 +143,7 @@ FGameplayAbilitySpecHandle UExAbilitySystemComponent::GiveAbilityByCaseInternal(
 
 	if (AbilityCase.IsValid() == false)
 	{
-		UE_LOG(LogTemp, Error, TEXT("UExAbilitySystemComponent::GiveAbilityByCaseInternal error, AbilityCase Invalid"));
+		ABILITY_LOG(Error, TEXT("UExAbilitySystemComponent::GiveAbilityByCaseInternal error, AbilityCase Invalid"));
 		return FGameplayAbilitySpecHandle();
 	}
 
@@ -230,4 +231,39 @@ void  UExAbilitySystemComponent::ClientStopMontage_Implementation()
 	{
 		CurrentMontageStop();
 	}
+}
+
+bool UExAbilitySystemComponent::ReplicateSubobjects(UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags)
+{
+	bool WroteSomething = UGameplayTasksComponent::ReplicateSubobjects(Channel, Bunch, RepFlags);
+
+	for (const UAttributeSet* Set : GetSpawnedAttributes())
+	{
+		if (IsValid(Set))
+		{
+			WroteSomething |= Channel->ReplicateSubobject(const_cast<UAttributeSet*>(Set), *Bunch, *RepFlags);
+		}
+	}
+
+	for (UGameplayAbility* Ability : AllReplicatedInstancedAbilities)
+	{
+		if (IsValid(Ability))
+		{
+			UExGameplayAbility* ExAbility = Cast<UExGameplayAbility>(Ability);
+			if (ExAbility && ExAbility->OnlyReplateWhenActivate)
+			{
+				FGameplayAbilitySpec* Spec = FindAbilitySpecFromClass(Ability->GetClass());
+				if (Spec && Spec->IsActive())
+				{
+					WroteSomething |= Channel->ReplicateSubobject(Ability, *Bunch, *RepFlags);
+				}
+			}
+			else
+			{
+				WroteSomething |= Channel->ReplicateSubobject(Ability, *Bunch, *RepFlags);
+			}
+		}
+	}
+
+	return WroteSomething;
 }

@@ -36,4 +36,7 @@ private:
 private:
 	UPROPERTY(Transient, DuplicateTransient)
 		TObjectPtr<UEnhancedInputComponent> InputComponent;
+
+	UPROPERTY()
+	APlayerController* CurrentPlayerController;
 };

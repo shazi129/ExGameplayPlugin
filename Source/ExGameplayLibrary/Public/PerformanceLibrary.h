@@ -58,4 +58,38 @@ class EXGAMEPLAYLIBRARY_API UPerformanceLibrary : public UBlueprintFunctionLibra
 
 	UFUNCTION(BlueprintCallable, Category = "PerformanceLibrary")
 		static void StopTrace();
+
+	UFUNCTION(BlueprintCallable, Category="PerformanceLibrary")
+		static void SetResolutionQuality(int ResolutionScale);
+
+	UFUNCTION(BlueprintCallable, Category="PerformanceLibrary")
+		static void SetViewDistanceQuality(int ViewDistanceQuality);
+
+	UFUNCTION(BlueprintCallable, Category="PerformanceLibrary")
+		static void SetAntiAliasingQuality(int AntiAliasingQuality);
+
+	UFUNCTION(BlueprintCallable, Category="PerformanceLibrary")
+		static void SetPostProcessQuality(int PostProcessQuality);
+
+	UFUNCTION(BlueprintCallable, Category="PerformanceLibrary")
+		static void SetShadowQuality(int ShadowQuality);
+
+	UFUNCTION(BlueprintCallable, Category="PerformanceLibrary")
+		static void SetGlobalIlluminationQuality(int GlobalIlluminationQuality);
+
+	UFUNCTION(BlueprintCallable, Category="PerformanceLibrary")
+		static void SetReflectionQuality(int ReflectionQuality);
+
+	UFUNCTION(BlueprintCallable, Category="PerformanceLibrary")
+		static void SetTextureQuality(int TextureQuality);
+
+	UFUNCTION(BlueprintCallable, Category="PerformanceLibrary")
+		static void SetEffectsQuality(int EffectsQuality);
+
+	UFUNCTION(BlueprintCallable, Category="PerformanceLibrary")
+		static void SetFoliageQuality(int FoliageQuality);
+
+	UFUNCTION(BlueprintCallable, Category="PerformanceLibrary")
+		static void SetShadingQuality(int ShadingQuality);
+	
 };

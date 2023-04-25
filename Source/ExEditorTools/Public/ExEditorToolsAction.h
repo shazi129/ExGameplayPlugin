@@ -26,7 +26,7 @@ class EXEDITORTOOLS_API UExEditorAction_OpenWidget : public UExEditorAction
 {
 	GENERATED_BODY()
 protected:
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, meta = (AllowedClasses = "EditorUtilityWidgetBlueprint"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, meta = (AllowedClasses = "/Script/Blutility.EditorUtilityWidgetBlueprint"))
 	FSoftObjectPath WidgetBlueprintPath;
 
 public:
@@ -38,7 +38,7 @@ class EXEDITORTOOLS_API UExEditorAction_RunBlueprint: public UExEditorAction
 {
 	GENERATED_BODY()
 protected:
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, meta = (AllowedClasses = "EditorUtilityBlueprint"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, meta = (AllowedClasses = "/Script/Blutility.EditorUtilityBlueprint"))
 		FSoftObjectPath UtilityBlueprintPath;
 
 public:

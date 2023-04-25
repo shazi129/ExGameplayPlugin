@@ -27,14 +27,16 @@ FInputMappingResult UExInputLibrary::AddInputMappingConfig(FInputMappingConfig I
 	for (int i = 0; i < InputMappingConfig.InputBindings.Num(); i++)
 	{
 		FInputBindingConfig& BindingConfig = InputMappingConfig.InputBindings[i];
-		if (BindingConfig.InputAction != nullptr && BindingConfig.InputHandler != nullptr)
+		UInputActionHandler* InputActionHandler = BindingConfig.GetInputHandler();
+
+		if (BindingConfig.InputAction != nullptr && InputActionHandler != nullptr)
 		{
-			BindingConfig.InputHandler->SetSourceObject(SourceObject);
+			InputActionHandler->SetSourceObject(SourceObject);
 
 			FEnhancedInputActionEventBinding& Binding = InputComponent->BindAction(
 				BindingConfig.InputAction,
 				BindingConfig.TriggerEvent,
-				BindingConfig.InputHandler,
+				InputActionHandler,
 				&UInputActionHandler::NativeExecute);
 
 			int BindingHandle = Binding.GetHandle();

@@ -50,4 +50,8 @@ public:
 	//判断文件夹是否存在
 	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
 	static bool DirectoryExists(const FString& Path);
+
+	//转换包路径  /Game/a  =>  C:/UE5Project/Content/a.uasset
+	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
+	static FString TryConvertLongPackageNameToFilename(const FString& InLongPackageName);
 };

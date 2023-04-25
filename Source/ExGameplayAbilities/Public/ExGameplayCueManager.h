@@ -15,4 +15,7 @@ public:
 	void FindCueAssets(FGameplayTag CueTag,TArray<FSoftObjectPath>& ResultToAppend);
 	void FindDepentCueAssets(UObject* Object, TArray<FSoftObjectPath>& ResultToAppend);
 #endif
+
+	virtual bool ShouldSyncLoadMissingGameplayCues() const override;
+	virtual bool ShouldAsyncLoadMissingGameplayCues() const override;
 };

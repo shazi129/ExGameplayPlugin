@@ -19,7 +19,6 @@ UExLocalPlayerInputSubsystem* UExLocalPlayerInputSubsystem::GetSubsystem( UObjec
 void UExLocalPlayerInputSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-	//InitializeInputComponent();
 }
 void UExLocalPlayerInputSubsystem::Deinitialize()
 {
@@ -52,6 +51,13 @@ UEnhancedInputLocalPlayerSubsystem* UExLocalPlayerInputSubsystem::GetEnhancedInp
 
 void UExLocalPlayerInputSubsystem::InitializeInputComponent()
 {
+	APlayerController* PlayerController = GetPlayerController();
+	if (!PlayerController)
+	{
+		EXINPUTSYSTEM_LOG(Log, TEXT("%s cannot get player controller"), *FString(__FUNCTION__));
+		return;
+	}
+
 	if (InputComponent == nullptr)
 	{
 		UClass* DefaultClass = UInputSettings::GetDefaultInputComponentClass();
@@ -60,17 +66,20 @@ void UExLocalPlayerInputSubsystem::InitializeInputComponent()
 			DefaultClass = UEnhancedInputComponent::StaticClass();
 		}
 
-		if (APlayerController* PlayerController = GetPlayerController())
-		{
-			const FName InputComponentName(TEXT("LocalPlayerInputComponent"));
-			InputComponent = Cast<UEnhancedInputComponent>(NewObject<UInputComponent>(this, DefaultClass, InputComponentName));
-			PlayerController->PushInputComponent(InputComponent);
-		}
-		else
-		{
-			EXINPUTSYSTEM_LOG(Error, TEXT("UExLocalPlayerInputSubsystem::InitializeInputComponent error, Cannot Get PlayerController"));
-		}
+		const FName InputComponentName(TEXT("LocalPlayerInputComponent"));
+		InputComponent = Cast<UEnhancedInputComponent>(NewObject<UInputComponent>(this, DefaultClass, InputComponentName));
+		PlayerController->PushInputComponent(InputComponent);
 	}
+	else if (PlayerController != CurrentPlayerController) //controller变了
+	{
+		if (CurrentPlayerController)
+		{
+			CurrentPlayerController->PopInputComponent(InputComponent);
+		}
+		PlayerController->PushInputComponent(InputComponent);
+	}
+
+	CurrentPlayerController = PlayerController;
 }
 
 void UExLocalPlayerInputSubsystem::DeinitializeInputComponent()

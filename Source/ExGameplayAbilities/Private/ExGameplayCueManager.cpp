@@ -56,3 +56,14 @@ void UExGameplayCueManager::FindDepentCueAssets(UObject* Object, TArray<FSoftObj
 	}
 }
 #endif
+
+bool UExGameplayCueManager::ShouldAsyncLoadMissingGameplayCues() const
+{
+	return false;
+}
+
+bool UExGameplayCueManager::ShouldSyncLoadMissingGameplayCues() const
+{
+	return true;
+}
+

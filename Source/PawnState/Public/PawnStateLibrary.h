@@ -18,6 +18,9 @@ public:
 		static class UPawnStateComponent* GetPawnStateComponent(AActor* Actor);
 
 	UFUNCTION(BlueprintPure)
+		static bool HasPawnStateTag(AActor* Actor, FGameplayTag PawnStateTag);
+
+	UFUNCTION(BlueprintPure)
 		static bool CanEnterPawnState(AActor* Actor, const FPawnStateInstance& PawnStateInstance);
 
 	UFUNCTION(BlueprintCallable)

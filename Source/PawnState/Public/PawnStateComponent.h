@@ -39,7 +39,10 @@ public:
 		bool LeavePawnState(const FPawnStateInstance& PawnStateInstance);
 
 	UFUNCTION(BlueprintCallable)
-		bool HasPawnState(const FPawnStateInstance& PawnStateInstance);
+		bool HasPawnStateTag(FGameplayTag PawnStateTag);
+
+	UFUNCTION(BlueprintCallable)
+		bool HasPawnStateInstance(const FPawnStateInstance& PawnStateInstance);
 
 	UFUNCTION(BlueprintCallable)
 		UPawnStateEvent* GetEnterEventByTag(FGameplayTag PawnStateTag);

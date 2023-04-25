@@ -5,6 +5,15 @@
 #include "InputActionHandler.h"
 #include "ExInputTypes.generated.h"
 
+UENUM(BlueprintType)
+enum class EInputBindingType : uint8
+{
+	//Instanced， 可以直接配置参数， 但可能存在循环引用问题
+	E_Instanced		UMETA(DisplayName = "Instanced"),
+
+	//SoftPtr, 延迟加载方式，创建了才加载
+	E_SoftReference	UMETA(DisplayName = "SoftReference"),
+};
 
 USTRUCT(BlueprintType)
 struct EXINPUTSYSTEM_API FInputBindingConfig
@@ -20,9 +29,22 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		ETriggerEvent TriggerEvent;
 
-	//响应逻辑
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Instanced)
+	//绑定方式
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		EInputBindingType BindingType = EInputBindingType::E_Instanced;
+
+	//响应逻辑, 不建议直接访问，应使用GetInputHandler函数
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Instanced, meta = (EditCondition = "BindingType == EInputBindingType::E_Instanced", EditConditionHides))
 		UInputActionHandler* InputHandler;
+
+	//响应逻辑, 不建议直接访问，应使用GetInputHandler函数
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "BindingType == EInputBindingType::E_SoftReference", EditConditionHides))
+		TSoftObjectPtr<UInputActionHandler>	SoftInputHandler;
+
+	UInputActionHandler* GetInputHandler();
+
+private:
+	TObjectPtr<UInputActionHandler> CurrentHandler = nullptr;
 };
 
 USTRUCT(BlueprintType)
@@ -35,10 +57,21 @@ public:
 		UInputMappingContext* InputMappingContext;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	int InputPriority = 0;
+		int InputPriority = 0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		TArray<FInputBindingConfig> InputBindings;
+};
+
+UCLASS()
+class EXINPUTSYSTEM_API UInputMappingConfigAsset : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+	/*绑定输入配置*/
+	UPROPERTY(EditAnywhere)
+		FInputMappingConfig InputMappingConfig;
 };
 
 //一个输入绑定后的结果

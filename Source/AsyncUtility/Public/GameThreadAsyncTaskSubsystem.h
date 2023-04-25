@@ -16,6 +16,7 @@ public:
 
 	//任务执行入口
 	virtual void ExecuteTask() {};
+	virtual  ~FGameThreadAsyncTask() {};
 };
 
 DECLARE_DYNAMIC_DELEGATE(FGameThreadAsyncTaskDelegate);

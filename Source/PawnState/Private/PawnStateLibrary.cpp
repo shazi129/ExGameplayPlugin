@@ -25,6 +25,17 @@ UPawnStateComponent* UPawnStateLibrary::GetPawnStateComponent(AActor* Actor)
 	return Component;
 }
 
+bool UPawnStateLibrary::HasPawnStateTag(AActor* Actor, FGameplayTag PawnStateTag)
+{
+	if (UPawnStateComponent* Component = UPawnStateLibrary::GetPawnStateComponent(Actor))
+	{
+		return Component->HasPawnStateTag(PawnStateTag);
+	}
+
+	PAWNSTATE_LOG(Error, TEXT("%s error, cannot get pawn state component for actor[%s]"), *FString(__FUNCTION__), *GetNameSafe(Actor));
+	return false;
+}
+
 bool UPawnStateLibrary::CanEnterPawnState(AActor* Actor, const FPawnStateInstance& PawnStateInstance)
 {
 	if (UPawnStateComponent* Component = UPawnStateLibrary::GetPawnStateComponent(Actor))

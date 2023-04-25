@@ -77,4 +77,7 @@ public:
 	static bool IsRunning(UObject* WorldContextObject);
 
 	static FString GetPackageFullName(UObject* WorldContextObject, UObject* Object);
+
+	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
+	static FString ObjectPathToPackageName(const FString& ObjectPath);
 };

@@ -47,6 +47,8 @@ public:
 	//ͨ��Case��Spec
 	FGameplayAbilitySpec* FindAbilitySpecFromCase(const FExAbilityCase& AbilityCase);
 
+	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
+
 public:
 
 	UFUNCTION()

@@ -39,3 +39,16 @@ private:\
 		UE_LOG(LogCategory, LogLevel, TEXT("%s.%s error, init error: %s"), *GetName(), *FString(__FUNCTION__), *InitErrMsg);\
 		return ReturnValue;\
 	}
+
+#define  GET_GAMEINSTANCE_SUBSYSTEM(LogCategory, SubsystemType, WorldContextObject) \
+	const UGameInstance* GameInstance = Cast<UGameInstance>(WorldContextObject); \
+	if (GameInstance == nullptr) \
+	{ \
+		GameInstance = UGameplayStatics::GetGameInstance(WorldContextObject); \
+	} \
+	if (GameInstance == nullptr) \
+	{ \
+		UE_LOG(LogCategory, Error, TEXT("%s error, cannot get game instance by object[%s]"), *FString(__FUNCTION__), *GetNameSafe(WorldContextObject)); \
+		return nullptr; \
+	} \
+	return GameInstance->GetSubsystem<SubsystemType>();\

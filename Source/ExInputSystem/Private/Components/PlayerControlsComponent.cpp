@@ -80,7 +80,14 @@ void UPlayerControlsComponent::SetupInputComponent(APawn* Pawn)
 	}
 
 	UEnhancedInputLocalPlayerSubsystem* Subsystem = GetEnhancedInputSubsystem();
-	InputMappingResult = UExInputLibrary::AddInputMappingConfig(InputMappingConfig, InputComponent, Subsystem, this);
+	for (int i = 0; i < InputMappingConfigList.Num(); i++)
+	{
+		UInputMappingConfigAsset* ConfigAsset = InputMappingConfigList[i];
+		if (ConfigAsset && ConfigAsset->InputMappingConfig.InputMappingContext)
+		{
+			InputMappingResultList.Add(UExInputLibrary::AddInputMappingConfig(ConfigAsset->InputMappingConfig, InputComponent, Subsystem, this));
+		}
+	}
 
 	SetupPlayerControls(InputComponent);
 }
@@ -91,8 +98,10 @@ void UPlayerControlsComponent::ReleaseInputComponent(AController* OldController)
 	if (Subsystem && InputComponent)
 	{
 		TeardownPlayerControls(InputComponent);
-
-		UExInputLibrary::RemoveInputMappingConfig(InputMappingResult, InputComponent, Subsystem);
+		for (int i = 0; i < InputMappingResultList.Num(); i++)
+		{
+			UExInputLibrary::RemoveInputMappingConfig(InputMappingResultList[i], InputComponent, Subsystem);
+		}
 	}
 	InputComponent = nullptr;
 }

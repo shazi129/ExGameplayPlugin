@@ -1,10 +1,11 @@
 #include "GameThreadAsyncTaskSubsystem.h"
 #include "Kismet/GameplayStatics.h"
+#include "AsyncUtilityModule.h"
+#include "ExMacros.h"
 
 UGameThreadAsyncTaskSubsystem* UGameThreadAsyncTaskSubsystem::GetSubsystem(const UObject* WorldContextObject)
 {
-	UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(WorldContextObject);
-	return GameInstance->GetSubsystem<UGameThreadAsyncTaskSubsystem>();
+	GET_GAMEINSTANCE_SUBSYSTEM(LogAsyncUtility, UGameThreadAsyncTaskSubsystem, WorldContextObject);
 }
 
 void UGameThreadAsyncTaskSubsystem::Initialize(FSubsystemCollectionBase& Collection)

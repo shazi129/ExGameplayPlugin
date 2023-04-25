@@ -19,6 +19,61 @@ void UPerformanceLibrary::SetScalability(FScalabilityInfo ScalabilityInfo)
 	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.ShadingQuality %d"), ScalabilityInfo.Shading));
 }
 
+void UPerformanceLibrary::SetResolutionQuality(int ResolutionScale)
+{
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.ResolutionQuality %d"), ResolutionScale));
+}
+
+void UPerformanceLibrary::SetViewDistanceQuality(int ViewDistanceQuality)
+{
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.ViewDistanceQuality %d"), ViewDistanceQuality));
+}
+
+void UPerformanceLibrary::SetAntiAliasingQuality(int AntiAliasingQuality)
+{
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.AntiAliasingQuality %d"), AntiAliasingQuality));
+}
+
+void UPerformanceLibrary::SetPostProcessQuality(int PostProcessQuality)
+{
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.PostProcessQuality %d"), PostProcessQuality));
+}
+
+void UPerformanceLibrary::SetShadowQuality(int ShadowQuality)
+{
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.ShadowQuality %d"), ShadowQuality));
+}
+
+void UPerformanceLibrary::SetGlobalIlluminationQuality(int GlobalIlluminationQuality)
+{
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.GlobalIlluminationQuality %d"), GlobalIlluminationQuality));
+}
+
+void UPerformanceLibrary::SetReflectionQuality(int ReflectionQuality)
+{
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.ReflectionQuality %d"), ReflectionQuality));
+}
+
+void UPerformanceLibrary::SetTextureQuality(int TextureQuality)
+{
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.TextureQuality %d"), TextureQuality));
+}
+
+void UPerformanceLibrary::SetEffectsQuality(int EffectsQuality)
+{
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.EffectsQuality %d"), EffectsQuality));
+}
+
+void UPerformanceLibrary::SetFoliageQuality(int FoliageQuality)
+{
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.FoliageQuality %d"), FoliageQuality));
+}
+
+void UPerformanceLibrary::SetShadingQuality(int ShadingQuality)
+{
+	UExGameplayLibrary::ExecCommand(FString::Printf(TEXT("sg.ShadingQuality %d"), ShadingQuality));
+}
+
 FScalabilityInfo UPerformanceLibrary::GetScalability()
 {
 	FScalabilityInfo ScalabilityInfo;
@@ -35,6 +90,8 @@ FScalabilityInfo UPerformanceLibrary::GetScalability()
 	ScalabilityInfo.Shading = UKismetSystemLibrary::GetConsoleVariableIntValue("sg.ShadingQuality");
 	return ScalabilityInfo;
 }
+
+
 
 void UPerformanceLibrary::StartTrace(const FName Name)
 {

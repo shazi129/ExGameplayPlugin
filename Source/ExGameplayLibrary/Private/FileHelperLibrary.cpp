@@ -96,3 +96,13 @@ bool UFileHelperLibrary::DirectoryExists(const FString& Path)
 	FString AbsPath = UKismetSystemLibrary::ConvertToAbsolutePath(Path);
 	return FPlatformFileManager::Get().GetPlatformFile().DirectoryExists(*AbsPath);
 }
+
+FString UFileHelperLibrary::TryConvertLongPackageNameToFilename(const FString& InLongPackageName)
+{
+	FString OutRelativePath;
+	if (!FPackageName::TryConvertLongPackageNameToFilename(InLongPackageName, OutRelativePath))
+	{
+		EXLIBRARY_LOG(Error, TEXT("%s convert[%s] error"), *FString(__FUNCTION__), *InLongPackageName);
+	}
+	return OutRelativePath;
+}

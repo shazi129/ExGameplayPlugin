@@ -18,7 +18,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
 	FString Description;
 	// 该按钮点击时的事件DA路径
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, meta=(AllowedClasses="ExEditorActionDefine"))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, meta=(AllowedClasses="/Script/ExEditorTools.ExEditorActionDefine"))
 	FSoftObjectPath Action;
 };
 
@@ -36,7 +36,7 @@ class EXEDITORTOOLS_API UExEditorToolsConfig : public UObject
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(Config, EditDefaultsOnly, Category = ExEditorTools, meta = (AllowedClasses = "ExEditorToolsContext"))
+	UPROPERTY(Config, EditDefaultsOnly, Category = ExEditorTools, meta = (AllowedClasses = "/Script/ExEditorTools.ExEditorToolsContext"))
 		FSoftObjectPath EditorToolsContext;
 
 	UFUNCTION(BlueprintCallable)

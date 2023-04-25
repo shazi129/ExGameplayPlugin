@@ -103,7 +103,7 @@ bool UPawnStateComponent::EnterPawnState(const FPawnStateInstance& NewPawnStateI
 		return false;
 	}
 
-	if (HasPawnState(NewPawnStateInstance))
+	if (HasPawnStateInstance(NewPawnStateInstance))
 	{
 		PAWNSTATE_LOG(Warning, TEXT("%s warning: enter a exist state %s"), *FString(__FUNCTION__), *NewPawnStateInstance.ToString());
 		return true;
@@ -182,7 +182,19 @@ bool UPawnStateComponent::InternalLeavePawnState(const FPawnStateInstance& PawnS
 	return true;
 }
 
-bool UPawnStateComponent::HasPawnState(const FPawnStateInstance& PawnStateInstance)
+bool UPawnStateComponent::HasPawnStateTag(FGameplayTag PawnStateTag)
+{
+	for (const FPawnStateInstance& Instance : PawnStateInstances)
+	{
+		if (Instance.PawnState.PawnStateTag == PawnStateTag)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool UPawnStateComponent::HasPawnStateInstance(const FPawnStateInstance& PawnStateInstance)
 {
 	for (const FPawnStateInstance& Instance : PawnStateInstances)
 	{

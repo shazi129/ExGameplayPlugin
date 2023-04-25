@@ -32,9 +32,7 @@ public:
 
 	/*绑定输入配置*/
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Controls")
-	FInputMappingConfig InputMappingConfig;
-
-	bool isRegister = false;
+	TArray<UInputMappingConfigAsset*> InputMappingConfigList;
 
 protected:
 	
@@ -78,5 +76,5 @@ protected:
 	UEnhancedInputComponent* InputComponent;
 
 	UPROPERTY()
-	FInputMappingResult InputMappingResult;
+	TArray<FInputMappingResult> InputMappingResultList;
 };

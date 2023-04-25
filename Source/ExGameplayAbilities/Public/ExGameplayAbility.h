@@ -9,6 +9,10 @@ UCLASS(ClassGroup = (ExAbility), BlueprintType, Blueprintable, abstract, editinl
 class EXGAMEPLAYABILITIES_API UExGameplayAbility : public UGameplayAbility
 {
 	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Replication")
+		bool OnlyReplateWhenActivate = false;
 };
 
 

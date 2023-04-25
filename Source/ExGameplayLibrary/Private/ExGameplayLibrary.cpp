@@ -404,3 +404,8 @@ FString UExGameplayLibrary::GetPackageFullName(UObject* WorldContextObject, UObj
 	}
 	return "";
 }
+
+FString UExGameplayLibrary::ObjectPathToPackageName(const FString& ObjectPath)
+{
+	return FPackageName::ObjectPathToPackageName(ObjectPath);
+}

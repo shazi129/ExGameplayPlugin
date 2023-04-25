@@ -34,10 +34,12 @@ public class ExGameplayPlugin : ModuleRules
 				"GameplayTags",
 				"DeveloperSettings",
 				"ExGameplayLibrary",
+				"ExInputSystem",
 				"GameplayAbilities",
 				"GameFeatures",
 				"Json",
-				"Http"
+				"HTTP",
+				"AnimToTexture"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
