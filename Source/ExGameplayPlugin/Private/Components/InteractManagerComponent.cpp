@@ -19,10 +19,29 @@ void UInteractManagerComponent::BeginPlay()
 	if (Owner && UExGameplayLibrary::IsClient(Owner))
 	{
 		SetComponentTickEnabled(true);
+
+		//注册输入
+		UExInputSubsystem* InputSubsystem = UExInputSubsystem::GetInputSubsystem(this);
+		if (InputSubsystem)
+		{
+			InputSubsystem->OnInputEventReceiveDelegate.AddDynamic(this, &UInteractManagerComponent::ReceiveInput);
+		}
 	}
 	else
 	{
 		SetComponentTickEnabled(false);
+	}
+}
+
+void UInteractManagerComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	//反注册输入
+	UExInputSubsystem* InputSubsystem = UExInputSubsystem::GetInputSubsystem(this);
+	if (InputSubsystem)
+	{
+		InputSubsystem->OnInputEventReceiveDelegate.RemoveDynamic(this, &UInteractManagerComponent::ReceiveInput);
 	}
 }
 
@@ -332,15 +351,8 @@ void UInteractManagerComponent::SetComponentEnable(UInteractItemComponent* Compo
 	}
 }
 
-bool UInteractManagerComponent::ReceiveInput(const FGameplayTag& InputTag)
+void UInteractManagerComponent::ReceiveInput(const FGameplayTag& InputTag)
 {
-	UExInputSubsystem * InputSubsystem = UExInputSubsystem::GetInputSubsystem(this);
-	bool IsHandled = InputSubsystem->HandleInputEvent(InputTag).IsHandled;
-	if (IsHandled)
-	{
-		return true;
-	}
-
 	for (int i = 0; i < InteractOrderList.Num(); i++)
 	{
 		FInteractData* InteractData = InteractOrderList[i];
@@ -356,7 +368,7 @@ bool UInteractManagerComponent::ReceiveInput(const FGameplayTag& InputTag)
 			//只在客户端允许的交互是有返回结果的
 			if (ConfigData->InteractRole == E_Interact_Role_OnlyClient)
 			{
-				IsHandled = InternalInteractItem(*InteractData) ? true:IsHandled;
+				InternalInteractItem(*InteractData);
 			}
 			//要经过DS确认的交互，因为是异步的，没法确认返回结果
 			else
@@ -366,17 +378,11 @@ bool UInteractManagerComponent::ReceiveInput(const FGameplayTag& InputTag)
 		}
 	}
 
-	if (!IsHandled)
-	{
-		IsHandled = BP_ReceiveInput(InputTag);
-	}
-
-	return IsHandled;
+	BP_ReceiveInput(InputTag);
 }
 
-bool UInteractManagerComponent::BP_ReceiveInput_Implementation(const FGameplayTag& InputTag)
+void UInteractManagerComponent::BP_ReceiveInput_Implementation(const FGameplayTag& InputTag)
 {
-	return false;
 }
 
 void UInteractManagerComponent::ServerInteractItem_Implementation(const FInteractData& InteractData)

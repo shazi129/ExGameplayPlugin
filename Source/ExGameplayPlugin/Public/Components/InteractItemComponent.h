@@ -35,12 +35,12 @@ enum EInteractRole
 };
 
 USTRUCT(BlueprintType)
-struct EXINPUTSYSTEM_API FInteractRange
+struct EXGAMEPLAYPLUGIN_API FInteractRange
 {
 	GENERATED_BODY()
 
-		//方向
-		UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	//方向
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		FVector Direction;
 
 	//范围角度
@@ -54,7 +54,7 @@ struct EXINPUTSYSTEM_API FInteractRange
 
 //配置数据，用于在蓝图中配置，一般运行时不做修改
 USTRUCT(BlueprintType)
-struct EXINPUTSYSTEM_API FInteractConfigData
+struct EXGAMEPLAYPLUGIN_API FInteractConfigData
 {
 	GENERATED_BODY()
 
@@ -103,7 +103,7 @@ class UInteractItemComponent;
 
 //交互数据，用于各种操作
 USTRUCT(BlueprintType)
-struct EXINPUTSYSTEM_API FInteractData
+struct EXGAMEPLAYPLUGIN_API FInteractData
 {
 	GENERATED_BODY()
 
@@ -154,7 +154,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnInteract, const FInteractData&, I
 */
 
 UCLASS(ClassGroup = (Interact), BlueprintType, Blueprintable, meta = (BlueprintSpawnableComponent))
-class EXINPUTSYSTEM_API UInteractItemComponent : public UActorComponent
+class EXGAMEPLAYPLUGIN_API UInteractItemComponent : public UActorComponent
 {
 	GENERATED_BODY()
 

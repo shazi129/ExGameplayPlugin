@@ -80,4 +80,7 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
 	static FString ObjectPathToPackageName(const FString& ObjectPath);
+
+	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary", meta = (DefaultToSelf = "WorldContextObject"))
+	static AActor* SpawnActorInSocket(UObject* WorldContextObject, TSubclassOf<AActor> ActorClass, UPrimitiveComponent* Parent, FName Socket);
 };

@@ -2,17 +2,14 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
 #include "Components/InteractItemComponent.h"
 #include "InteractManagerComponent.generated.h"
-
 
 /**
 *  挂在Character身上，管理交互数据
 */
 UCLASS(Blueprintable, ClassGroup = (Interact), meta = (BlueprintSpawnableComponent))
-class EXINPUTSYSTEM_API UInteractManagerComponent : public UActorComponent
+class EXGAMEPLAYPLUGIN_API UInteractManagerComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
@@ -27,6 +24,7 @@ public:
 	UInteractManagerComponent();
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	FInteractData* FindItem(UInteractItemComponent* Component, const FGameplayTag& InteractType);
 
@@ -51,10 +49,10 @@ public:
 		bool GetItemEnable(UInteractItemComponent* Component, const FGameplayTag& InteractType);
 
 	UFUNCTION(BlueprintCallable)
-		bool ReceiveInput(const FGameplayTag& InputTag);
+		void ReceiveInput(const FGameplayTag& InputTag);
 
 	UFUNCTION(BlueprintNativeEvent)
-		bool BP_ReceiveInput(const FGameplayTag& InputTag);
+		void BP_ReceiveInput(const FGameplayTag& InputTag);
 
 	void UpdateItem(FInteractData& IteractData);
 

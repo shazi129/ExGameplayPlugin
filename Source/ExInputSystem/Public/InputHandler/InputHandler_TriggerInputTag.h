@@ -16,4 +16,7 @@ public:
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTag InputTag;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool ToServer;
 };

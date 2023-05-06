@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Components/SplineComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Components/SplineMeshComponent.h"
 #include "ProjectilePredictLineComponent.generated.h"
 
 UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent))
@@ -9,23 +11,47 @@ class EXGAMEPLAYPLUGIN_API UProjectilePredictLineComponent : public USplineCompo
 	GENERATED_BODY()
 
 public:
+	UProjectilePredictLineComponent();
+
+	virtual void BeginPlay();
+	virtual void EndPlay(EEndPlayReason::Type Reason);
+	virtual void TickComponent(float DeltaTime, enum ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction);
+
 	UFUNCTION(BlueprintCallable)
-		void SetEmitParam(FVector InStartPosition, FVector InStartVelocity);
+		void SetEmitParamByViewport();
+
+	UFUNCTION(BlueprintPure)
+		FVector GetStartVelocity();
+
+	UFUNCTION(BlueprintCallable)
+		void SetPredictLineVisible(bool Visible);
 
 	UFUNCTION(BlueprintCallable)
 		void SetIgnoreActors(TArray<AActor*> InActorsToIgnore);
 
 	UFUNCTION(BlueprintCallable)
-	void UpdatePredictLine();
+		void UpdatePredictLine();
+
+	UFUNCTION(BlueprintCallable)
+		void GetSplineMeshes(int Num, TArray<USplineMeshComponent*>& OutSplineMeshes);
+
+	UFUNCTION(BlueprintCallable)
+		void ResetSplineMeshes();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predict Path")
-	bool TracePath = true;
+		FRotator EmitViewOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predict Path")
+		float DefaultVelocityValue = 1000.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predict Path")
+		bool TracePath = true;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category= "Predict Path")
 		float GrenadeRadius = 10.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predict Path")
-		TEnumAsByte<ECollisionChannel> TraceChannel;
+		TEnumAsByte<ECollisionChannel> TraceChannel = ECC_Visibility;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predict Path")
 		bool TraceComplex;
@@ -48,9 +74,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predict Path")
 		UMaterialParameterCollection* ParamterCollection;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predict Path")
+		TSubclassOf<USplineMeshComponent> SplineMeshClass;;
+
 protected:
 	FVector StartPosition;
 	FVector StartVelocity;
 
 	TArray<TObjectPtr<AActor>> ActorsToIgnore;
+	TArray<USplineMeshComponent*> SplineMeshes;
 };

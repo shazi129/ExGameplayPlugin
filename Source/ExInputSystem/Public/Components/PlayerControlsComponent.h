@@ -26,6 +26,9 @@ public:
 	virtual void OnUnregister() override;
 	//~ End UActorComponent interface
 
+	UFUNCTION(Server, reliable, WithValidation)
+	void ServerTriggerInputTag(const FGameplayTag& InputTag);
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Controls")
 	bool SetupInputWhenPawnStart = true;
@@ -43,19 +46,6 @@ protected:
 	/** Native/BP Event to undo control setup */
 	UFUNCTION(BlueprintNativeEvent, Category = "Player Controls")
 	void TeardownPlayerControls(UEnhancedInputComponent* PlayerInputComponent);
-
-	/** Wrapper function for binding to this input component */
-	template<class UserClass, typename FuncType>
-	bool BindInputAction(const UInputAction* Action, const ETriggerEvent EventType, UserClass* Object, FuncType Func)
-	{
-		if (ensure(InputComponent != nullptr) && ensure(Action != nullptr))
-		{
-			InputComponent->BindAction(Action, EventType, Object, Func);
-			return true;
-		}
-
-		return false;
-	}
 	
 	/** Called when pawn restarts, bound to dynamic delegate */
 	UFUNCTION()

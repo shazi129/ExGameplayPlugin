@@ -409,3 +409,23 @@ FString UExGameplayLibrary::ObjectPathToPackageName(const FString& ObjectPath)
 {
 	return FPackageName::ObjectPathToPackageName(ObjectPath);
 }
+
+AActor* UExGameplayLibrary::SpawnActorInSocket(UObject* WorldContextObject, TSubclassOf<AActor> ActorClass, UPrimitiveComponent* Parent, FName Socket)
+{
+	UWorld* World = WorldContextObject->GetWorld();
+	if (!World)
+	{
+		return nullptr;
+	}
+
+	AActor* Actor = World->SpawnActor(ActorClass);
+	if (Actor)
+	{
+		Actor->AttachToComponent(Parent, FAttachmentTransformRules(EAttachmentRule::KeepRelative, false), Socket);
+	}
+	else
+	{
+		UE_LOG(LogExGameplayLibrary, Error, TEXT("%s error, cannot spawn actor by class %s"), *FString(__FUNCTION__), *GetNameSafe(ActorClass));
+	}
+	return Actor;
+}

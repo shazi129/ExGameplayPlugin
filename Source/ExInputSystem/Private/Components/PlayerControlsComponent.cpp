@@ -9,6 +9,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "ExInputSystemModule.h"
 #include "ExInputLibrary.h"
+#include "ExInputSubsystem.h"
 
 void UPlayerControlsComponent::OnRegister()
 {
@@ -46,6 +47,16 @@ void UPlayerControlsComponent::OnUnregister()
 	}
 
 	Super::OnUnregister();
+}
+
+bool UPlayerControlsComponent::ServerTriggerInputTag_Validate(const FGameplayTag& InputTag)
+{
+	return true;
+}
+
+void  UPlayerControlsComponent::ServerTriggerInputTag_Implementation(const FGameplayTag& InputTag)
+{
+	UExInputSubsystem::TriggerInputTag(this, InputTag);	
 }
 
 void UPlayerControlsComponent::OnPawnRestarted(APawn* Pawn)

@@ -10,19 +10,20 @@ struct EXINPUTSYSTEM_API FInputHandleResult
 {
 	GENERATED_BODY()
 
-		UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 		bool IsHandled = false;
 };
 
 DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(FInputHandleResult, FInputHandleDelegate, const FGameplayTag&, InputTag);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInputHandleMulticastDelegate, const FGameplayTag&, InputTag);
 
 USTRUCT(BlueprintType)
 struct EXINPUTSYSTEM_API FInputHandleEvent
 {
 	GENERATED_BODY()
 
-		UPROPERTY(BlueprintReadOnly)
-		int64 EventID;
+	UPROPERTY(BlueprintReadOnly)
+		int32 EventID;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		FGameplayTag InputTag;
@@ -32,6 +33,9 @@ struct EXINPUTSYSTEM_API FInputHandleEvent
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		int Priority = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+		bool ExecuteOnlyOnce = false;
 };
 
 UCLASS(BlueprintType)
@@ -43,18 +47,23 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (WorldContext = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
 		static UExInputSubsystem* GetInputSubsystem(const UObject* WorldContextObject);
 
-	UFUNCTION(BlueprintPure)
-		static FInputHandleEvent CreateInputEvent(const FGameplayTag& GameplayTag, const FInputHandleDelegate& Delegate);
+	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (WorldContext = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
+		static void TriggerInputTag(const UObject* WorldContextObject, const FGameplayTag& InputTag);
 
-	UFUNCTION(BlueprintCallable)
-		void AddInputEvent(const FInputHandleEvent& InputHandleEvent);
-
-	UFUNCTION(BlueprintCallable)
-		void RemoveInputEvent(const FInputHandleEvent& InputHandleEvent);
+	FInputHandleEvent* AddInputEvent(const FGameplayTag& InputTag, int32 Priority = 0);
+	bool RemoveInputEvent(int32 EventID);
 
 	FInputHandleResult HandleInputEvent(const FGameplayTag& InputTag);
+
+	int32 FindInputEventIndex(int32 EventID);
+
+public:
+	UPROPERTY(BlueprintAssignable)
+		FInputHandleMulticastDelegate OnInputEventReceiveDelegate;
 
 private:
 	UPROPERTY()
 		TArray<FInputHandleEvent> InputHandleEvents;
+
+	std::atomic<int32> EventIDGenerator = 1;
 };

@@ -40,7 +40,7 @@ public:
 	//override IExAbilityProvider
 	virtual void CollectAbilitCases(TArray<FExAbilityCase>& Abilities) const override;
 
-	//��Ability Provider�Ĳ���
+	//Ability Provider
 	virtual void RegisterAbilityProvider(IExAbilityProvider* ProviderObject);
 	virtual void UnregisterAbilityProvider(IExAbilityProvider* ProviderObject);
 
@@ -85,5 +85,7 @@ protected:
 
 private:
 	FGameplayAbilitySpecHandle GiveAbilityByCaseInternal(const FExAbilityCase& AbilityCase, UObject* AbilityProvider);
+
+	TArray<IExAbilityProvider*> RegistedProviders;
 
 };

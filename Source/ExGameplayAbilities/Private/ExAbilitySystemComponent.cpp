@@ -48,6 +48,7 @@ void UExAbilitySystemComponent::BeginPlay()
 
 void UExAbilitySystemComponent::EndPlay(EEndPlayReason::Type EndPlayReason)
 {
+	RegistedProviders.Reset();
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -89,6 +90,13 @@ void UExAbilitySystemComponent::RegisterAbilityProvider(IExAbilityProvider* Prov
 		return;
 	}
 
+	if (RegistedProviders.Contains(ProviderObject))
+	{
+		EXABILITY_LOG(Warning, TEXT("%s duplicate provider: %s"), *FString(__FUNCTION__), *GetNameSafe(Cast<UObject>(ProviderObject)));
+		return;
+	}
+	RegistedProviders.Add(ProviderObject);
+
 	TArray<FExAbilityCase> AbilityCases;
 	ProviderObject->CollectAbilitCases(AbilityCases);
 	for (const FExAbilityCase& AbilityCase : AbilityCases)
@@ -99,7 +107,7 @@ void UExAbilitySystemComponent::RegisterAbilityProvider(IExAbilityProvider* Prov
 
 void UExAbilitySystemComponent::UnregisterAbilityProvider(IExAbilityProvider* ProviderObject)
 {
-
+	RegistedProviders.Remove(ProviderObject);
 }
 
 FGameplayAbilitySpec* UExAbilitySystemComponent::FindAbilitySpecFromCase(const FExAbilityCase& AbilityCase)
