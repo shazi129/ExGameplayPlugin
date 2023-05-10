@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Abilities/GameplayAbilityTargetTypes.h"
+#include "InstancedStruct.h"
 #include "ExGameplayAbilityTargetTypes.generated.h"
 
 USTRUCT(BlueprintType)
@@ -71,6 +72,42 @@ public:
 
 template<>
 struct TStructOpsTypeTraits<FGameplayAbilityTargetData_FVectorArray> : public TStructOpsTypeTraitsBase2<FGameplayAbilityTargetData_FVectorArray>
+{
+	enum {
+		WithNetSerializer = true
+	};
+};
+
+USTRUCT(BlueprintType)
+struct EXGAMEPLAYABILITIES_API FGameplayAbilityTargetData_FInstancedStruct : public FGameplayAbilityTargetData
+{
+	GENERATED_USTRUCT_BODY()
+
+public:
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+		FInstancedStruct InstancedStruct;
+
+	virtual UScriptStruct* GetScriptStruct() const override
+	{
+		return FGameplayAbilityTargetData_FInstancedStruct::StaticStruct();
+	}
+
+	virtual FString ToString() const override {
+		return TEXT("FGameplayAbilityTargetData_FInstancedStruct");
+	}
+
+	bool NetSerialize(FArchive& Ar, class UPackageMap* Map, bool& bOutSuccess)
+	{
+		InstancedStruct.Serialize(Ar);
+		bOutSuccess = true;
+		return true;
+	}
+};
+
+
+template<>
+struct TStructOpsTypeTraits<FGameplayAbilityTargetData_FInstancedStruct> : public TStructOpsTypeTraitsBase2<FGameplayAbilityTargetData_FInstancedStruct>
 {
 	enum {
 		WithNetSerializer = true

@@ -17,6 +17,8 @@ class EXGAMEPLAYPLUGIN_API AExCharacter : public ACharacter, public IAbilitySyst
 public:
 	AExCharacter(const FObjectInitializer& ObjectInitializer);
 
+	virtual void Tick( float DeltaSeconds) override;
+
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	/** Returns FollowCamera subobject **/
@@ -25,6 +27,12 @@ public:
 	virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 	virtual void PostInitializeComponents() override;
 	virtual void PossessedBy(AController* NewController) override;
+
+	UFUNCTION(BlueprintCallable)
+	virtual void SetRagdoll(bool Enable);
+
+private:
+	void UpdateRootWhenRagdoll(float DeltaSeconds);
 
 private:
 	/** Camera boom positioning the camera behind the character */
@@ -37,4 +45,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Ability, meta = (AllowPrivateAccess = "true"))
 		UAbilitySystemComponent* AbilitySystemComponent;
+
+	bool bInRagdoll;
 };

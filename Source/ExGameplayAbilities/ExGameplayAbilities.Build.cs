@@ -33,7 +33,8 @@ public class ExGameplayAbilities : ModuleRules
                 "GameplayTasks",
 				"ExGameplayLibrary",
 				"EnhancedInput",
-				"ExInputSystem"
+				"ExInputSystem",
+				"StructUtils"
 			}
 			);
 			

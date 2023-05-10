@@ -43,6 +43,15 @@ AExCharacter::AExCharacter(const FObjectInitializer& ObjectInitializer)
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
 
+void AExCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (bInRagdoll)
+	{
+		UpdateRootWhenRagdoll(DeltaSeconds);
+	}
+}
+
 UAbilitySystemComponent* AExCharacter::GetAbilitySystemComponent() const
 {
 	return AbilitySystemComponent;
@@ -65,5 +74,28 @@ void AExCharacter::PossessedBy(AController* NewController)
 	if (AbilitySystemComponent)
 	{
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
+}
+
+void AExCharacter::UpdateRootWhenRagdoll(float DeltaSeconds)
+{
+	FVector MeshLocation = GetMesh()->GetComponentLocation();
+	FVector Velocity = (MeshLocation - GetActorLocation()) / DeltaSeconds;
+	GetCharacterMovement()->MoveSmooth(Velocity, DeltaSeconds);
+}
+
+void AExCharacter::SetRagdoll(bool Enable)
+{
+	bInRagdoll = Enable;
+
+	USkeletalMeshComponent* SkeletalMesh = GetMesh();
+	SkeletalMesh->SetAllBodiesSimulatePhysics(bInRagdoll);
+	if (bInRagdoll)
+	{
+		SkeletalMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	}
+	else
+	{
+		SkeletalMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	}
 }

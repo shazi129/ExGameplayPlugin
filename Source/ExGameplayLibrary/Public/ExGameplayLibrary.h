@@ -81,6 +81,11 @@ public:
 	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
 	static FString ObjectPathToPackageName(const FString& ObjectPath);
 
+	//在某个socket上spawn一个Actor
 	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary", meta = (DefaultToSelf = "WorldContextObject"))
 	static AActor* SpawnActorInSocket(UObject* WorldContextObject, TSubclassOf<AActor> ActorClass, UPrimitiveComponent* Parent, FName Socket);
+
+	//单独对某个Actor做LineTrace
+	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary")
+	static bool ActorLineTraceSingle(AActor* Actor, FHitResult& OutHit, const FVector& Start, const FVector& End, ECollisionChannel TraceChannel);
 };

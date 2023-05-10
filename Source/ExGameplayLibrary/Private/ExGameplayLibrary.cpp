@@ -429,3 +429,16 @@ AActor* UExGameplayLibrary::SpawnActorInSocket(UObject* WorldContextObject, TSub
 	}
 	return Actor;
 }
+
+
+bool UExGameplayLibrary::ActorLineTraceSingle(AActor* Actor, FHitResult& OutHit, const FVector& Start, const FVector& End, ECollisionChannel TraceChannel)
+{
+	if (Actor)
+	{
+		FCollisionQueryParams Params;
+		Params.TraceTag = FName("ActorLineTraceSingle");
+		Params.bTraceComplex = false;
+		return Actor->ActorLineTraceSingle(OutHit, Start, End, TraceChannel, Params);
+	}
+	return false;
+}

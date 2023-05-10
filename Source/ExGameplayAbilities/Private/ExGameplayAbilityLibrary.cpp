@@ -17,3 +17,16 @@ TArray<int64> UExGameplayAbilityLibrary::GetInt64ArrayFromTargetData(const FGame
 	return Result;
 
 }
+
+FInstancedStruct UExGameplayAbilityLibrary::GetInstancedStructFromTargetData(const FGameplayAbilityTargetDataHandle& TargetData, int Index)
+{
+	if (Index >= 0 && TargetData.Num() > Index)
+	{
+		const FGameplayAbilityTargetData_FInstancedStruct* InstancedStruct = static_cast<const FGameplayAbilityTargetData_FInstancedStruct*>(TargetData.Get(Index));
+		if (InstancedStruct != nullptr)
+		{
+			return InstancedStruct->InstancedStruct;
+		}
+	}
+	return FInstancedStruct();
+}
