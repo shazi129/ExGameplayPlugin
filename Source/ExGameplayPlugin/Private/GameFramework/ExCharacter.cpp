@@ -46,10 +46,6 @@ AExCharacter::AExCharacter(const FObjectInitializer& ObjectInitializer)
 void AExCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	if (bInRagdoll)
-	{
-		UpdateRootWhenRagdoll(DeltaSeconds);
-	}
 }
 
 UAbilitySystemComponent* AExCharacter::GetAbilitySystemComponent() const
@@ -77,20 +73,13 @@ void AExCharacter::PossessedBy(AController* NewController)
 	}
 }
 
-void AExCharacter::UpdateRootWhenRagdoll(float DeltaSeconds)
-{
-	FVector MeshLocation = GetMesh()->GetComponentLocation();
-	FVector Velocity = (MeshLocation - GetActorLocation()) / DeltaSeconds;
-	GetCharacterMovement()->MoveSmooth(Velocity, DeltaSeconds);
-}
-
 void AExCharacter::SetRagdoll(bool Enable)
 {
-	bInRagdoll = Enable;
 
 	USkeletalMeshComponent* SkeletalMesh = GetMesh();
-	SkeletalMesh->SetAllBodiesSimulatePhysics(bInRagdoll);
-	if (bInRagdoll)
+	SkeletalMesh->SetSimulatePhysics(Enable);
+
+	if (Enable)
 	{
 		SkeletalMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 	}

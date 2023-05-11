@@ -31,8 +31,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void SetRagdoll(bool Enable);
 
-private:
-	void UpdateRootWhenRagdoll(float DeltaSeconds);
 
 private:
 	/** Camera boom positioning the camera behind the character */
@@ -45,6 +43,4 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Ability, meta = (AllowPrivateAccess = "true"))
 		UAbilitySystemComponent* AbilitySystemComponent;
-
-	bool bInRagdoll;
 };
