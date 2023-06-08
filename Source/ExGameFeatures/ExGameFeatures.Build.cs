@@ -30,10 +30,13 @@ public class ExGameFeatures: ModuleRules
                 "ModularGameplay",
 				"GameFeatures",
 				"GameplayAbilities",
-				"ExGameplayAbilities",
+                "ExGameplayLibrary",
+                "ExGameplayAbilities",
 				"ExInputSystem",
 				"EnhancedInput",
 				"Projects",
+                "GameplayTags",
+                "DeveloperSettings",
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

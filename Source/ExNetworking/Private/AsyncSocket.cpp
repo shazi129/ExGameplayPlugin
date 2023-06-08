@@ -314,6 +314,7 @@ void FAsyncSocket::HandleError(const FString& ErrorMsg)
 
 void FAsyncSocket::CheckResolutionAndConnect(const FResolveInfo* ResolveInfo)
 {
+	/*
 	QUICK_SCOPE_CYCLE_COUNTER(FAsyncSocket_CheckResolutionAndConnect);
 	check(ResolveInfo);
 
@@ -346,6 +347,7 @@ void FAsyncSocket::CheckResolutionAndConnect(const FResolveInfo* ResolveInfo)
 			HandleConnectError(EConnectCode::DNS_TIMEOUT, ErrorMsg);
 		}
 	}
+	*/
 }
 
 bool FAsyncSocket::CheckIsConnected()

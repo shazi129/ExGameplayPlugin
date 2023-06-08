@@ -17,6 +17,8 @@ class EXGAMEPLAYPLUGIN_API AExCharacter : public ACharacter, public IAbilitySyst
 public:
 	AExCharacter(const FObjectInitializer& ObjectInitializer);
 
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void Tick( float DeltaSeconds) override;
 
 	/** Returns CameraBoom subobject **/

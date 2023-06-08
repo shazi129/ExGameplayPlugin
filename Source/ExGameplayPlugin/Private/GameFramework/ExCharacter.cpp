@@ -1,7 +1,8 @@
 #include "GameFramework/ExCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
+#include "Kismet/GameplayStatics.h"
+#include "Components/GameFrameworkComponentManager.h"
 
 AExCharacter::AExCharacter(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -41,6 +42,24 @@ AExCharacter::AExCharacter(const FObjectInitializer& ObjectInitializer)
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+}
+
+void AExCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	const UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(this);
+	UGameFrameworkComponentManager* ComponentMgr = GameInstance->GetSubsystem<UGameFrameworkComponentManager>();
+	ComponentMgr->AddReceiver(this);
+}
+
+void AExCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	const UGameInstance* GameInstance = UGameplayStatics::GetGameInstance(this);
+	UGameFrameworkComponentManager* ComponentMgr = GameInstance->GetSubsystem<UGameFrameworkComponentManager>();
+	ComponentMgr->RemoveReceiver(this);
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void AExCharacter::Tick(float DeltaSeconds)
