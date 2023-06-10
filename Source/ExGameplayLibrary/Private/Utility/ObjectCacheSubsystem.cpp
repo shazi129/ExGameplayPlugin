@@ -80,8 +80,6 @@ void FActorCachePool::CreateObjects(int Size)
 	}
 }
 
-DEFINE_GET_GAMEINSTANCE_SUBSYSTEM(UObjectCacheSubsystem)
-
 void UObjectCacheSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);

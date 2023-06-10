@@ -77,7 +77,7 @@ class EXGAMEPLAYLIBRARY_API UObjectCacheSubsystem : public UGameInstanceSubsyste
 	GENERATED_BODY()
 
 public:
-	DECLARE_GET_GAMEINSTANCE_SUBSYSTEM(UObjectCacheSubsystem)
+	DECLARE_GET_GAMEINSTANCE_SUBSYSTEM(UObjectCacheSubsystem, LogTemp)
 
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize();

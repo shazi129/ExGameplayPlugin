@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "ExGameplayLibrary.h"
+#include "Kismet/GameplayStatics.h"
 
 #define DECLARE_LOG_TAG() \
 private:\
