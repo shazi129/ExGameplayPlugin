@@ -111,10 +111,10 @@ bool UExGameFeaturesSubsystem::DeactivateModule(const FGameplayTag& ModularTag)
 
 void UExGameFeaturesSubsystem::LoadDefaultModularActions()
 {
-	TSoftObjectPtr<UModularActionData>& ActionsDataConfig = GetMutableDefault<UExGameFeaturesSettings>()->ModularActionData;
+	TSoftObjectPtr<UModularActionsAssetData>& ActionsDataConfig = GetMutableDefault<UExGameFeaturesSettings>()->ModularActionData;
 	if (!ActionsDataConfig.IsNull())
 	{
-		UModularActionData* ActionsDataPtr = ActionsDataConfig.LoadSynchronous();
+		UModularActionsAssetData* ActionsDataPtr = ActionsDataConfig.LoadSynchronous();
 
 		for (const auto& ModularActionData : ActionsDataPtr->ModularActionsMap)
 		{

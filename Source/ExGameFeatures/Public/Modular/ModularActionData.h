@@ -18,7 +18,7 @@ struct EXGAMEFEATURES_API FModularActions
 };
 
 UCLASS()
-class EXGAMEFEATURES_API UModularActionData : public UDataAsset
+class EXGAMEFEATURES_API UModularActionsAssetData : public UDataAsset
 {
 	GENERATED_BODY()
 

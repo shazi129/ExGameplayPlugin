@@ -20,5 +20,5 @@ public:
 		TArray<FString> DefaultGameFeatures;
 
 	UPROPERTY(Config, EditAnywhere, Category = "GameFeatures")
-		TSoftObjectPtr<UModularActionData> ModularActionData;
+		TSoftObjectPtr<UModularActionsAssetData> ModularActionData;
 };
