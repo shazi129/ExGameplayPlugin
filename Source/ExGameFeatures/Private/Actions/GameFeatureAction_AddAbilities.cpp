@@ -36,8 +36,8 @@ void UGameFeatureAction_AddAbilities::AddAdditionalAssetBundleData(FAssetBundleD
 	{
 		auto AddBundleAsset = [&AssetBundleData](const FSoftObjectPath& SoftObjectPath)
 		{
-			AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateClient, SoftObjectPath);
-			AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateServer, SoftObjectPath);
+			AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateClient, SoftObjectPath.GetAssetPath());
+			AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateServer, SoftObjectPath.GetAssetPath());
 		};
 
 		for (const FGameFeatureAbilitiesEntry& Entry : AbilitiesList)

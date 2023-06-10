@@ -18,7 +18,7 @@ bool UGameFeatureBPLibrary::AddToPluginsList(const FString& PluginFilename)
 FString UGameFeatureBPLibrary::GetPluginURLByName(const FString& PluginName)
 {
 	FString Result;
-	if (UGameFeaturesSubsystem::Get().GetPluginURLForBuiltInPluginByName(PluginName, Result))
+	if (UGameFeaturesSubsystem::Get().GetPluginURLByName(PluginName, Result))
 	{
 		return Result;
 	}

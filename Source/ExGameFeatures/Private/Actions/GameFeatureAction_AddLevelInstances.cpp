@@ -41,8 +41,8 @@ void UGameFeatureAction_AddLevelInstances::AddAdditionalAssetBundleData(FAssetBu
 	{
 		for (const FGameFeatureLevelInstanceEntry& Entry : LevelInstanceList)
 		{
-			AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateClient, Entry.Level.ToSoftObjectPath());
-			AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateServer, Entry.Level.ToSoftObjectPath());
+			AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateClient, Entry.Level.ToSoftObjectPath().GetAssetPath());
+			AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateServer, Entry.Level.ToSoftObjectPath().GetAssetPath());
 		}
 	}
 }

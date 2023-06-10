@@ -33,8 +33,8 @@ void UGameFeatureAction_AddInputContextMapping::AddAdditionalAssetBundleData(FAs
 {
 	if (UAssetManager::IsValid())
 	{
-		AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateClient, InputMapping.ToSoftObjectPath());
-		AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateServer, InputMapping.ToSoftObjectPath());
+		AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateClient, InputMapping.ToSoftObjectPath().GetAssetPath());
+		AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateServer, InputMapping.ToSoftObjectPath().GetAssetPath());
 	}
 }
 #endif

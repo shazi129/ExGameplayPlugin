@@ -106,7 +106,7 @@ void UGameFeatureAction_WorldActionBase::HandleWorld(UWorld* InWorld)
 
 	if (IsWorldHandled(InWorld))
 	{
-		UE_LOG(LogTemp, Error, TEXT("UGameFeatureAction_WorldActionBase.HandleWorld, InWorld[%s|%p] was Handled"), *(InWorld->GetName()), InWorld);
+		UE_LOG(LogTemp, Warning, TEXT("UGameFeatureAction_WorldActionBase.HandleWorld, InWorld[%s|%p] was Handled"), *(InWorld->GetName()), InWorld);
 		return;
 	}
 

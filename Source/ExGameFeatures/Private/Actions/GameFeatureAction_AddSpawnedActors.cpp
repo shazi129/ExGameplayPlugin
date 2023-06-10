@@ -4,10 +4,11 @@
 #include "Engine/AssetManager.h"
 #include "GameFeaturesSubsystemSettings.h"
 
-#define LOCTEXT_NAMESPACE "AncientGameFeatures"
+#define LOCTEXT_NAMESPACE "ExGameFeatures"
 
 //////////////////////////////////////////////////////////////////////
 // UGameFeatureAction_AddWorldSystem
+
 
 void UGameFeatureAction_AddSpawnedActors::OnGameFeatureDeactivating(FGameFeatureDeactivatingContext& Context)
 {

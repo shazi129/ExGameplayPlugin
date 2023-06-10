@@ -19,8 +19,8 @@ void UGameFeatureAction_RemoveComponent::AddAdditionalAssetBundleData(FAssetBund
 	{
 		for (const FRedundantComponentEntry& Entry : ComponentList)
 		{
-			AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateClient, Entry.OwnerActorClass.ToSoftObjectPath());
-			AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateServer, Entry.OwnerActorClass.ToSoftObjectPath());
+			AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateClient, Entry.OwnerActorClass.ToSoftObjectPath().GetAssetPath());
+			AssetBundleData.AddBundleAsset(UGameFeaturesSubsystemSettings::LoadStateServer, Entry.OwnerActorClass.ToSoftObjectPath().GetAssetPath());
 		}
 	}
 }
