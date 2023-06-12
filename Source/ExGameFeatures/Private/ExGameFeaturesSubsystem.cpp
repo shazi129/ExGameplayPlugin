@@ -109,18 +109,25 @@ bool UExGameFeaturesSubsystem::DeactivateModule(const FGameplayTag& ModularTag)
 	return true;
 }
 
-void UExGameFeaturesSubsystem::LoadDefaultModularActions()
+bool UExGameFeaturesSubsystem::LoadModuarActionData(TSoftObjectPtr<UModularActionsAssetData> ModularActionData)
 {
-	TSoftObjectPtr<UModularActionsAssetData>& ActionsDataConfig = GetMutableDefault<UExGameFeaturesSettings>()->ModularActionData;
-	if (!ActionsDataConfig.IsNull())
+	if (!ModularActionData.IsNull())
 	{
-		UModularActionsAssetData* ActionsDataPtr = ActionsDataConfig.LoadSynchronous();
+		UModularActionsAssetData* ActionsDataPtr = ModularActionData.LoadSynchronous();
 
 		for (const auto& ModularActionData : ActionsDataPtr->ModularActionsMap)
 		{
 			AddModularActions(ModularActionData.Key, ModularActionData.Value);
 		}
+		return true;
 	}
+	return false;
+}
+
+bool UExGameFeaturesSubsystem::LoadDefaultModularActions()
+{
+	TSoftObjectPtr<UModularActionsAssetData>& ActionsDataConfig = GetMutableDefault<UExGameFeaturesSettings>()->ModularActionData;
+	return LoadModuarActionData(ActionsDataConfig);
 }
 
 void UExGameFeaturesSubsystem::OnCheatCreate(UCheatManager* CheatManager)

@@ -47,8 +47,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool DeactivateModule(const FGameplayTag& ModularTag);
 
+	UFUNCTION(BlueprintCallable)
+	bool LoadModuarActionData(TSoftObjectPtr<UModularActionsAssetData> ModularActionData);
+
 private:
-	void LoadDefaultModularActions();
+	bool LoadDefaultModularActions();
 	void OnCheatCreate(UCheatManager* CheatManager);
 
 private:
