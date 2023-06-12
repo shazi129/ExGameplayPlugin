@@ -9,5 +9,9 @@ class EXGAMEFEATURES_API UModularWorldSubsystem : public UWorldSubsystem
 	GENERATED_BODY()
 
 public:
+	UModularWorldSubsystem();
 	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
+
+private:
+	bool bReady;
 };

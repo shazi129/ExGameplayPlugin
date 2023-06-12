@@ -79,7 +79,7 @@ void UPawnStateSettingSubsystem::UnregisterLevelChangeHander()
 
 const FWorldPawnStateInfo* UPawnStateSettingSubsystem::GetWorldStateInfo(UWorld* InWorld)
 {
-	FString WorldPackageFullName = UExGameplayLibrary::GetPackageFullName(InWorld, InWorld);
+	FString WorldPackageFullName = UExGameplayLibrary::GetPackageFullName(InWorld);
 	for (const FWorldPawnStateInfo& StateInfo : GetDefault<UPawnStateSettings>()->WorldPawnStates)
 	{
 		if (!StateInfo.MainWorld.IsNull() && WorldPackageFullName == StateInfo.MainWorld.GetLongPackageName())
@@ -103,7 +103,7 @@ UPawnStateAsset* UPawnStateSettingSubsystem::GetStreamingLevelPawnState(UWorld* 
 
 	ACharacter* LocalCharacter = UGameplayStatics::GetPlayerCharacter(World, 0);
 
-	FString WorldPackageFullName = UExGameplayLibrary::GetPackageFullName(World, World);
+	FString WorldPackageFullName = UExGameplayLibrary::GetPackageFullName(World);
 	for (const FWorldPawnStateInfo& StateInfo : GetDefault<UPawnStateSettings>()->WorldPawnStates)
 	{
 		if (!StateInfo.MainWorld.IsNull() && WorldPackageFullName != StateInfo.MainWorld.GetLongPackageName())
@@ -111,7 +111,7 @@ UPawnStateAsset* UPawnStateSettingSubsystem::GetStreamingLevelPawnState(UWorld* 
 			continue;
 		}
 
-		FString LevelPackageFullName = UExGameplayLibrary::GetPackageFullName(World, Level);
+		FString LevelPackageFullName = UExGameplayLibrary::GetPackageFullName(World);
 		FName LevelPackageShortName = FPackageName::GetShortFName(LevelPackageFullName);
 		if (StateInfo.LevelState.Contains(LevelPackageShortName))
 		{
