@@ -1,8 +1,9 @@
 #pragma once 
 
 #include "CoreMinimal.h"
-#include "Subsystems/GameInstanceSubsystem.h"
+#include "Subsystems/WorldSubsystem.h"
 #include "GameplayTags.h"
+#include "ExInputTypes.h"
 #include "ExInputSubsystem.generated.h"
 
 USTRUCT(BlueprintType)
@@ -39,7 +40,7 @@ struct EXINPUTSYSTEM_API FInputHandleEvent
 };
 
 UCLASS(BlueprintType)
-class EXINPUTSYSTEM_API UExInputSubsystem : public UGameInstanceSubsystem
+class EXINPUTSYSTEM_API UExInputSubsystem : public UWorldSubsystem
 {
 	GENERATED_BODY()
 
@@ -50,12 +51,21 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (WorldContext = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
 		static void TriggerInputTag(const UObject* WorldContextObject, const FGameplayTag& InputTag);
 
+public:
+	virtual void Initialize(FSubsystemCollectionBase& Collection);
+	virtual void Deinitialize();
+
+	UFUNCTION(BlueprintCallable)
+		UInputActionHandler* CreateInputActionHandler(TSubclassOf<UInputActionHandler> InputHandlerClass);
+
 	FInputHandleEvent* AddInputEvent(const FGameplayTag& InputTag, int32 Priority = 0);
 	bool RemoveInputEvent(int32 EventID);
 
 	FInputHandleResult HandleInputEvent(const FGameplayTag& InputTag);
-
 	int32 FindInputEventIndex(int32 EventID);
+
+protected:
+	virtual bool DoesSupportWorldType(const EWorldType::Type WorldType) const;
 
 public:
 	UPROPERTY(BlueprintAssignable)
@@ -66,4 +76,7 @@ private:
 		TArray<FInputHandleEvent> InputHandleEvents;
 
 	std::atomic<int32> EventIDGenerator = 1;
+
+	UPROPERTY()
+		TArray<UInputActionHandler*> HandlerInstance;
 };

@@ -29,7 +29,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		ETriggerEvent TriggerEvent;
 
-	//绑定方式
+	//绑定方式, 建议尽量使用SoftReference的方式，可以有效避免循环引用
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 		EInputBindingType BindingType = EInputBindingType::E_Instanced;
 
@@ -39,12 +39,13 @@ public:
 
 	//响应逻辑, 不建议直接访问，应使用GetInputHandler函数
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "BindingType == EInputBindingType::E_SoftReference", EditConditionHides))
-		TSoftObjectPtr<UInputActionHandler>	SoftInputHandler;
+		TSoftClassPtr<UInputActionHandler>	InputHandlerClass;
 
-	UInputActionHandler* GetInputHandler();
+	UInputActionHandler* GetInputHandler(UWorld* ContextWorld);
 
 private:
-	TObjectPtr<UInputActionHandler> CurrentHandler = nullptr;
+	UPROPERTY(transient)
+		UInputActionHandler* HandlerInstance;
 };
 
 USTRUCT(BlueprintType)

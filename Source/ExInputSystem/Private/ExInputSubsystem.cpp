@@ -5,7 +5,7 @@
 
 UExInputSubsystem* UExInputSubsystem::GetInputSubsystem(const UObject* WorldContextObject)
 {
-	GET_GAMEINSTANCE_SUBSYSTEM(ExInputSystemLog, UExInputSubsystem, WorldContextObject);
+	GET_WORLD_SUBSYSTEM(ExInputSystemLog, UExInputSubsystem, WorldContextObject);
 }
 
 void UExInputSubsystem::TriggerInputTag(const UObject* WorldContextObject, const FGameplayTag& InputTag)
@@ -23,6 +23,30 @@ void UExInputSubsystem::TriggerInputTag(const UObject* WorldContextObject, const
 		return;
 	}
 	InputSubsystem->HandleInputEvent(InputTag);
+}
+
+void UExInputSubsystem::Initialize(FSubsystemCollectionBase& Collection)
+{
+	Super::Initialize(Collection);
+}
+
+void UExInputSubsystem::Deinitialize()
+{
+	Super::Deinitialize();
+}
+
+UInputActionHandler* UExInputSubsystem::CreateInputActionHandler(TSubclassOf<UInputActionHandler> InputHandlerClass)
+{
+	if (!InputHandlerClass)
+	{
+		return nullptr;
+	}
+	UInputActionHandler* Handler = NewObject<UInputActionHandler>(GetWorld(), InputHandlerClass);
+	if (Handler)
+	{
+		HandlerInstance.Add(Handler);
+	}
+	return Handler;
 }
 
 FInputHandleEvent* UExInputSubsystem::AddInputEvent(const FGameplayTag& InputTag, int32 Priority)
@@ -56,6 +80,11 @@ int32 UExInputSubsystem::FindInputEventIndex(int32 EventID)
 		}
 	}
 	return -1;
+}
+
+bool UExInputSubsystem::DoesSupportWorldType(const EWorldType::Type WorldType) const
+{
+	return WorldType == EWorldType::Game || WorldType == EWorldType::PIE;
 }
 
 bool UExInputSubsystem::RemoveInputEvent(int32 EventID)

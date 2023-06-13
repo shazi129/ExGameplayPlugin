@@ -1,17 +1,23 @@
 #include "ExInputTypes.h"
+#include "ExInputSubsystem.h"
 
-UInputActionHandler* FInputBindingConfig::GetInputHandler()
+UInputActionHandler* FInputBindingConfig::GetInputHandler(UWorld* ContextWorld)
 {
-	if (!CurrentHandler)
+	if (HandlerInstance == nullptr)
 	{
 		if (BindingType == EInputBindingType::E_Instanced)
 		{
-			CurrentHandler = InputHandler;
+			HandlerInstance = InputHandler;
 		}
 		else
 		{
-			CurrentHandler = SoftInputHandler.LoadSynchronous();
+			TSubclassOf<UInputActionHandler> HandlerClass = InputHandlerClass.LoadSynchronous();
+			if (HandlerClass)
+			{
+				HandlerInstance = UExInputSubsystem::GetInputSubsystem(ContextWorld)->CreateInputActionHandler(HandlerClass);
+			}
 		}
 	}
-	return CurrentHandler;
+
+	return HandlerInstance;
 }

@@ -27,7 +27,7 @@ FInputMappingResult UExInputLibrary::AddInputMappingConfig(FInputMappingConfig I
 	for (int i = 0; i < InputMappingConfig.InputBindings.Num(); i++)
 	{
 		FInputBindingConfig& BindingConfig = InputMappingConfig.InputBindings[i];
-		UInputActionHandler* InputActionHandler = BindingConfig.GetInputHandler();
+		UInputActionHandler* InputActionHandler = BindingConfig.GetInputHandler(InputComponent->GetWorld());
 
 		if (BindingConfig.InputAction != nullptr && InputActionHandler != nullptr)
 		{
