@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFeatureAction.h"
+#include "GameplayTags.h"
 #include "ModularActionData.generated.h"
 
 
@@ -10,8 +11,8 @@ struct EXGAMEFEATURES_API FModularActions
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere)
-	TArray<TObjectPtr<UGameFeatureAction>> Actions;
+	UPROPERTY(EditAnywhere, Instanced)
+	TArray<UGameFeatureAction*> Actions;
 
 	UPROPERTY(EditAnywhere)
 	bool ActivateDefault = false;

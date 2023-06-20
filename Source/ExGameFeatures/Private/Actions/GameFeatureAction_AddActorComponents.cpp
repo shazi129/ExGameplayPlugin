@@ -6,6 +6,7 @@
 #include "Engine/GameInstance.h"
 #include "GameFeaturesSubsystemSettings.h"
 #include "Engine/AssetManager.h"
+#include "ExGameFeaturesModule.h"
 
 #define LOCTEXT_NAMESPACE "ExGameFeatures"
 
@@ -62,12 +63,15 @@ EDataValidationResult UGameFeatureAction_AddActorComponents::IsDataValid(TArray<
 }
 #endif
 
-void UGameFeatureAction_AddActorComponents::AddToWorld(const FWorldContext& WorldContext)
+void UGameFeatureAction_AddActorComponents::AddToGameInstance(UGameInstance* GameInstance)
 {
-	UWorld* World = WorldContext.World();
-	UGameInstance* GameInstance = WorldContext.OwningGameInstance;
+	if (!GameInstance)
+	{
+		return;
+	}
 
-	if ((GameInstance != nullptr) && (World != nullptr) && World->IsGameWorld())
+	UWorld* World = GameInstance->GetWorld();
+	if (World != nullptr && World->IsGameWorld())
 	{
 		if (UGameFrameworkComponentManager* GFCM = UGameInstance::GetSubsystem<UGameFrameworkComponentManager>(GameInstance))
 		{
@@ -75,14 +79,15 @@ void UGameFeatureAction_AddActorComponents::AddToWorld(const FWorldContext& Worl
 			const bool bIsServer = NetMode != NM_Client;
 			const bool bIsClient = NetMode != NM_DedicatedServer;
 
-			UE_LOG(LogGameFeatures, Verbose, TEXT("Adding components for %s to world %s (client: %d, server: %d)"), *GetPathNameSafe(this), *World->GetDebugDisplayName(), bIsClient ? 1 : 0, bIsServer ? 1 : 0);
-			
 			for (const FAddActorComponentEntry& Entry : ComponentList)
 			{
+				EXIGAMEFEATURE_LOG(Log, TEXT("%s: %s --> %s (client: %d, server: %d)"), *FString(__FUNCTION__),
+					*Entry.ComponentClass.ToString(), *Entry.ActorClass.ToString(), bIsClient ? 1 : 0, bIsServer ? 1 : 0);
+
 				const bool bShouldAddRequest = (bIsServer && Entry.bServerComponent) || (bIsClient && Entry.bClientComponent);
 				if (bShouldAddRequest)
 				{
-					if (!Entry.ActorClass.IsNull())
+					if (!Entry.ActorClass.IsNull() && !Entry.ComponentClass.IsNull())
 					{
 						UE_SCOPED_ENGINE_ACTIVITY(TEXT("Adding component to world %s (%s)"), *World->GetDebugDisplayName(), *Entry.ComponentClass.ToString());
 						TSubclassOf<UActorComponent> ComponentClass = Entry.ComponentClass.LoadSynchronous();
@@ -90,9 +95,9 @@ void UGameFeatureAction_AddActorComponents::AddToWorld(const FWorldContext& Worl
 						{
 							ComponentRequestHandles.Add(GFCM->AddComponentRequest(Entry.ActorClass, ComponentClass));
 						}
-						else if (!Entry.ComponentClass.IsNull())
+						else
 						{
-							UE_LOG(LogGameFeatures, Error, TEXT("[GameFeatureData %s]: Failed to load component class %s. Not applying component."), *GetPathNameSafe(this), *Entry.ComponentClass.ToString());
+							EXIGAMEFEATURE_LOG(Log, TEXT("%s: cannot load component class:%s"), *FString(__FUNCTION__), *Entry.ComponentClass.ToString());
 						}
 					}
 				}

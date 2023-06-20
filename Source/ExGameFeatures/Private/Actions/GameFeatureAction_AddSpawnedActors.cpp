@@ -3,6 +3,7 @@
 #include "Actions/GameFeatureAction_AddSpawnedActors.h"
 #include "Engine/AssetManager.h"
 #include "GameFeaturesSubsystemSettings.h"
+#include "ExGameplayLibrary.h"
 
 #define LOCTEXT_NAMESPACE "ExGameFeatures"
 
@@ -73,11 +74,12 @@ void UGameFeatureAction_AddSpawnedActors::AddToWorld(const FWorldContext& WorldC
 		{
 			if (!Entry.TargetWorld.IsNull())
 			{
-				UWorld* TargetWorld = Entry.TargetWorld.Get();
-				if (TargetWorld && TargetWorld->GetName() != World->GetName())
+				FString TargetWorldPath = Entry.TargetWorld.GetLongPackageName();
+				FString CurrentWorldPath = UExGameplayLibrary::GetPackageFullName(World);
+				if (TargetWorldPath != CurrentWorldPath)
 				{
 					// This system is intended for a specific world (not this one)
-					UE_LOG(LogTemp, Log, TEXT("UGameFeatureAction_AddSpawnedActors.AddToWorld ignore, Current World[%s],  Target World[%s]"), *(World->GetName()), *(TargetWorld->GetName()));
+					UE_LOG(LogTemp, Log, TEXT("%s ignore, Current World[%s],  Target World[%s]"), *FString(__FUNCTION__), *CurrentWorldPath, *TargetWorldPath);
 					continue;
 				}
 			}

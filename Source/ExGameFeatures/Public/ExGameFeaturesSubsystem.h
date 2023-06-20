@@ -12,7 +12,8 @@ struct EXGAMEFEATURES_API FModularActionsInstance
 {
 	GENERATED_BODY()
 
-	FModularActions ModularActrions;
+	UPROPERTY()
+	TArray<TSoftObjectPtr<UGameFeatureAction>> ModularActrions;
 
 	bool IsActivated = false;
 
@@ -48,7 +49,7 @@ public:
 	bool DeactivateModule(const FGameplayTag& ModularTag);
 
 	UFUNCTION(BlueprintCallable)
-	bool LoadModuarActionData(TSoftObjectPtr<UModularActionsAssetData> ModularActionData);
+	bool LoadModuarActionData(TSoftObjectPtr<UModularActionsAssetData> ModularActionAssetData);
 
 private:
 	bool LoadDefaultModularActions();

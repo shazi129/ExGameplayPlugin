@@ -70,7 +70,7 @@ void UGameFeatureAction_WorldActionBase::OnGameFeatureActivating()
 	for (const FWorldContext& WorldContext : WorldContextList)
 	{
 		UWorld* World = WorldContext.World();
-		if (World->HasBegunPlay())
+		if (World && World->HasBegunPlay())
 		{
 			HandleWorld(World);
 		}

@@ -38,9 +38,18 @@ bool UExGameFeaturesSubsystem::AddModularActions(const FGameplayTag& ModularTag,
 		return false;
 	}
 
+	EXIGAMEFEATURE_LOG(Log, TEXT("%s: %s, ActivateDefault:%d"), *FString(__FUNCTION__), *ModularTag.ToString(), ModularActions.ActivateDefault);
+
+	//填充Instance
 	FModularActionsInstance& Instance = ModularActionsMap.Add(ModularTag);
-	Instance.ModularActrions = ModularActions;
-	if (Instance.ModularActrions.ActivateDefault)
+	for (auto Action : ModularActions.Actions)
+	{
+		Instance.ModularActrions.Add(Action);
+	}
+	Instance.IsActivated = false;
+
+	//如果是默认需要激活
+	if (ModularActions.ActivateDefault)
 	{
 		ActivateModule(ModularTag);
 	}

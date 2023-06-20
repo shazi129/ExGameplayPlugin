@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Actions/GameFeatureAction_WorldActionBase.h"
+#include "Actions/GameFeatureAction_GameInstanceActionBase.h"
 #include "GameFeaturesSubsystem.h"
 #include "GameFeatureAction_AddActorComponents.generated.h"
 
@@ -33,7 +33,7 @@ struct EXGAMEFEATURES_API FAddActorComponentEntry
 };
 
 UCLASS(MinimalAPI, meta = (DisplayName = "Add Actor Components"))
-class UGameFeatureAction_AddActorComponents final : public UGameFeatureAction_WorldActionBase
+class UGameFeatureAction_AddActorComponents final : public UGameFeatureAction_GameInstanceActionBase
 {
 	GENERATED_BODY()
 
@@ -55,9 +55,9 @@ public:
 	UPROPERTY(EditAnywhere, Category="Components", meta=(TitleProperty="{ActorClass} -> {ComponentClass}"))
 	TArray<FAddActorComponentEntry> ComponentList;
 
+protected:
+	virtual void AddToGameInstance(UGameInstance* GameInstance) override;
 private:
 
 	TArray<TSharedPtr<FComponentRequestHandle>> ComponentRequestHandles;
-
-	void AddToWorld(const FWorldContext& WorldContext);
 };
