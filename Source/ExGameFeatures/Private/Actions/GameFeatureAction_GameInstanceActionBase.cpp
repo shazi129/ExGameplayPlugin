@@ -5,8 +5,6 @@ void UGameFeatureAction_GameInstanceActionBase::OnGameFeatureActivating()
 {
 	EXIGAMEFEATURE_LOG(Log, TEXT("%s %s"), *FString(__FUNCTION__), *(GetName()));
 	
-	TMap<UGameInstance*, int> HandledGameInstance;
-
 	for (const FWorldContext& WorldContext : GEngine->GetWorldContexts())
 	{
 		UWorld* World = WorldContext.World();
@@ -14,10 +12,9 @@ void UGameFeatureAction_GameInstanceActionBase::OnGameFeatureActivating()
 		{
 			if (UGameInstance* GameInstance = World->GetGameInstance())
 			{
-				if (!HandledGameInstance.Contains(GameInstance))
+				if (HandledGameInstances.Find(GameInstance) == INDEX_NONE && AddToGameInstance(GameInstance))
 				{
-					AddToGameInstance(GameInstance);
-					HandledGameInstance.Add(GameInstance, 1);
+					HandledGameInstances.Add(GameInstance);
 				}
 			}
 		}
@@ -30,15 +27,24 @@ void UGameFeatureAction_GameInstanceActionBase::OnGameFeatureDeactivating(FGameF
 {
 	EXIGAMEFEATURE_LOG(Log, TEXT("%s %s"), *FString(__FUNCTION__), *(GetName()));
 	FWorldDelegates::OnStartGameInstance.Remove(GameInstanceStartHandle);
+	HandledGameInstances.Reset();
 }
 
-void UGameFeatureAction_GameInstanceActionBase::AddToGameInstance(UGameInstance* GameInstance)
+FString UGameFeatureAction_GameInstanceActionBase::ToString() const
 {
-	
+	return GetNameSafe(this);
+}
+
+bool UGameFeatureAction_GameInstanceActionBase::AddToGameInstance(UGameInstance* GameInstance)
+{
+	return false;
 }
 
 void UGameFeatureAction_GameInstanceActionBase::HandleGameInstanceStart(UGameInstance* GameInstance)
 {
-	EXIGAMEFEATURE_LOG(Log, TEXT("%s %s"), *FString(__FUNCTION__), *(GetName()));
-	AddToGameInstance(GameInstance);
+	if (HandledGameInstances.Find(GameInstance) == INDEX_NONE && AddToGameInstance(GameInstance))
+	{
+		EXIGAMEFEATURE_LOG(Log, TEXT("%s %s"), *FString(__FUNCTION__), *(GetName()));
+		HandledGameInstances.Add(GameInstance);
+	}
 }

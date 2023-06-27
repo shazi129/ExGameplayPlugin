@@ -15,10 +15,15 @@ public:
 	virtual void OnGameFeatureDeactivating(FGameFeatureDeactivatingContext& Context) override;
 	//~ End UGameFeatureAction interface
 
+	virtual FString ToString() const;
+
 protected:
-	virtual void AddToGameInstance(UGameInstance* GameInstance);
+	virtual bool AddToGameInstance(UGameInstance* GameInstance);
 
 private:
 	void HandleGameInstanceStart(UGameInstance* GameInstance);
 	FDelegateHandle GameInstanceStartHandle;
+
+	UPROPERTY()
+		TArray<UGameInstance*> HandledGameInstances;
 };

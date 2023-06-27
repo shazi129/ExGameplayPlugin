@@ -63,47 +63,54 @@ EDataValidationResult UGameFeatureAction_AddActorComponents::IsDataValid(TArray<
 }
 #endif
 
-void UGameFeatureAction_AddActorComponents::AddToGameInstance(UGameInstance* GameInstance)
+bool UGameFeatureAction_AddActorComponents::AddToGameInstance(UGameInstance* GameInstance)
 {
 	if (!GameInstance)
 	{
-		return;
+		return false;
 	}
 
 	UWorld* World = GameInstance->GetWorld();
-	if (World != nullptr && World->IsGameWorld())
+	if (!World  || !World->IsGameWorld())
 	{
-		if (UGameFrameworkComponentManager* GFCM = UGameInstance::GetSubsystem<UGameFrameworkComponentManager>(GameInstance))
+		return false;
+	}
+
+	UGameFrameworkComponentManager* GFCM = UGameInstance::GetSubsystem<UGameFrameworkComponentManager>(GameInstance);
+	if (!GFCM)
+	{
+		EXIGAMEFEATURE_LOG(Error, TEXT("%s error: GFCM is null"), *FString(__FUNCTION__));
+		return false;
+	}
+
+	const ENetMode NetMode = World->GetNetMode();
+	const bool bIsServer = NetMode == NM_DedicatedServer || NetMode == NM_ListenServer;
+	const bool bIsClient = !bIsServer;
+
+	for (const FAddActorComponentEntry& Entry : ComponentList)
+	{
+		EXIGAMEFEATURE_LOG(Log, TEXT("%s: %s --> %s, NetMode:%d (client: %d, server: %d), Instance:%p"), *FString(__FUNCTION__),
+			*Entry.ComponentClass.ToString(), *Entry.ActorClass.ToString(), NetMode, bIsClient ? 1 : 0, bIsServer ? 1 : 0, GameInstance);
+
+		const bool bShouldAddRequest = (bIsServer && Entry.bServerComponent) || (bIsClient && Entry.bClientComponent);
+		if (bShouldAddRequest)
 		{
-			const ENetMode NetMode = World->GetNetMode();
-			const bool bIsServer = NetMode != NM_Client;
-			const bool bIsClient = NetMode != NM_DedicatedServer;
-
-			for (const FAddActorComponentEntry& Entry : ComponentList)
+			if (!Entry.ActorClass.IsNull() && !Entry.ComponentClass.IsNull())
 			{
-				EXIGAMEFEATURE_LOG(Log, TEXT("%s: %s --> %s (client: %d, server: %d)"), *FString(__FUNCTION__),
-					*Entry.ComponentClass.ToString(), *Entry.ActorClass.ToString(), bIsClient ? 1 : 0, bIsServer ? 1 : 0);
-
-				const bool bShouldAddRequest = (bIsServer && Entry.bServerComponent) || (bIsClient && Entry.bClientComponent);
-				if (bShouldAddRequest)
+				UE_SCOPED_ENGINE_ACTIVITY(TEXT("Adding component to world %s (%s)"), *World->GetDebugDisplayName(), *Entry.ComponentClass.ToString());
+				TSubclassOf<UActorComponent> ComponentClass = Entry.ComponentClass.LoadSynchronous();
+				if (ComponentClass)
 				{
-					if (!Entry.ActorClass.IsNull() && !Entry.ComponentClass.IsNull())
-					{
-						UE_SCOPED_ENGINE_ACTIVITY(TEXT("Adding component to world %s (%s)"), *World->GetDebugDisplayName(), *Entry.ComponentClass.ToString());
-						TSubclassOf<UActorComponent> ComponentClass = Entry.ComponentClass.LoadSynchronous();
-						if (ComponentClass)
-						{
-							ComponentRequestHandles.Add(GFCM->AddComponentRequest(Entry.ActorClass, ComponentClass));
-						}
-						else
-						{
-							EXIGAMEFEATURE_LOG(Log, TEXT("%s: cannot load component class:%s"), *FString(__FUNCTION__), *Entry.ComponentClass.ToString());
-						}
-					}
+					ComponentRequestHandles.Add(GFCM->AddComponentRequest(Entry.ActorClass, ComponentClass));
+				}
+				else
+				{
+					EXIGAMEFEATURE_LOG(Log, TEXT("%s: cannot load component class:%s"), *FString(__FUNCTION__), *Entry.ComponentClass.ToString());
 				}
 			}
 		}
 	}
+	return true;
 }
 
 #undef LOCTEXT_NAMESPACE

@@ -56,7 +56,7 @@ public:
 	TArray<FAddActorComponentEntry> ComponentList;
 
 protected:
-	virtual void AddToGameInstance(UGameInstance* GameInstance) override;
+	virtual bool AddToGameInstance(UGameInstance* GameInstance) override;
 private:
 
 	TArray<TSharedPtr<FComponentRequestHandle>> ComponentRequestHandles;

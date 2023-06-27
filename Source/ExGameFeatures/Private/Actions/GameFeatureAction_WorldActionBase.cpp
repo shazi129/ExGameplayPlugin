@@ -128,3 +128,8 @@ void UGameFeatureAction_WorldActionBase::OnWorldTearDown(UWorld* InWorld)
 	UE_LOG(LogTemp, Log, TEXT("UGameFeatureAction_WorldActionBase.HandleWorldTearDown[%s], World[%s]"), *(this->GetName()), *(InWorld->GetName()));
 	RemoveHandledWord(InWorld);
 }
+
+FString UGameFeatureAction_WorldActionBase::ToString() const
+{
+	return GetNameSafe(this);
+}

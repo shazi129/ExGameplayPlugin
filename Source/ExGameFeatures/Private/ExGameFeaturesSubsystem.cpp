@@ -6,6 +6,9 @@
 void UExGameFeaturesSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
+
+	Collection.InitializeDependency(UGameFrameworkComponentManager::StaticClass());
+
 	LoadDefaultModularActions();
 
 #if UE_WITH_CHEAT_MANAGER
@@ -65,6 +68,7 @@ bool UExGameFeaturesSubsystem::RemoveModularActions(const FGameplayTag& ModularT
 		return true;
 	}
 
+	EXIGAMEFEATURE_LOG(Log, TEXT("%s: %s"), *FString(__FUNCTION__), *ModularTag.ToString());
 	if (Instance->IsActivated)
 	{
 		ActivateModule(ModularTag);
@@ -80,11 +84,12 @@ bool UExGameFeaturesSubsystem::ActivateModule(const FGameplayTag& ModularTag)
 	FModularActionsInstance* Instance = ModularActionsMap.Find(ModularTag);
 	if (!Instance)
 	{
-		EXIGAMEFEATURE_LOG(Error, TEXT("%s error: No ModuleTag[%s]"));
+		EXIGAMEFEATURE_LOG(Error, TEXT("%s error: No ModuleTag[%s]"), *FString(__FUNCTION__), *ModularTag.ToString());
 		return false;
 	}
 
-	for (auto& GameFeatureAction : Instance->ModularActrions.Actions)
+	EXIGAMEFEATURE_LOG(Log, TEXT("%s: %s, Action Num: %d"), *FString(__FUNCTION__), *ModularTag.ToString(), Instance->ModularActrions.Num());
+	for (auto& GameFeatureAction : Instance->ModularActrions)
 	{
 		if (GameFeatureAction)
 		{
@@ -105,9 +110,10 @@ bool UExGameFeaturesSubsystem::DeactivateModule(const FGameplayTag& ModularTag)
 		return false;
 	}
 	
-	for (auto& GameFeatureAction : Instance->ModularActrions.Actions)
+	EXIGAMEFEATURE_LOG(Log, TEXT("%s: %s"), *FString(__FUNCTION__), *ModularTag.ToString());
+	for (auto& GameFeatureAction : Instance->ModularActrions)
 	{
-		if (GameFeatureAction)
+		if (!GameFeatureAction.IsNull() && GameFeatureAction.IsValid())
 		{
 			FGameFeatureDeactivatingContext Context(nullptr);
 			GameFeatureAction->OnGameFeatureDeactivating(Context);
@@ -118,11 +124,11 @@ bool UExGameFeaturesSubsystem::DeactivateModule(const FGameplayTag& ModularTag)
 	return true;
 }
 
-bool UExGameFeaturesSubsystem::LoadModuarActionData(TSoftObjectPtr<UModularActionsAssetData> ModularActionData)
+bool UExGameFeaturesSubsystem::LoadModuarActionData(TSoftObjectPtr<UModularActionsAssetData> ModularActionAssetData)
 {
-	if (!ModularActionData.IsNull())
+	if (!ModularActionAssetData.IsNull())
 	{
-		UModularActionsAssetData* ActionsDataPtr = ModularActionData.LoadSynchronous();
+		UModularActionsAssetData* ActionsDataPtr = ModularActionAssetData.LoadSynchronous();
 
 		for (const auto& ModularActionData : ActionsDataPtr->ModularActionsMap)
 		{
@@ -149,6 +155,17 @@ void UExGameFeaturesSubsystem::OnCheatCreate(UCheatManager* CheatManager)
 
 FString FModularActionsInstance::ToString() const
 {
-	FString Content = FString::Printf(TEXT("Activate: %d"), IsActivated);
+	FString Content = FString::Printf(TEXT("Activate: %d\n\tActions:\n"), IsActivated);
+	for (auto Action : ModularActrions)
+	{
+		if (Action.IsNull() || !Action.IsValid())
+		{
+			Content += FString::Printf(TEXT("\t\tNULL\n"));
+		}
+		else
+		{
+			Content += FString::Printf(TEXT("\t\t%s\n"), *Action.ToString());
+		}
+	}
 	return Content;
 }

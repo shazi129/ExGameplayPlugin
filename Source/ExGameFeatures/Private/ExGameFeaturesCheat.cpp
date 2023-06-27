@@ -49,6 +49,7 @@ void UExGameFeaturesCheat::ShowModularActions()
 	{
 		Content.Append(FString::Printf(TEXT("\t%s --> %s\n"), *ModularActionsItem.Key.ToString(), *ModularActionsItem.Value.ToString()));
 	}
+	EXIGAMEFEATURE_LOG(Error, TEXT("%s: %s"), *FString(__FUNCTION__), *Content);
 }
 
 void UExGameFeaturesCheat::ShowUsage()

@@ -39,6 +39,8 @@ public:
 	void OnWorldBeginplay(UWorld* InWorld);
 	void OnWorldTearDown(UWorld* InWorld);
 
+	virtual FString ToString() const;
+
 private:
 	virtual void AddToWorld(const FWorldContext& WorldContext) PURE_VIRTUAL(UGameFeatureAction_WorldActionBase::AddToWorld,);
 

@@ -4,6 +4,7 @@
 #include "Engine/AssetManager.h"
 #include "GameFeaturesSubsystemSettings.h"
 #include "ExGameplayLibrary.h"
+#include "ExGameFeaturesModule.h"
 
 #define LOCTEXT_NAMESPACE "ExGameFeatures"
 
@@ -60,15 +61,13 @@ EDataValidationResult UGameFeatureAction_AddSpawnedActors::IsDataValid(TArray<FT
 
 void UGameFeatureAction_AddSpawnedActors::AddToWorld(const FWorldContext& WorldContext)
 {
-	UE_LOG(LogTemp, Log, TEXT("UGameFeatureAction_AddSpawnedActors.AddToWorld start"));
 	UWorld* World = WorldContext.World();
 
 	if ((World != nullptr) && World->IsGameWorld())
 	{
 		const ENetMode NetMode = World->GetNetMode();
-		const bool bIsServer = NetMode != NM_Client;
-		const bool bIsClient = NetMode != NM_DedicatedServer;
-		UE_LOG(LogTemp, Verbose, TEXT("Adding Actor for %s to world %s (client: %d, server: %d)"), *GetPathNameSafe(this), *World->GetDebugDisplayName(), bIsClient ? 1 : 0, bIsServer ? 1 : 0);
+		const bool bIsServer = NetMode == NM_DedicatedServer || NetMode == NM_ListenServer;
+		const bool bIsClient = !bIsServer;
 
 		for (const FSpawningWorldActorsEntry& Entry : ActorsList)
 		{
@@ -86,6 +85,8 @@ void UGameFeatureAction_AddSpawnedActors::AddToWorld(const FWorldContext& WorldC
 
 			for (const FSpawningActorEntry& ActorEntry : Entry.Actors)
 			{
+				EXIGAMEFEATURE_LOG(Log, TEXT("%s: %s --> %s, NetMode:%d (client: %d, server: %d)"), *FString(__FUNCTION__), *GetNameSafe(ActorEntry.ActorType), *GetNameSafe(World), NetMode, bIsClient ? 1 : 0, bIsServer ? 1 : 0);
+
 				bool ShouldSpawn = (bIsServer && ActorEntry.bServerActor) || (bIsClient && ActorEntry.bClientActor);
 				if (ShouldSpawn && ActorEntry.ActorType != nullptr)
 				{
