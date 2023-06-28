@@ -5,7 +5,7 @@
 #include "Modular/ModularActionData.h"
 #include "ExGameFeaturesSettings.generated.h"
 
-UCLASS(Config = Gameplay, defaultconfig, meta = (DisplayName = "Gameplay Extension"))
+UCLASS(Config = Gameplay, defaultconfig, meta = (DisplayName = "GameFeatures"))
 class EXGAMEFEATURES_API UExGameFeaturesSettings : public UDeveloperSettings
 {
 	GENERATED_BODY()
@@ -13,12 +13,12 @@ class EXGAMEFEATURES_API UExGameFeaturesSettings : public UDeveloperSettings
 public:
 	UExGameFeaturesSettings()
 	{
-		CategoryName = "Game";
+		CategoryName = "Extension Gameplay";
 	}
 
 	UPROPERTY(Config, EditAnywhere, Category = "GameFeatures")
 		TArray<FString> DefaultGameFeatures;
 
 	UPROPERTY(Config, EditAnywhere, Category = "GameFeatures")
-		TSoftObjectPtr<UModularActionsAssetData> ModularActionData;
+		TArray<TSoftObjectPtr<UModularActionsAssetData>> ModularActionDatas;
 };

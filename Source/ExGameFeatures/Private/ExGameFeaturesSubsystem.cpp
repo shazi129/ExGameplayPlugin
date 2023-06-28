@@ -129,6 +129,11 @@ bool UExGameFeaturesSubsystem::LoadModuarActionData(TSoftObjectPtr<UModularActio
 	if (!ModularActionAssetData.IsNull())
 	{
 		UModularActionsAssetData* ActionsDataPtr = ModularActionAssetData.LoadSynchronous();
+		if (!ActionsDataPtr)
+		{
+			EXIGAMEFEATURE_LOG(Error, TEXT("%s error: cannot load %s"), *FString(__FUNCTION__), *ModularActionAssetData.ToString());
+			return false;
+		}
 
 		for (const auto& ModularActionData : ActionsDataPtr->ModularActionsMap)
 		{
@@ -141,8 +146,12 @@ bool UExGameFeaturesSubsystem::LoadModuarActionData(TSoftObjectPtr<UModularActio
 
 bool UExGameFeaturesSubsystem::LoadDefaultModularActions()
 {
-	TSoftObjectPtr<UModularActionsAssetData>& ActionsDataConfig = GetMutableDefault<UExGameFeaturesSettings>()->ModularActionData;
-	return LoadModuarActionData(ActionsDataConfig);
+	auto& ActionsDataConfigs = GetMutableDefault<UExGameFeaturesSettings>()->ModularActionDatas;
+	for (auto& ActionsDataConfig : ActionsDataConfigs)
+	{
+		LoadModuarActionData(ActionsDataConfig);
+	}
+	return true;
 }
 
 void UExGameFeaturesSubsystem::OnCheatCreate(UCheatManager* CheatManager)
