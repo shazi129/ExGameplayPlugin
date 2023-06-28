@@ -24,6 +24,7 @@ class EXGAMEPLAYLIBRARY_API UPlatformLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
+public:
 	UFUNCTION(BlueprintPure, Category = "PlatformLibrary")
 		static FString GetComputerName();
 
@@ -38,4 +39,7 @@ class EXGAMEPLAYLIBRARY_API UPlatformLibrary : public UBlueprintFunctionLibrary
 
 	UFUNCTION(BlueprintPure, Category = "PlatformLibrary")
 		static FORCEINLINE double Seconds() { return FPlatformTime::Seconds(); }
+
+	UFUNCTION(BlueprintCallable, Category = "PlatformLibrary")
+		static void ClipboardCopy(const FString& Value);
 };

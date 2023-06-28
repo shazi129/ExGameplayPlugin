@@ -34,3 +34,12 @@ FMemoryInfo UPlatformLibrary::GetMemoryInfo()
 	MemoryInfo.TotalPhysicalGB = data.TotalPhysicalGB;
 	return MemoryInfo;
 }
+
+void UPlatformLibrary::ClipboardCopy(const FString& Value)
+{
+#if PLATFORM_WINDOWS
+	return FWindowsPlatformMisc::ClipboardCopy(*Value);
+#else
+	return FGenericPlatformMisc::ClipboardCopy(*Value);
+#endif
+}
