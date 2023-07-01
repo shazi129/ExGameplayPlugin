@@ -7,6 +7,8 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/ExCharacter.h"
 #include "PlatformLibrary.h"
+#include "GameFramework/ExCharacterMovementComponent.h"
+#include "ExGameplayLibrary.h"
 
 void UExCheatManagerExtension::LogAndCopyToClipboard(const FString Value)
 {
@@ -74,10 +76,16 @@ void UExCheatManagerExtension::ShowLevelInfo()
 #pragma region Character相关的Cheat
 void UExCheatManagerExtension::Character(const FString& Param)
 {
+	int IntValue = 0;
 	ACharacter* Character = UGameplayStatics::GetPlayerCharacter(this, 0);
+
 	if (UKismetSystemLibrary::ParseParam(Param, "ShowComponents"))
 	{
 		ShowActorComponets(Character);
+	}
+	else if (UExGameplayLibrary::ParseParamIntValue(Param, "-SyncMovement=", IntValue))
+	{
+		SetSyncCharacterMovement(Character, IntValue == 0 ? false : true);
 	}
 	else
 	{
@@ -89,7 +97,19 @@ void UExCheatManagerExtension::ShowCharacterUsage()
 {
 	FString Usage;
 	Usage.Append(FString::Printf(TEXT("Character -ShowComponents")));
+	Usage.Append(FString::Printf(TEXT("\t\t-SyncMovement=0|1")));
 	LogAndCopyToClipboard(Usage);
+}
+void UExCheatManagerExtension::SetSyncCharacterMovement(ACharacter* Character, bool Sync)
+{
+	UExCharacterMovementComponent* MovementComponent = Cast<UExCharacterMovementComponent>(Character->GetMovementComponent());
+	if (!MovementComponent)
+	{
+		EXGAMEPLAY_LOG(Error, TEXT("Cannot Get UExCharacterMovementComponent"));
+		return;
+	}
+
+	MovementComponent->SetMovementSyncEnable(Sync);
 }
 #pragma endregion
 

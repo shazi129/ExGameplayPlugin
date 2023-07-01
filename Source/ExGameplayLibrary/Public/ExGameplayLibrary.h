@@ -88,4 +88,16 @@ public:
 	//单独对某个Actor做LineTrace
 	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary")
 	static bool ActorLineTraceSingle(AActor* Actor, FHitResult& OutHit, const FVector& Start, const FVector& End, ECollisionChannel TraceChannel);
+
+	/**
+	 * @brief 在参数列表中获取指定的int值，例如对于参数Param：-MaxFps=100 -AutoTest
+	 * 可以使用ParseParamIntValue(Param, "-MaxFps=", OutValue)将MaxFps的值100写入参数OutValue中
+	 * 
+	 * @param InString 参数字符串
+	 * @param InParam  指定的参数项
+	 * @param OutValue  获取到的参数项的int值
+	 * @return 是否获取成功，当参数字符串中没有需要的参数项时，返回false
+	*/
+	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary")
+	static bool ParseParamIntValue(const FString& InString, const FString& InParam, int& OutValue);
 };

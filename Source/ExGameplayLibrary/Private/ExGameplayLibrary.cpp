@@ -442,3 +442,16 @@ bool UExGameplayLibrary::ActorLineTraceSingle(AActor* Actor, FHitResult& OutHit,
 	}
 	return false;
 }
+
+bool UExGameplayLibrary::ParseParamIntValue(const FString& InString, const FString& InParam, int& OutValue)
+{
+	FString ParamStringValue;
+	bool Result = UKismetSystemLibrary::ParseParamValue(InString, InParam, ParamStringValue);
+	if (Result && !ParamStringValue.IsEmpty())
+	{
+		OutValue = FCString::Atoi(*ParamStringValue);
+		return true;
+	}
+	
+	return false;
+}

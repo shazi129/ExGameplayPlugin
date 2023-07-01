@@ -33,6 +33,7 @@ public:
 
 private:
 	void ShowCharacterUsage();
+	void SetSyncCharacterMovement(ACharacter* Character, bool Sync);
 #pragma endregion
 
 private:
