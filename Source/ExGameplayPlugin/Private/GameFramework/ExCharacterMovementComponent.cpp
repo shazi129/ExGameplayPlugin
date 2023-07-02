@@ -12,14 +12,6 @@ void UExCharacterMovementComponent::SetMovementSyncEnable(bool Value)
 	bMovementSyncEnable = Value;
 }
 
-void UExCharacterMovementComponent::ReplicateMoveToServer(float DeltaTime, const FVector& NewAcceleration)
-{
-	//if (bMovementSyncEnable)
-	{
-		Super::ReplicateMoveToServer(DeltaTime, NewAcceleration);
-	}
-}
-
 void UExCharacterMovementComponent::CallServerMovePacked(const FSavedMove_Character* NewMove, const FSavedMove_Character* PendingMove, const FSavedMove_Character* OldMove)
 {
 	if (bMovementSyncEnable)
