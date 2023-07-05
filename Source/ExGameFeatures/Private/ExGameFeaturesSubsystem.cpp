@@ -30,6 +30,9 @@ void UExGameFeaturesSubsystem::Deinitialize()
 		DeactivateModule(ModularActionsItem.Key);
 	}
 
+	ModularActionsMap.Empty();
+	ModularActionAssetMap.Empty();
+
 	Super::Deinitialize();
 }
 
@@ -128,6 +131,16 @@ bool UExGameFeaturesSubsystem::LoadModuarActionData(TSoftObjectPtr<UModularActio
 {
 	if (!ModularActionAssetData.IsNull())
 	{
+		FString AssetPackageName = ModularActionAssetData.GetLongPackageName();
+
+		//已经加载过了
+		if (ModularActionAssetMap.Contains(AssetPackageName))
+		{
+			EXIGAMEFEATURE_LOG(Warning, TEXT("%s warning: ignore duplicate asset %s"), *FString(__FUNCTION__), *AssetPackageName);
+			return false;
+		}
+
+		//加载资源
 		UModularActionsAssetData* ActionsDataPtr = ModularActionAssetData.LoadSynchronous();
 		if (!ActionsDataPtr)
 		{
@@ -135,6 +148,10 @@ bool UExGameFeaturesSubsystem::LoadModuarActionData(TSoftObjectPtr<UModularActio
 			return false;
 		}
 
+		//保存，防止资源被释放
+		ModularActionAssetMap.Add(AssetPackageName, ActionsDataPtr);
+
+		//建立tag -> Action的索引
 		for (const auto& ModularActionData : ActionsDataPtr->ModularActionsMap)
 		{
 			AddModularActions(ModularActionData.Key, ModularActionData.Value);

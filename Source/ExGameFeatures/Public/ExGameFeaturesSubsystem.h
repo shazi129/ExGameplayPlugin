@@ -56,7 +56,11 @@ private:
 	void OnCheatCreate(UCheatManager* CheatManager);
 
 private:
-	TMap<FGameplayTag, FModularActionsInstance> ModularActionsMap;
+	UPROPERTY(Transient)
+		TMap<FGameplayTag, FModularActionsInstance> ModularActionsMap;
+
+	UPROPERTY(Transient)
+		TMap<FString, TObjectPtr<UModularActionsAssetData>> ModularActionAssetMap;
 
 	FDelegateHandle CheatCreateHandle;
 };

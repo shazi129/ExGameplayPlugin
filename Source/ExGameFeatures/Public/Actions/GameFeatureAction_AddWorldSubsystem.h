@@ -1,3 +1,4 @@
+
 #pragma once
 
 #include "Actions/GameFeatureAction_WorldActionBase.h"
@@ -25,7 +26,7 @@ struct FAddWorldSubsystemEntry
 	{
 	}
 };
-
+/*
 USTRUCT()
 struct FAddWorldSubsystemEntries
 {
@@ -67,3 +68,4 @@ private:
 	virtual void AddToWorld(const FWorldContext& WorldContext) override;
 	//~ End UGameFeatureAction_WorldActionBase interface
 };
+*/

@@ -69,6 +69,8 @@ void UGameFeatureAction_AddSpawnedActors::AddToWorld(const FWorldContext& WorldC
 		const bool bIsServer = NetMode == NM_DedicatedServer || NetMode == NM_ListenServer;
 		const bool bIsClient = !bIsServer;
 
+		EXIGAMEFEATURE_LOG(Log, TEXT("%s start, Actor num: %d, NetMode:%d (client: %d, server: %d)"), *FString(__FUNCTION__), ActorsList.Num(), NetMode, bIsClient ? 1 : 0, bIsServer ? 1 : 0);
+
 		for (const FSpawningWorldActorsEntry& Entry : ActorsList)
 		{
 			if (!Entry.TargetWorld.IsNull())
@@ -85,9 +87,9 @@ void UGameFeatureAction_AddSpawnedActors::AddToWorld(const FWorldContext& WorldC
 
 			for (const FSpawningActorEntry& ActorEntry : Entry.Actors)
 			{
+				bool ShouldSpawn = (bIsServer && ActorEntry.bServerActor) || (bIsClient && ActorEntry.bClientActor);
 				EXIGAMEFEATURE_LOG(Log, TEXT("%s: %s --> %s, NetMode:%d (client: %d, server: %d)"), *FString(__FUNCTION__), *GetNameSafe(ActorEntry.ActorType), *GetNameSafe(World), NetMode, bIsClient ? 1 : 0, bIsServer ? 1 : 0);
 
-				bool ShouldSpawn = (bIsServer && ActorEntry.bServerActor) || (bIsClient && ActorEntry.bClientActor);
 				if (ShouldSpawn && ActorEntry.ActorType != nullptr)
 				{
 					AActor* NewActor = World->SpawnActor<AActor>(ActorEntry.ActorType, ActorEntry.SpawnTransform);

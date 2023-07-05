@@ -2,6 +2,7 @@
 #include "ExGameFeaturesModule.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "ExGameFeaturesSubsystem.h"
+#include "ExMacros.h"
 
 FGameplayTag UExGameFeaturesCheat::ParseParamTagValue(const FString& Param, const FString& Name)
 {
@@ -49,7 +50,7 @@ void UExGameFeaturesCheat::ShowModularActions()
 	{
 		Content.Append(FString::Printf(TEXT("\t%s --> %s\n"), *ModularActionsItem.Key.ToString(), *ModularActionsItem.Value.ToString()));
 	}
-	EXIGAMEFEATURE_LOG(Error, TEXT("%s: %s"), *FString(__FUNCTION__), *Content);
+	LOG_AND_COPY(LogExGameFeatures, Log, Content);
 }
 
 void UExGameFeaturesCheat::ShowUsage()
@@ -57,7 +58,7 @@ void UExGameFeaturesCheat::ShowUsage()
 	FString Usage;
 	Usage.Append(FString::Printf(TEXT("\nExGF -ShowModularActions\n")));
 	Usage.Append(FString::Printf(TEXT("\t-Activate=A.B.C  -Deactivate=A.B.C\n")));
-	EXIGAMEFEATURE_LOG(Error, TEXT("%s: %s"), *FString(__FUNCTION__), *Usage);
+	LOG_AND_COPY(LogExGameFeatures, Log, Usage);
 }
 
 void UExGameFeaturesCheat::ActivateActions(const FString& Tag)

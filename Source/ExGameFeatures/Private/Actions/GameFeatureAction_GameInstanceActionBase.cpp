@@ -30,10 +30,6 @@ void UGameFeatureAction_GameInstanceActionBase::OnGameFeatureDeactivating(FGameF
 	HandledGameInstances.Reset();
 }
 
-FString UGameFeatureAction_GameInstanceActionBase::ToString() const
-{
-	return GetNameSafe(this);
-}
 
 bool UGameFeatureAction_GameInstanceActionBase::AddToGameInstance(UGameInstance* GameInstance)
 {

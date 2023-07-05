@@ -2,8 +2,7 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GameFeatureAction.h"
+#include "Actions/GameFeatureAction_ActionBase.h"
 #include "Engine/World.h" // for FWorldDelegates::OnStartGameInstance
 #include "GameFeatureAction_WorldActionBase.generated.h"
 
@@ -26,7 +25,7 @@ struct FGameFeatureActionWorldInfo
  * Base class for GameFeatureActions that wish to do something world specific.
  */
 UCLASS(Abstract)
-class UGameFeatureAction_WorldActionBase : public UGameFeatureAction
+class UGameFeatureAction_WorldActionBase : public UGameFeatureAction_ActionBase
 {
 	GENERATED_BODY()
 
@@ -38,8 +37,6 @@ public:
 
 	void OnWorldBeginplay(UWorld* InWorld);
 	void OnWorldTearDown(UWorld* InWorld);
-
-	virtual FString ToString() const;
 
 private:
 	virtual void AddToWorld(const FWorldContext& WorldContext) PURE_VIRTUAL(UGameFeatureAction_WorldActionBase::AddToWorld,);

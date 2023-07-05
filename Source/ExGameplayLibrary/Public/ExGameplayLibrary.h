@@ -2,6 +2,7 @@
 
 #include "ExTypes.h"
 #include "GameplayTagsManager.h"
+#include "GameFramework/Character.h"
 #include "ExGameplayLibrary.generated.h"
 
 UCLASS()
@@ -75,8 +76,18 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary", meta = (DefaultToSelf = "WorldContextObject"))
 	static bool IsRunning(UObject* WorldContextObject);
-
+	
+	/**
+	 * @brief 获取Object的完整包名，例如：/Game/FPSGame/GameBase/BP_Character,等同于Object->GetPackage()->GetName()
+	 * 但会过滤Editor环境下的PIE前缀，例如在PIE模式下，一个Level的包名为：/Game/FPSGame/Maps/UEDPIE_0_Login
+	 * 通过GetPackageFullName获取的是：/Game/FPSGame/Maps/Login
+	 * 
+	 * @param Object 目标Object
+	 * @return 完整包名
+	*/
+	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
 	static FString GetPackageFullName(UObject* Object);
+
 
 	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
 	static FString ObjectPathToPackageName(const FString& ObjectPath);
@@ -89,15 +100,23 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary")
 	static bool ActorLineTraceSingle(AActor* Actor, FHitResult& OutHit, const FVector& Start, const FVector& End, ECollisionChannel TraceChannel);
 
+	//移动Character
+	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary")
+	static void CharacterSmoothMoveTo(ACharacter* Character, FVector TargetLocation, float DeltaSecond);
+
+	//一个Object是否合法
+	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
+	static bool IsValidObject(UObject* Object);
+
 	/**
 	 * @brief 在参数列表中获取指定的int值，例如对于参数Param：-MaxFps=100 -AutoTest
 	 * 可以使用ParseParamIntValue(Param, "-MaxFps=", OutValue)将MaxFps的值100写入参数OutValue中
-	 * 
+	 *
 	 * @param InString 参数字符串
 	 * @param InParam  指定的参数项
 	 * @param OutValue  获取到的参数项的int值
 	 * @return 是否获取成功，当参数字符串中没有需要的参数项时，返回false
 	*/
 	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary")
-	static bool ParseParamIntValue(const FString& InString, const FString& InParam, int& OutValue);
+		static bool ParseParamIntValue(const FString& InString, const FString& InParam, int& OutValue);
 };

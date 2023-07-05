@@ -3,6 +3,7 @@
 #include "Misc/DateTime.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/PostProcessVolume.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 bool UExGameplayLibrary::IsClient(const UObject* WorldContextObject)
 {
@@ -395,7 +396,7 @@ FString UExGameplayLibrary::GetPackageFullName(UObject* Object)
 				PackageShortName.RemoveFromStart(World->StreamingLevelsPrefix);
 				return FString::Printf(TEXT("%s/%s"), *PackagePath, *PackageShortName);
 			}
-
+			
 		}
 		return Package->GetName();
 #else
@@ -443,6 +444,24 @@ bool UExGameplayLibrary::ActorLineTraceSingle(AActor* Actor, FHitResult& OutHit,
 	return false;
 }
 
+void UExGameplayLibrary::CharacterSmoothMoveTo(ACharacter* Character, FVector TargetLocation, float DeltaSecond)
+{
+	if (Character)
+	{
+		if (DeltaSecond == 0.0f)
+		{
+			DeltaSecond = 0.03f;
+		}
+		FVector Velocity = (TargetLocation - Character->GetActorLocation()) / DeltaSecond;
+		Character->GetCharacterMovement()->MoveSmooth(Velocity, DeltaSecond);
+	}
+}
+
+bool UExGameplayLibrary::IsValidObject(UObject* Object)
+{
+	return Object != nullptr && !Object->HasAnyFlags(RF_BeginDestroyed | RF_FinishDestroyed);
+}
+
 bool UExGameplayLibrary::ParseParamIntValue(const FString& InString, const FString& InParam, int& OutValue)
 {
 	FString ParamStringValue;
@@ -452,6 +471,6 @@ bool UExGameplayLibrary::ParseParamIntValue(const FString& InString, const FStri
 		OutValue = FCString::Atoi(*ParamStringValue);
 		return true;
 	}
-	
+
 	return false;
 }

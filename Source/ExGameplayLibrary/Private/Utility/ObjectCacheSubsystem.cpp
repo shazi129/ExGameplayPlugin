@@ -1,83 +1,141 @@
 #include "Utility/ObjectCacheSubsystem.h"
 #include "Kismet/GameplayStatics.h"
+#include "ExGameplayLibrary.h"
+#include "ExGameplayLibraryModule.h"
+
+void FClassObjectCachePool::FCacheObjectItem::Reset()
+{
+	Object = nullptr;
+	Status = 0;
+}
+
+bool FClassObjectCachePool::FCacheObjectItem::IsValid()
+{
+	return UExGameplayLibrary::IsValidObject(Object);
+}
 
 void FClassObjectCachePool::InitializePool()
 {
-	CreateObjects(DesignSize);
+	for (int i = 0; i < DesignSize; i++)
+	{
+		UObject * Object = CreateObject();
+		if (UExGameplayLibrary::IsValidObject(Object))
+		{
+			FCacheObjectItem* Item = new (CacheObjects)FCacheObjectItem();
+			Item->Object = Object;
+			Item->Status = 0;
+		}
+	}
 }
 
 UObject* FClassObjectCachePool::Retain()
 {
-	check(CacheObjects.Num() == CacheObjectStatus.Num());
+	int StartIndex = 0;
+	int EndIndex = CacheObjects.Num() - 1;
 
-	int ObjectIndex = 0;
-	for (; ObjectIndex < CacheObjects.Num(); ObjectIndex++)
+	while (StartIndex <= EndIndex)
 	{
-		if (CacheObjectStatus[ObjectIndex] == 0)
+		//找到一个合法的
+		if (CacheObjects[StartIndex].IsValid())
 		{
-			break;
+			if (CacheObjects[StartIndex].Status == 0) //可以返回了
+			{
+				break;
+			}
+			else
+			{
+				StartIndex++;
+			}
+		}
+		//遇到一个不合法的，把它交换到最后面
+		else
+		{
+			if (StartIndex != EndIndex)
+			{
+				CacheObjects[StartIndex] = CacheObjects[EndIndex];
+			}
+			CacheObjects[EndIndex].Reset();
+			EndIndex--;
 		}
 	}
 
-	//不够用了, 新增一个
-	if (ObjectIndex == CacheObjects.Num())
+	//没找到
+	if (StartIndex > EndIndex)
 	{
-		CreateObjects(1);
+		if (StartIndex == CacheObjects.Num()) //要创建新的了
+		{
+			new (CacheObjects)FCacheObjectItem();
+		}
+
+		CacheObjects[StartIndex].Object = CreateObject();
+		CacheObjects[StartIndex].Status = 0;
 	}
 
-	CacheObjectStatus[ObjectIndex] = 1;
-	OnObjectRetain(CacheObjects[ObjectIndex]);
-	return  CacheObjects[ObjectIndex];
+	OnObjectRetain(CacheObjects[StartIndex].Object);
+	CacheObjects[StartIndex].Status = 1;
+
+	return  CacheObjects[StartIndex].Object;
 }
 
-bool FClassObjectCachePool::Release(UObject* Item)
+bool FClassObjectCachePool::Release(UObject* Object)
 {
-	check(CacheObjects.Num() == CacheObjectStatus.Num());
-
-	int ItemIndex = CacheObjects.Find(Item);
-	if (CacheObjects.IsValidIndex(ItemIndex))
+	if (Object == nullptr)
 	{
-		CacheObjectStatus[ItemIndex] = 0;
-		OnObjectRelease(CacheObjects[ItemIndex]);
+		return false;
+	}
+
+	for (FCacheObjectItem& Item : CacheObjects)
+	{
+		if (Item.Object == Object)
+		{
+			if (UExGameplayLibrary::IsValidObject(Object))
+			{
+				OnObjectRelease(Item.Object);
+				Item.Status = 0;
+			}
+			else
+			{
+				Item.Reset();
+			}
+		}
 	}
 	return true;
 }
 
 void FActorCachePool::DeinitializePool()
 {
-	if (!ContextWorld || !ObjectClass)
-	{
-		return;
-	}
+	//World没有了，里面的Actor自己就没有了，不用特殊处理
 
-	for (UObject* Object : CacheObjects)
+	if (ContextWorld)
 	{
-		if (AActor* Actor = Cast<AActor>(Object))
+		for (FCacheObjectItem& Item : CacheObjects)
 		{
-			OnObjectDestroy(Actor);
-			Actor->Destroy();
+			if (Item.IsValid())
+			{
+				if (AActor* Actor = Cast<AActor>(Item.Object))
+				{
+					OnObjectDestroy(Actor);
+					Actor->Destroy();
+				}
+			}
 		}
 	}
 	CacheObjects.Empty();
 }
 
-void FActorCachePool::CreateObjects(int Size)
+UObject* FActorCachePool::CreateObject()
 {
 	if (!ContextWorld || !ObjectClass)
 	{
-		return;
+		return nullptr;
 	}
 
-	for (int i = 0; i < Size; i++)
+	AActor* Actor = ContextWorld->SpawnActor(ObjectClass);
+	if (Actor)
 	{
-		AActor* Actor = ContextWorld->SpawnActor(ObjectClass);
-		if (Actor)
-		{
-			CacheObjects.Add(Actor);
-			CacheObjectStatus.Add(0);
-			OnObjectCreate(Actor);
-		}
+		OnObjectCreate(Actor);
 	}
+	return Actor;
 }
 
 void UObjectCacheSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -107,6 +165,7 @@ void UObjectCacheSubsystem::OnWorldTearingDown(UWorld* World)
 	{
 		if (ClassObjectCachePool[i] && ClassObjectCachePool[i]->GetWorld() == World)
 		{
+			ClassObjectCachePool[i]->SetContextWorld(nullptr);
 			ClassObjectCachePool[i]->DeinitializePool();
 			ClassObjectCachePool.RemoveAt(i);
 		}
@@ -115,8 +174,9 @@ void UObjectCacheSubsystem::OnWorldTearingDown(UWorld* World)
 
 bool UObjectCacheSubsystem::CreateObjectPool(UScriptStruct* InScriptStruct, UClass* ObjectClass, UWorld* ContextWorld, int DesignSize)
 {
-	if (!InScriptStruct->IsChildOf(FClassObjectCachePool::StaticStruct()))
+	if (!InScriptStruct || !InScriptStruct->IsChildOf(FClassObjectCachePool::StaticStruct()))
 	{
+		EXLIBRARY_LOG(Error, TEXT("%s error, %s is not a FClassObjectCachePool"), *FString(__FUNCTION__), *GetNameSafe(InScriptStruct));
 		return false;
 	}
 
@@ -125,9 +185,13 @@ bool UObjectCacheSubsystem::CreateObjectPool(UScriptStruct* InScriptStruct, UCla
 	{
 		if (Pool && Pool->GetClass() == ObjectClass)
 		{
+			Pool->ReferenceCount = Pool->ReferenceCount <= 0 ? 1 : Pool->ReferenceCount + 1;
+			EXLIBRARY_LOG(Log, TEXT("%s exist same pool for type: %s, reference count:%d"), *FString(__FUNCTION__), *GetNameSafe(InScriptStruct), Pool->ReferenceCount);
 			return true;
 		}
 	}
+
+	EXLIBRARY_LOG(Log, TEXT("%s for %s, wrapper:"), *FString(__FUNCTION__), *GetNameSafe(ObjectClass), *GetNameSafe(InScriptStruct));
 
 	//申请内存
 	const int32 MinAlignment = InScriptStruct->GetMinAlignment();
@@ -140,14 +204,16 @@ bool UObjectCacheSubsystem::CreateObjectPool(UScriptStruct* InScriptStruct, UCla
 	NewPool->SetObjectClass(ObjectClass);
 	NewPool->SetContextWorld(ContextWorld);
 	NewPool->SetDesigneSize(DesignSize);
+	NewPool->ReferenceCount = 1;
 
 	NewPool->InitializePool();
 	ClassObjectCachePool.Add(NewPool);
 	return true;
 }
 
-bool UObjectCacheSubsystem::DestroyObjectPool(UClass* Class)
+bool UObjectCacheSubsystem::DestroyObjectPool(UClass* Class, bool OnlyClearItems)
 {
+	EXLIBRARY_LOG(Log, TEXT("%s for: %s, %d, current size:%d"), *FString(__FUNCTION__), *GetNameSafe(Class), OnlyClearItems, ClassObjectCachePool.Num());
 	if (!Class)
 	{
 		return false;
@@ -157,8 +223,18 @@ bool UObjectCacheSubsystem::DestroyObjectPool(UClass* Class)
 	{
 		if (ClassObjectCachePool[i]->GetClass() == Class)
 		{
+			ClassObjectCachePool[i]->ReferenceCount--;
+			if (ClassObjectCachePool[i]->ReferenceCount > 0)
+			{
+				EXLIBRARY_LOG(Log, TEXT("%s ignore, Object pool has another reference"), *FString(__FUNCTION__));
+				return true;
+			}
+
 			ClassObjectCachePool[i]->DeinitializePool();
-			ClassObjectCachePool.RemoveAt(i);
+			if (!OnlyClearItems)
+			{
+				ClassObjectCachePool.RemoveAt(i);
+			}
 			return true;
 		}
 	}
@@ -169,6 +245,7 @@ UObject* UObjectCacheSubsystem::RetainObject(UClass* ObjectClass)
 {
 	if (!ObjectClass)
 	{
+		EXLIBRARY_LOG(Error, TEXT("%s, ObjectClass is null"), *FString(__FUNCTION__));
 		return nullptr;
 	}
 
@@ -179,6 +256,8 @@ UObject* UObjectCacheSubsystem::RetainObject(UClass* ObjectClass)
 			return Pool->Retain();
 		}
 	}
+
+	EXLIBRARY_LOG(Error, TEXT("%s, Cannot find pool of class %s, current size:%d"), *FString(__FUNCTION__), *GetNameSafe(ObjectClass), ClassObjectCachePool.Num());
 	return nullptr;
 }
 

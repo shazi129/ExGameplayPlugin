@@ -8,7 +8,22 @@
 USTRUCT(BlueprintType)
 struct EXGAMEPLAYLIBRARY_API FClassObjectCachePool
 {
+	friend class UObjectCacheSubsystem;
+
 	GENERATED_BODY()
+
+public:
+	struct FCacheObjectItem
+	{
+		UPROPERTY()
+		UObject* Object;
+
+		int Status;
+
+		void Reset();
+
+		bool IsValid();
+	};
 
 public:
 	FClassObjectCachePool(){};
@@ -24,7 +39,7 @@ public:
 	virtual void InitializePool();
 	virtual void DeinitializePool() {};
 
-	virtual void CreateObjects(int Size) { }
+	virtual UObject* CreateObject() { return nullptr;}
 
 	virtual UObject* Retain();
 
@@ -42,9 +57,10 @@ protected:
 	//所有Object都是基于
 	UWorld* ContextWorld;
 
-	TArray<UObject*> CacheObjects;
-	TArray<int> CacheObjectStatus;
+	TArray<FCacheObjectItem> CacheObjects;
 	int DesignSize;
+
+	int ReferenceCount = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -68,7 +84,7 @@ struct EXGAMEPLAYLIBRARY_API FActorCachePool : public FClassObjectCachePool
 public:
 	FActorCachePool() {};
 	virtual void DeinitializePool() override;
-	virtual void CreateObjects(int Size) override;
+	virtual UObject* CreateObject();
 };
 
 UCLASS(BlueprintType)
@@ -87,7 +103,7 @@ public:
 	bool CreateObjectPool(UScriptStruct* InScriptStruct, UClass* ObjectClass, UWorld* ContextWorld, int DesignSize);
 
 	UFUNCTION(BlueprintCallable)
-	bool DestroyObjectPool(UClass* Class);
+	bool DestroyObjectPool(UClass* Class, bool OnlyClearItems=true);
 
 	UFUNCTION(BlueprintCallable)
 	UObject* RetainObject(UClass* ObjectClass);
@@ -97,6 +113,9 @@ public:
 
 private:
 	FDelegateHandle WorldBeginTearDownHandler;
+
 	TArray<FClassObjectCachePool*> ClassObjectCachePool;
+
+	UPROPERTY()
 	TArray<FStructObjectCachePool> StructObjectCachePool;
 };

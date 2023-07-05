@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "ExGameplayLibrary.h"
+#include "PlatformLibrary.h"
 #include "Kismet/GameplayStatics.h"
 
 #define DECLARE_LOG_TAG() \
@@ -11,7 +12,7 @@ private:\
 	{\
 		this->LogTag = FString::Printf(TEXT("[%s] %s"), *(UExGameplayLibrary::GetLogPrefix(this)), ClassName);\
 	}
-	
+
 #define  DEFINE_LOG_TAG(ClassName) \
 	this->InitLogTag(TEXT(#ClassName))
 
@@ -83,3 +84,6 @@ private:\
 		GET_WORLD_SUBSYSTEM(LogCategory, SubsystemType, WorldContextObject) \
 	} \
 
+#define LOG_AND_COPY(LogCategory, LogLevel, StrValue) \
+	UE_LOG(LogCategory, LogLevel, TEXT("%s"), *StrValue); \
+	UPlatformLibrary::ClipboardCopy(StrValue); \

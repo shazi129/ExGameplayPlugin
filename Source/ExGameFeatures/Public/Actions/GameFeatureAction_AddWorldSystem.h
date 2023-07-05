@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFeaturesWorldManager.h"
-#include "GameFeatureAction_WorldActionBase.h"
+#include "Actions/GameFeatureAction_WorldActionBase.h"
 #include "GameFeatureAction_AddWorldSystem.generated.h"
 
 /** Record for the game feature data. Specifies what type of system to instantiate. */

@@ -87,6 +87,8 @@ bool UGameFeatureAction_AddActorComponents::AddToGameInstance(UGameInstance* Gam
 	const bool bIsServer = NetMode == NM_DedicatedServer || NetMode == NM_ListenServer;
 	const bool bIsClient = !bIsServer;
 
+	EXIGAMEFEATURE_LOG(Log, TEXT("%s start, Component num: %d"), *FString(__FUNCTION__), ComponentList.Num());
+
 	for (const FAddActorComponentEntry& Entry : ComponentList)
 	{
 		EXIGAMEFEATURE_LOG(Log, TEXT("%s: %s --> %s, NetMode:%d (client: %d, server: %d), Instance:%p"), *FString(__FUNCTION__),

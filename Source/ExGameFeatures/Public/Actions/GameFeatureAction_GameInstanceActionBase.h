@@ -1,11 +1,10 @@
 #pragma once
 
-#include "CoreMinimal.h"
-#include "GameFeatureAction.h"
+#include "Actions/GameFeatureAction_ActionBase.h"
 #include "GameFeatureAction_GameInstanceActionBase.generated.h"
 
 UCLASS(Abstract)
-class UGameFeatureAction_GameInstanceActionBase : public UGameFeatureAction
+class UGameFeatureAction_GameInstanceActionBase : public UGameFeatureAction_ActionBase
 {
 	GENERATED_BODY()
 
@@ -14,8 +13,6 @@ public:
 	virtual void OnGameFeatureActivating() override;
 	virtual void OnGameFeatureDeactivating(FGameFeatureDeactivatingContext& Context) override;
 	//~ End UGameFeatureAction interface
-
-	virtual FString ToString() const;
 
 protected:
 	virtual bool AddToGameInstance(UGameInstance* GameInstance);
