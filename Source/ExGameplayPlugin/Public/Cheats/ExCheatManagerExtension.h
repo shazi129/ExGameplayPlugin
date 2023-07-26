@@ -32,11 +32,23 @@ public:
 		void Character(const FString& Param);
 
 private:
-	void ShowCharacterUsage();
+	void ShowCharacterUsage(ACharacter* Character);
 	void SetSyncCharacterMovement(ACharacter* Character, bool Sync);
 #pragma endregion
 
+#pragma region 场景相关Cheat
+public:
+	UFUNCTION(Exec)
+		void Scene(const FString& Param);
+
 private:
+	void ShowSceneUsage();
+	void ShowActorWithName(const FString& ActorName);
+	void DestroyActorByName(const FString& ActorName);
+#pragma endregion
+
+private:
+
 	void ShowActorComponets(AActor* Actor);
 	
 };

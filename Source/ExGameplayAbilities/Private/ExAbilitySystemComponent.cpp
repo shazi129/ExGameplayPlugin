@@ -101,7 +101,7 @@ void UExAbilitySystemComponent::RegisterAbilityProvider(IExAbilityProvider* Prov
 	ProviderObject->CollectAbilitCases(AbilityCases);
 	for (const FExAbilityCase& AbilityCase : AbilityCases)
 	{
-		GiveAbilityByCaseInternal(AbilityCase, Cast<UObject>(ProviderObject));
+		GiveAbilityByCase(AbilityCase, Cast<UObject>(ProviderObject));
 	}
 }
 
@@ -139,7 +139,28 @@ void UExAbilitySystemComponent::OnPawnControllerChanged(APawn* Pawn, AController
 
 FGameplayAbilitySpecHandle UExAbilitySystemComponent::GiveAbilityByCase(const FExAbilityCase& AbilityCase, UObject* AbilityProvider)
 {
-	return GiveAbilityByCaseInternal(AbilityCase, AbilityProvider);
+	AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		ABILITY_LOG(Error, TEXT("%s error, ASC has no owner"), *FString(__FUNCTION__));
+		return FGameplayAbilitySpecHandle();
+	}
+
+	ENetRole LocalRole = Owner->GetLocalRole();
+	if (LocalRole == ENetRole::ROLE_Authority)
+	{
+		return GiveAbilityByCaseInternal(AbilityCase, AbilityProvider);
+	}
+	else if (LocalRole == ENetRole::ROLE_AutonomousProxy)
+	{
+		ServerGiveAbilityByCase(AbilityCase, AbilityProvider);
+		ABILITY_LOG(Log, TEXT("%s in ROLE_AutonomousProxy, result will be invalid"), *FString(__FUNCTION__));
+	}
+	else
+	{
+		ABILITY_LOG(Error, TEXT("%s cannot be used in role: %d"), *FString(__FUNCTION__), LocalRole);
+	}
+	return FGameplayAbilitySpecHandle();
 }
 
 FGameplayAbilitySpecHandle UExAbilitySystemComponent::GiveAbilityByCaseInternal(const FExAbilityCase& AbilityCase, UObject* AbilityProvider)
@@ -155,6 +176,13 @@ FGameplayAbilitySpecHandle UExAbilitySystemComponent::GiveAbilityByCaseInternal(
 		return FGameplayAbilitySpecHandle();
 	}
 
+	//理论上每个Ability只Give一次
+	if (FindAbilitySpecFromClass(AbilityCase.AbilityClass))
+	{
+		ABILITY_LOG(Warning, TEXT("%s , add duplicated class: %s, provider:%s"), *FString(__FUNCTION__), *GetNameSafe(AbilityCase.AbilityClass), *GetNameSafe(AbilityProvider));
+		return FGameplayAbilitySpecHandle();
+	}
+
 	FGameplayAbilitySpec Spec(AbilityCase.AbilityClass, AbilityCase.AbilityLevel, INDEX_NONE, (AbilityProvider));
 	const FGameplayAbilitySpecHandle& SpecHandle = GiveAbility(Spec);
 
@@ -166,9 +194,62 @@ FGameplayAbilitySpecHandle UExAbilitySystemComponent::GiveAbilityByCaseInternal(
 	return SpecHandle;
 }
 
+bool UExAbilitySystemComponent::ServerGiveAbilityByCase_Validate(const FExAbilityCase& AbilityCase, UObject* AbilityProvider = nullptr)
+{
+	return true;
+}
+
+void UExAbilitySystemComponent::ServerGiveAbilityByCase_Implementation(const FExAbilityCase& AbilityCase, UObject* AbilityProvider = nullptr)
+{
+	GiveAbilityByCaseInternal(AbilityCase, AbilityProvider);
+}
+
+void UExAbilitySystemComponent::ClearAbilityByClassInternal(TSubclassOf<UGameplayAbility> AbilityClass)
+{
+	if (FGameplayAbilitySpec* Spec = FindAbilitySpecFromClass(AbilityClass))
+	{
+		ClearAbility(Spec->Handle);
+	}
+}
+
+void UExAbilitySystemComponent::ClearAbilityByClass(TSubclassOf<UGameplayAbility> AbilityClass)
+{
+	AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		ABILITY_LOG(Error, TEXT("%s error, ASC has no owner"), *FString(__FUNCTION__));
+		return;
+	}
+
+	ENetRole LocalRole = Owner->GetLocalRole();
+	ABILITY_LOG(Log, TEXT("%s in %d"), *FString(__FUNCTION__), LocalRole);
+
+	if (LocalRole == ENetRole::ROLE_Authority)
+	{
+		return ClearAbilityByClassInternal(AbilityClass);
+	}
+	else if (LocalRole == ENetRole::ROLE_AutonomousProxy)
+	{
+		ServerClearAbilityByClass(AbilityClass);
+	}
+	else
+	{
+		ABILITY_LOG(Error, TEXT("%s cannot be used in role: %d"), *FString(__FUNCTION__), LocalRole);
+	}
+}
+
+bool UExAbilitySystemComponent::ServerClearAbilityByClass_Validate(TSubclassOf<UGameplayAbility> AbilityClass)
+{
+	return true;
+}
+
+void UExAbilitySystemComponent::ServerClearAbilityByClass_Implementation(TSubclassOf<UGameplayAbility> AbilityClass)
+{
+	ClearAbilityByClassInternal(AbilityClass);
+}
+
 void UExAbilitySystemComponent::TryActivateAbilityOnceWithEventData_Implementation(const FExAbilityCase& AbilityCase, const FGameplayEventData& TriggerEventData, UObject* SourceObj)
 {
-	//ͨ��class �ҵ�handler
 	FGameplayAbilitySpec* Spec = FindAbilitySpecFromCase(AbilityCase);
 	if (Spec && Spec->Handle.IsValid())
 	{

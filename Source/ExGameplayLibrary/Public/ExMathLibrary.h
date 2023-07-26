@@ -17,4 +17,13 @@ public:
 	/* 从FromVector到ToVector的夹角， 逆时针旋转为负 */
 	UFUNCTION(BlueprintCallable, Category = "ExMathLibrary")
 	static float GetRotationAngle(FVector2D FromVector, FVector2D ToVector);
+
+	/**
+	 * @brief 旋转一个向量
+	 * @param 要旋转的向量
+	 * @param 旋转的角度
+	 * @return 旋转后的向量
+	*/
+	UFUNCTION(BlueprintPure, Category = "ExMathLibrary")
+	static FVector RotateVector(const FVector& InVector, const FRotator& InRotator);
 };

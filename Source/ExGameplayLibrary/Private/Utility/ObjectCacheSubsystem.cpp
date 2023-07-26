@@ -11,14 +11,14 @@ void FClassObjectCachePool::FCacheObjectItem::Reset()
 
 bool FClassObjectCachePool::FCacheObjectItem::IsValid()
 {
-	return UExGameplayLibrary::IsValidObject(Object);
+	return Object.IsValid();
 }
 
 void FClassObjectCachePool::InitializePool()
 {
 	for (int i = 0; i < DesignSize; i++)
 	{
-		UObject * Object = CreateObject();
+		UObject* Object = CreateObject();
 		if (UExGameplayLibrary::IsValidObject(Object))
 		{
 			FCacheObjectItem* Item = new (CacheObjects)FCacheObjectItem();
@@ -71,10 +71,10 @@ UObject* FClassObjectCachePool::Retain()
 		CacheObjects[StartIndex].Status = 0;
 	}
 
-	OnObjectRetain(CacheObjects[StartIndex].Object);
+	OnObjectRetain(CacheObjects[StartIndex].Object.Get());
 	CacheObjects[StartIndex].Status = 1;
 
-	return  CacheObjects[StartIndex].Object;
+	return  CacheObjects[StartIndex].Object.Get();
 }
 
 bool FClassObjectCachePool::Release(UObject* Object)
@@ -90,7 +90,7 @@ bool FClassObjectCachePool::Release(UObject* Object)
 		{
 			if (UExGameplayLibrary::IsValidObject(Object))
 			{
-				OnObjectRelease(Item.Object);
+				OnObjectRelease(Item.Object.Get());
 				Item.Status = 0;
 			}
 			else
@@ -112,7 +112,7 @@ void FActorCachePool::DeinitializePool()
 		{
 			if (Item.IsValid())
 			{
-				if (AActor* Actor = Cast<AActor>(Item.Object))
+				if (AActor* Actor = Cast<AActor>(Item.Object.Get()))
 				{
 					OnObjectDestroy(Actor);
 					Actor->Destroy();

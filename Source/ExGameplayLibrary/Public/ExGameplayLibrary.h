@@ -14,8 +14,19 @@ public:
 	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary", meta = (DefaultToSelf = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
 		static bool IsClient(const UObject* WorldContextObject);
 
+	/**
+	 * @brief 获取UTC时间戳
+	 * @return 时间戳，秒级
+	*/
 	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
 		static int64 GetTimestamp(); //统一用的UTC时间
+
+	/**
+	 * @brief 获取UTC时间戳
+	 * @return 时间戳，毫秒级
+	*/
+	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
+		static int64 GetTimestampMs();
 
 	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
 		static int GetTimeZone(); //当地时区
@@ -119,4 +130,15 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "ExGameplayLibrary")
 		static bool ParseParamIntValue(const FString& InString, const FString& InParam, int& OutValue);
+
+	/**
+	 * @brief 工具函数， ENetRole转为可识别的字符串
+	*/
+	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
+		static FString NetRoleToString(ENetRole NetRole);
+
+	/**
+	 * @brief 工具函数， ENetMode转为可识别的字符串
+	*/
+	static FString NetModeToString(ENetMode NetMode);
 };

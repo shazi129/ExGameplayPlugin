@@ -57,6 +57,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = ExAbility)
 		FGameplayAbilitySpecHandle GiveAbilityByCase(const FExAbilityCase& AbilityCase, UObject* AbilityProvider = nullptr);
 
+	UFUNCTION(BlueprintCallable, Server, reliable, WithValidation, Category = ExAbility)
+		void ServerGiveAbilityByCase(const FExAbilityCase& AbilityCase, UObject* AbilityProvider = nullptr);
+
+	UFUNCTION(BlueprintCallable, Category = ExAbility)
+		void ClearAbilityByClass(TSubclassOf<UGameplayAbility> AbilityClass);
+
+	UFUNCTION(BlueprintCallable, Server, reliable, WithValidation, Category = ExAbility)
+		void ServerClearAbilityByClass(TSubclassOf<UGameplayAbility> AbilityClass);
+
 	UFUNCTION(BlueprintCallable, Server, reliable, WithValidation)
 		virtual void TryActivateAbilityOnceWithEventData(const FExAbilityCase& AbilityCase, const FGameplayEventData& TriggerEventData, UObject* SourceObj);
 
@@ -85,6 +94,7 @@ protected:
 
 private:
 	FGameplayAbilitySpecHandle GiveAbilityByCaseInternal(const FExAbilityCase& AbilityCase, UObject* AbilityProvider);
+	void ClearAbilityByClassInternal(TSubclassOf<UGameplayAbility> AbilityClass);
 
 	TArray<IExAbilityProvider*> RegistedProviders;
 

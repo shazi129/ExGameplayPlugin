@@ -53,3 +53,10 @@ float UExMathLibrary::GetRotationAngle(FVector2D FromVector, FVector2D ToVector)
 	float Angle = (FMath::Acos(Dot) * 180) / PI;
 	return Angle * Direction;
 }
+
+FVector UExMathLibrary::RotateVector(const FVector& InVector, const FRotator& InRotator)
+{
+	double VectorLenght = InVector.Length();
+	FVector VectorNormal = InVector.GetSafeNormal();
+	return (VectorNormal.Rotation() + InRotator).Vector() * VectorLenght;
+}

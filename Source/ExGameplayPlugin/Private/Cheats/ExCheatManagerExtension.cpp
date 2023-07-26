@@ -9,6 +9,7 @@
 #include "PlatformLibrary.h"
 #include "GameFramework/ExCharacterMovementComponent.h"
 #include "ExGameplayLibrary.h"
+#include "EngineUtils.h"
 
 void UExCheatManagerExtension::LogAndCopyToClipboard(const FString Value)
 {
@@ -78,6 +79,7 @@ void UExCheatManagerExtension::Character(const FString& Param)
 {
 	int IntValue = 0;
 	ACharacter* Character = UGameplayStatics::GetPlayerCharacter(this, 0);
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
 
 	if (UKismetSystemLibrary::ParseParam(Param, "ShowComponents"))
 	{
@@ -89,14 +91,23 @@ void UExCheatManagerExtension::Character(const FString& Param)
 	}
 	else
 	{
-		ShowCharacterUsage();
+		ShowCharacterUsage(Character);
 	}
 }
 
-void UExCheatManagerExtension::ShowCharacterUsage()
+void UExCheatManagerExtension::ShowCharacterUsage(ACharacter* Character)
 {
+	APlayerController* PlayerController = UGameplayStatics::GetPlayerController(this, 0);
+
 	FString Usage;
-	Usage.Append(FString::Printf(TEXT("Character -ShowComponents")));
+	if (Character)
+	{
+		Usage.Append(FString::Printf(TEXT("Character: %s\n"), *GetNameSafe(Character)));
+		Usage.Append(FString::Printf(TEXT("Controller: %s\n"), *GetNameSafe(PlayerController)));
+		Usage.Append(FString::Printf(TEXT("Role:%s\n"), *UExGameplayLibrary::NetRoleToString(Character->GetLocalRole())));
+	}
+	
+	Usage.Append(FString::Printf(TEXT("Character -ShowComponents\n")));
 	Usage.Append(FString::Printf(TEXT("\t\t-SyncMovement=0|1")));
 	LogAndCopyToClipboard(Usage);
 }
@@ -111,6 +122,82 @@ void UExCheatManagerExtension::SetSyncCharacterMovement(ACharacter* Character, b
 
 	MovementComponent->SetMovementSyncEnable(Sync);
 }
+#pragma endregion
+
+#pragma region 场景相关的Cheat
+void UExCheatManagerExtension::Scene(const FString& Param)
+{
+	FString StringValue;
+
+	if (UKismetSystemLibrary::ParseParamValue(Param, "-ShowActorByName=", StringValue))
+	{
+		ShowActorWithName(StringValue);
+	}
+	else if (UKismetSystemLibrary::ParseParamValue(Param, "-DestroyActorByName=", StringValue))
+	{
+		DestroyActorByName(StringValue);
+	}
+	else
+	{
+		ShowSceneUsage();
+	}
+}
+
+void UExCheatManagerExtension::ShowSceneUsage()
+{
+	UWorld* World = GetWorld();
+	FString WorldName = World->GetName();
+	ENetMode NetMode = World->GetNetMode();
+
+	FString Usage;
+	Usage.Append(FString::Printf(TEXT("World: %s\t NetMode:%s\n"), *WorldName, *UExGameplayLibrary::NetModeToString(NetMode)));
+	Usage.Append(FString::Printf(TEXT("Scene -ShowActorByName=ActorName\n")));
+	Usage.Append(FString::Printf(TEXT("\t -DestroyActorByName=ActorName\n")));
+	LogAndCopyToClipboard(Usage);
+}
+
+void UExCheatManagerExtension::ShowActorWithName(const FString& ActorName)
+{
+	UWorld* World = GetWorld();
+
+	FString Result = FString::Printf(TEXT("Show Actor With name: %s, world:%s: \n"), *ActorName, *GetNameSafe(World));
+
+	if (World)
+	{
+		for (FActorIterator ActorIt(World); ActorIt; ++ActorIt)
+		{
+			FString ActorLable = ActorIt->GetActorNameOrLabel();
+			if (ActorName.IsEmpty() || ActorLable.Contains(ActorName))
+			{
+				Result += FString::Printf(TEXT("%s\tType:%s\tRole:%s\tAddr:%p\n"), *ActorLable, *ActorIt->GetClass()->GetName(),
+									*UExGameplayLibrary::NetRoleToString(ActorIt->GetLocalRole()), *ActorIt);
+			}
+		}
+	}
+	LogAndCopyToClipboard(Result);
+}
+
+void UExCheatManagerExtension::DestroyActorByName(const FString& ActorName)
+{
+	UWorld* World = GetWorld();
+
+	FString Result = FString::Printf(TEXT("Destroy Actor With name: %s, world:%s: \n"), *ActorName, *GetNameSafe(World));
+
+	if (World)
+	{
+		for (FActorIterator ActorIt(World); ActorIt; ++ActorIt)
+		{
+			FString ActorLable = ActorIt->GetActorNameOrLabel();
+			if (ActorLable.Contains(ActorName))
+			{
+				Result += FString::Printf(TEXT("%s, Role:%s \n"), *ActorLable, *UExGameplayLibrary::NetRoleToString(ActorIt->GetLocalRole()));
+				ActorIt->Destroy();
+			}
+		}
+	}
+	LogAndCopyToClipboard(Result);
+}
+
 #pragma endregion
 
 void UExCheatManagerExtension::ShowActorComponets(AActor* Actor)

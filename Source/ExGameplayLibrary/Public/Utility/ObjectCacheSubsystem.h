@@ -15,8 +15,8 @@ struct EXGAMEPLAYLIBRARY_API FClassObjectCachePool
 public:
 	struct FCacheObjectItem
 	{
-		UPROPERTY()
-		UObject* Object;
+		UPROPERTY(transient)
+			TSoftObjectPtr<UObject> Object;
 
 		int Status;
 
@@ -26,20 +26,20 @@ public:
 	};
 
 public:
-	FClassObjectCachePool(){};
-	virtual ~FClassObjectCachePool(){};
+	FClassObjectCachePool() {};
+	virtual ~FClassObjectCachePool() {};
 
-	UWorld* GetWorld() {return ContextWorld;}
-	UClass* GetClass() {return ObjectClass;}
+	UWorld* GetWorld() { return ContextWorld; }
+	UClass* GetClass() { return ObjectClass; }
 
-	void SetContextWorld(UWorld* InContextWorld){ContextWorld = InContextWorld;}
+	void SetContextWorld(UWorld* InContextWorld) { ContextWorld = InContextWorld; }
 	void SetObjectClass(UClass* InObjectClass) { ObjectClass = InObjectClass; }
-	void SetDesigneSize(int Size){ DesignSize = Size;}
+	void SetDesigneSize(int Size) { DesignSize = Size; }
 
 	virtual void InitializePool();
 	virtual void DeinitializePool() {};
 
-	virtual UObject* CreateObject() { return nullptr;}
+	virtual UObject* CreateObject() { return nullptr; }
 
 	virtual UObject* Retain();
 
@@ -95,21 +95,21 @@ class EXGAMEPLAYLIBRARY_API UObjectCacheSubsystem : public UGameInstanceSubsyste
 public:
 	DECLARE_GET_GAMEINSTANCE_SUBSYSTEM(UObjectCacheSubsystem, LogTemp)
 
-	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+		virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize();
 	void OnWorldTearingDown(UWorld* World);
-	
-	UFUNCTION(BlueprintCallable)
-	bool CreateObjectPool(UScriptStruct* InScriptStruct, UClass* ObjectClass, UWorld* ContextWorld, int DesignSize);
 
 	UFUNCTION(BlueprintCallable)
-	bool DestroyObjectPool(UClass* Class, bool OnlyClearItems=true);
+		bool CreateObjectPool(UScriptStruct* InScriptStruct, UClass* ObjectClass, UWorld* ContextWorld, int DesignSize);
 
 	UFUNCTION(BlueprintCallable)
-	UObject* RetainObject(UClass* ObjectClass);
+		bool DestroyObjectPool(UClass* Class, bool OnlyClearItems = true);
 
 	UFUNCTION(BlueprintCallable)
-	bool ReleaseObject(UObject* Object);
+		UObject* RetainObject(UClass* ObjectClass);
+
+	UFUNCTION(BlueprintCallable)
+		bool ReleaseObject(UObject* Object);
 
 private:
 	FDelegateHandle WorldBeginTearDownHandler;
@@ -117,5 +117,5 @@ private:
 	TArray<FClassObjectCachePool*> ClassObjectCachePool;
 
 	UPROPERTY()
-	TArray<FStructObjectCachePool> StructObjectCachePool;
+		TArray<FStructObjectCachePool> StructObjectCachePool;
 };

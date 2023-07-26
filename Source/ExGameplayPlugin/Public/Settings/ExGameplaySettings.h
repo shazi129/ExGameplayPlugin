@@ -15,6 +15,9 @@ public:
 		CategoryName = "Extension Gameplay";
 	}
 
-	UPROPERTY(config, EditAnywhere, Category = "Development", meta = (MetaClass = "CheatManagerExtension", DisplayName = "Cheat Manager Extension", ConfigRestartRequired = true))
+	UPROPERTY(config, EditAnywhere, Category = "Basic")
+		bool EnableCheat = false;
+
+	UPROPERTY(config, EditAnywhere, Category = "Basic", meta = (MetaClass = "CheatManagerExtension", DisplayName = "Cheat Manager Extension", ConfigRestartRequired = true))
 		TArray<FSoftClassPath> CheatExtensionClasses;
 };
