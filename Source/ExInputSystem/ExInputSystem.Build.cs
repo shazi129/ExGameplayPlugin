@@ -33,7 +33,8 @@ public class ExInputSystem : ModuleRules
 				"EnhancedInput",
 				"ModularGameplay",
 				"ExGameplayLibrary",
-				"GameplayAbilities"
+				"GameplayAbilities",
+				"GameplayUtils"
 			});
 			
 	

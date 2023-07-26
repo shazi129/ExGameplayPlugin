@@ -56,12 +56,7 @@
 			"LoadingPhase": "Default"
 		},
 		{
-			"Name": "HttpUtility",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		},
-		{
-			"Name": "ZipUtility",
+			"Name": "GameplayUtils",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		},
@@ -72,11 +67,6 @@
 		},
 		{
 			"Name": "UIManager",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		},
-		{
-			"Name": "AsyncUtility",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}

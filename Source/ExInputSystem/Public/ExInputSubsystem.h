@@ -1,6 +1,6 @@
 #pragma once 
 
-#include "CoreMinimal.h"
+#include "Macros/SubsystemMacros.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "GameplayTags.h"
 #include "ExInputTypes.h"
