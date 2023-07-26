@@ -24,7 +24,7 @@ void FInstancedMaterialParamter::SetCustemData(TArray<float>& CustomData, int Da
 	{
 		CustomData = DefaultCustomData;
 	}
-	check(CustomData.Num() == DefaultCustomData.Num());
+	check(CustomData.Num() >= DefaultCustomData.Num());
 
 	int* DataIndexPtr = ParamterMap.Find(DataType);
 	if (!DataIndexPtr)

@@ -1,10 +1,9 @@
 #pragma once
-
 #include "GameFramework/CharacterMovementComponent.h"
 #include "ExCharacterMovementComponent.generated.h"
 
 UCLASS()
-class UExCharacterMovementComponent : public UCharacterMovementComponent
+class EXGAMEPLAYPLUGIN_API UExCharacterMovementComponent : public UCharacterMovementComponent
 {
 	GENERATED_BODY()
 
