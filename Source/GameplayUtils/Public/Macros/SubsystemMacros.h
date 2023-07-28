@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Kismet/GameplayStatics.h"
+#include "Subsystems/GameInstanceSubsystem.h"
 
 #define  GET_GAMEINSTANCE_SUBSYSTEM(LogCategory, SubsystemType, WorldContextObject) \
 	const UGameInstance* GameInstance = Cast<UGameInstance>(WorldContextObject); \
