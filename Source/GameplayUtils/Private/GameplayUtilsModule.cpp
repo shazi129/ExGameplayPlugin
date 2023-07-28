@@ -4,7 +4,7 @@
 
 #define LOCTEXT_NAMESPACE "GameplayUtilsModule"
 
-DEFINE_LOG_CATEGORY(LogLogGameplayUtils)
+DEFINE_LOG_CATEGORY(LogGameplayUtils)
 
 void FGameplayUtilsModule::StartupModule()
 {

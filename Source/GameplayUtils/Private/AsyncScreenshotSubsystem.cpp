@@ -1,6 +1,6 @@
 #include "AsyncScreenshotSubsystem.h"
 #include "ImageUtils.h"
-#include "ExGameplayLibrary.h"
+#include "GameplayUtilsLibrary.h"
 
 void UAsyncScreenshotSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
@@ -35,7 +35,7 @@ void UAsyncScreenshotSubsystem::TakeScreenshot(int32 Width, int32 Height, const 
 	DelegateHandle = UGameViewportClient::OnScreenshotCaptured().AddUObject(this, &UAsyncScreenshotSubsystem::OnScreenshotCompleteToPng);
 
 	FString Command = FString::Printf(TEXT("HighResShot %dx%d filename=\"%s\""), Width, Height, *FileName);
-	UExGameplayLibrary::ExecCommand(Command);
+	UGameplayUtilsLibrary::ExecCommand(Command);
 }
 
 void UAsyncScreenshotSubsystem::OnScreenshotCompleteToPng(int32 InWidth, int32 InHeight, const TArray<FColor>& InColors)

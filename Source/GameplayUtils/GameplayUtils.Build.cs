@@ -29,7 +29,9 @@ public class GameplayUtils : ModuleRules
                 "GameplayTags",
                 "MeshDescription",
                 "StaticMeshDescription",
-                "zlib"
+                "zlib",
+                "HTTP",
+                "Projects"
 				// ... add other public dependencies that you statically link with here ...
 			}
             );

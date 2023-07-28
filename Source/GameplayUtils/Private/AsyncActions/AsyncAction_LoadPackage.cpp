@@ -1,5 +1,5 @@
 #include "AsyncActions/AsyncAction_LoadPackage.h"
-#include "AsyncUtilityModule.h"
+#include "GameplayUtilsModule.h"
 
 UAsyncAction_LoadPackage* UAsyncAction_LoadPackage::AsyncLoadPackage(const FString& PackageName)
 {
@@ -31,7 +31,7 @@ void UAsyncAction_LoadPackage::UnLoadPackage(UPackage* Package)
 {
 	if (Package == nullptr)
 	{
-		ASYNCUTILITY_LOG(Error, TEXT("%s error, Package is null"), *FString(__FUNCTION__));
+		GAMEPLAYUTILS_LOG(Error, TEXT("%s error, Package is null"), *FString(__FUNCTION__));
 		return;
 	}
 

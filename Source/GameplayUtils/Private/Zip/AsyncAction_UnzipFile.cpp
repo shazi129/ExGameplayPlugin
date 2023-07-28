@@ -1,5 +1,5 @@
-#include "AsyncAction_UnzipFile.h"
-#include "ZipUtilityModule.h"
+#include "Zip/AsyncAction_UnzipFile.h"
+#include "GameplayUtilsModule.h"
 #include "minizip/unzip.h"
 #include "MiniCodeConvert.h"
 #include "HAL/Platform.h"
@@ -32,7 +32,7 @@ void UAsyncAction_UnzipFile::UnzipFile()
 	IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
 	if (!PlatformFile.DirectoryExists(*DestPath) && !PlatformFile.CreateDirectoryTree(*DestPath))
 	{
-		ZIPUTILITY_LOG(Error, TEXT("%s error, cannot create dest dir: %s"), *FString(__FUNCTION__), *DestPath);
+		GAMEPLAYUTILS_LOG(Error, TEXT("%s error, cannot create dest dir: %s"), *FString(__FUNCTION__), *DestPath);
 		OnFinishError(Result);
 		return;
 	}
@@ -41,7 +41,7 @@ void UAsyncAction_UnzipFile::UnzipFile()
 	const unzFile& ZFile = unzOpen64(FMiniCodeConvert::WideCharToMultiByte(*ZipFilePath).c_str());
 	if (ZFile == nullptr)
 	{
-		ZIPUTILITY_LOG(Error, TEXT("%s error, cannot open zip file: %s"), *FString(__FUNCTION__), *ZipFilePath);
+		GAMEPLAYUTILS_LOG(Error, TEXT("%s error, cannot open zip file: %s"), *FString(__FUNCTION__), *ZipFilePath);
 		OnFinishError(Result);
 		return;
 	}
@@ -75,13 +75,13 @@ void UAsyncAction_UnzipFile::UnzipFile()
 
 		if (unzGetCurrentFileInfo64(ZFile, &ZFileInfo, Filename, NAME_BUFF_SIZE, nullptr, 0, nullptr, 0) != UNZ_OK)
 		{
-			ZIPUTILITY_LOG(Error, TEXT("%s error, cannot open zip file: %s"), *FString(__FUNCTION__), *ZipFilePath);
+			GAMEPLAYUTILS_LOG(Error, TEXT("%s error, cannot open zip file: %s"), *FString(__FUNCTION__), *ZipFilePath);
 			OnProgressError(Result);
 		}
 
 		if (unzOpenCurrentFile(ZFile) != UNZ_OK)
 		{
-			ZIPUTILITY_LOG(Error, TEXT("%s error, cannot open zip file: %s"), *FString(__FUNCTION__), *ZipFilePath);
+			GAMEPLAYUTILS_LOG(Error, TEXT("%s error, cannot open zip file: %s"), *FString(__FUNCTION__), *ZipFilePath);
 			OnProgressError(Result);
 			continue;
 		}
@@ -96,7 +96,7 @@ void UAsyncAction_UnzipFile::UnzipFile()
 			{
 				if (!IFileManager::Get().MakeDirectory(*FullFilePath, true))
 				{
-					ZIPUTILITY_LOG(Error, TEXT("%s error, MakeDirectory: %s"), *FString(__FUNCTION__), *FullFilePath);
+					GAMEPLAYUTILS_LOG(Error, TEXT("%s error, MakeDirectory: %s"), *FString(__FUNCTION__), *FullFilePath);
 					OnProgressError(Result);
 					continue;
 				}
@@ -105,7 +105,7 @@ void UAsyncAction_UnzipFile::UnzipFile()
 			{
 				if (!FFileHelper::SaveStringToFile(TEXT(""), *FullFilePath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM))
 				{
-					ZIPUTILITY_LOG(Error, TEXT("%s error, SaveStringToFile: %s"), *FString(__FUNCTION__), *FullFilePath);
+					GAMEPLAYUTILS_LOG(Error, TEXT("%s error, SaveStringToFile: %s"), *FString(__FUNCTION__), *FullFilePath);
 					OnProgressError(Result);
 					continue;
 				}
@@ -129,14 +129,14 @@ void UAsyncAction_UnzipFile::UnzipFile()
 
 				if (!ArchivePtr->Close())
 				{
-					ZIPUTILITY_LOG(Error, TEXT("%s error, Close File: %s"), *FString(__FUNCTION__), *FullFilePath);
+					GAMEPLAYUTILS_LOG(Error, TEXT("%s error, Close File: %s"), *FString(__FUNCTION__), *FullFilePath);
 					OnProgressError(Result);
 					continue;
 				}
 			}
 			else
 			{
-				ZIPUTILITY_LOG(Error, TEXT("%s error, Create File: %s"), *FString(__FUNCTION__), *FullFilePath);
+				GAMEPLAYUTILS_LOG(Error, TEXT("%s error, Create File: %s"), *FString(__FUNCTION__), *FullFilePath);
 				OnProgressError(Result);
 				continue;
 			}

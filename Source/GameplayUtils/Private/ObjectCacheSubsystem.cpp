@@ -16,8 +16,7 @@ void FClassObjectCachePool::InitializePool()
 {
 	for (int i = 0; i < DesignSize; i++)
 	{
-		UObject* Object = CreateObject();
-		if (UExGameplayLibrary::IsValidObject(Object))
+		if (UObject* Object = CreateObject())
 		{
 			FCacheObjectItem* Item = new (CacheObjects)FCacheObjectItem();
 			Item->Object = Object;
@@ -84,17 +83,14 @@ bool FClassObjectCachePool::Release(UObject* Object)
 
 	for (FCacheObjectItem& Item : CacheObjects)
 	{
-		if (Item.Object == Object)
+		if (!Item.IsValid())
 		{
-			if (UExGameplayLibrary::IsValidObject(Object))
-			{
-				OnObjectRelease(Item.Object.Get());
-				Item.Status = 0;
-			}
-			else
-			{
-				Item.Reset();
-			}
+			Item.Reset();
+		}
+		else if (Item.Object == Object)
+		{
+			OnObjectRelease(Item.Object.Get());
+			Item.Status = 0;
 		}
 	}
 	return true;
@@ -174,7 +170,7 @@ bool UObjectCacheSubsystem::CreateObjectPool(UScriptStruct* InScriptStruct, UCla
 {
 	if (!InScriptStruct || !InScriptStruct->IsChildOf(FClassObjectCachePool::StaticStruct()))
 	{
-		EXLIBRARY_LOG(Error, TEXT("%s error, %s is not a FClassObjectCachePool"), *FString(__FUNCTION__), *GetNameSafe(InScriptStruct));
+		GAMEPLAYUTILS_LOG(Error, TEXT("%s error, %s is not a FClassObjectCachePool"), *FString(__FUNCTION__), *GetNameSafe(InScriptStruct));
 		return false;
 	}
 
@@ -184,12 +180,12 @@ bool UObjectCacheSubsystem::CreateObjectPool(UScriptStruct* InScriptStruct, UCla
 		if (Pool && Pool->GetClass() == ObjectClass)
 		{
 			Pool->ReferenceCount = Pool->ReferenceCount <= 0 ? 1 : Pool->ReferenceCount + 1;
-			EXLIBRARY_LOG(Log, TEXT("%s exist same pool for type: %s, reference count:%d"), *FString(__FUNCTION__), *GetNameSafe(InScriptStruct), Pool->ReferenceCount);
+			GAMEPLAYUTILS_LOG(Log, TEXT("%s exist same pool for type: %s, reference count:%d"), *FString(__FUNCTION__), *GetNameSafe(InScriptStruct), Pool->ReferenceCount);
 			return true;
 		}
 	}
 
-	EXLIBRARY_LOG(Log, TEXT("%s for %s, wrapper:"), *FString(__FUNCTION__), *GetNameSafe(ObjectClass), *GetNameSafe(InScriptStruct));
+	GAMEPLAYUTILS_LOG(Log, TEXT("%s for %s, wrapper:"), *FString(__FUNCTION__), *GetNameSafe(ObjectClass), *GetNameSafe(InScriptStruct));
 
 	//申请内存
 	const int32 MinAlignment = InScriptStruct->GetMinAlignment();
@@ -211,7 +207,7 @@ bool UObjectCacheSubsystem::CreateObjectPool(UScriptStruct* InScriptStruct, UCla
 
 bool UObjectCacheSubsystem::DestroyObjectPool(UClass* Class, bool OnlyClearItems)
 {
-	EXLIBRARY_LOG(Log, TEXT("%s for: %s, %d, current size:%d"), *FString(__FUNCTION__), *GetNameSafe(Class), OnlyClearItems, ClassObjectCachePool.Num());
+	GAMEPLAYUTILS_LOG(Log, TEXT("%s for: %s, %d, current size:%d"), *FString(__FUNCTION__), *GetNameSafe(Class), OnlyClearItems, ClassObjectCachePool.Num());
 	if (!Class)
 	{
 		return false;
@@ -224,7 +220,7 @@ bool UObjectCacheSubsystem::DestroyObjectPool(UClass* Class, bool OnlyClearItems
 			ClassObjectCachePool[i]->ReferenceCount--;
 			if (ClassObjectCachePool[i]->ReferenceCount > 0)
 			{
-				EXLIBRARY_LOG(Log, TEXT("%s ignore, Object pool has another reference"), *FString(__FUNCTION__));
+				GAMEPLAYUTILS_LOG(Log, TEXT("%s ignore, Object pool has another reference"), *FString(__FUNCTION__));
 				return true;
 			}
 
@@ -243,7 +239,7 @@ UObject* UObjectCacheSubsystem::RetainObject(UClass* ObjectClass)
 {
 	if (!ObjectClass)
 	{
-		EXLIBRARY_LOG(Error, TEXT("%s, ObjectClass is null"), *FString(__FUNCTION__));
+		GAMEPLAYUTILS_LOG(Error, TEXT("%s, ObjectClass is null"), *FString(__FUNCTION__));
 		return nullptr;
 	}
 
@@ -255,7 +251,7 @@ UObject* UObjectCacheSubsystem::RetainObject(UClass* ObjectClass)
 		}
 	}
 
-	EXLIBRARY_LOG(Error, TEXT("%s, Cannot find pool of class %s, current size:%d"), *FString(__FUNCTION__), *GetNameSafe(ObjectClass), ClassObjectCachePool.Num());
+	GAMEPLAYUTILS_LOG(Error, TEXT("%s, Cannot find pool of class %s, current size:%d"), *FString(__FUNCTION__), *GetNameSafe(ObjectClass), ClassObjectCachePool.Num());
 	return nullptr;
 }
 
