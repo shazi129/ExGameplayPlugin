@@ -30,22 +30,6 @@ bool UExGameplayLibrary::IsClient(const UObject* WorldContextObject)
 	}
 }
 
-int64 UExGameplayLibrary::GetTimestamp()
-{
-	return FDateTime::UtcNow().ToUnixTimestamp();
-}
-
-int64 UExGameplayLibrary::GetTimestampMs()
-{
-	return (FDateTime::UtcNow() - FDateTime(1970, 1, 1)).GetTotalMilliseconds();
-}
-
-int UExGameplayLibrary::GetTimeZone()
-{
-	//本地时间与Utc时间差的小时数
-	return (FDateTime::Now().ToUnixTimestamp() - FDateTime::UtcNow().ToUnixTimestamp()) / 3600;
-}
-
 EBPNetMode UExGameplayLibrary::GetWorldNetMode(UWorld* World)
 {
 	return (EBPNetMode)World->GetNetMode();

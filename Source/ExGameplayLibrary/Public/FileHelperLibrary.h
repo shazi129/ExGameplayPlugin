@@ -22,14 +22,26 @@ public:
 	//删除文件
 	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
 	static bool	 DeleteFile(const FString& Filename);
+	
+	//修改文件名
+	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
+	static bool MoveFile(const FString& NewFilePath, const FString& OldFilePath);
+
+	//获取目录所有文件
+	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
+	static TArray<FString> GetFiles(const FString& Path);
 
 	//读文件
 	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
 	static bool LoadFileToArray(TArray<uint8>& Result, const FString& FileName, int Flags);
+	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
+	static bool LoadFileToString(FString& Result, const FString& FileName, int Flags);
 	
 	//保存文件
 	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
-	static bool SaveArrayToFile(TArray<uint8>& Result, const FString& FileName);
+	static bool SaveArrayToFile(TArray<uint8>& Array, const FString& FileName);
+	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
+	static bool SaveStringToFile(const FString& String, const FString& FileName, int EncodingOptions = 0);
 
 	//打开文件夹
 	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
@@ -54,4 +66,7 @@ public:
 	//转换包路径  /Game/a  =>  C:/UE5Project/Content/a.uasset
 	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
 	static FString TryConvertLongPackageNameToFilename(const FString& InLongPackageName);
+
+	UFUNCTION(BlueprintCallable, Category = "FileHelperLibrary")
+	static FString GetFileMD5(const FString& FilePath);
 };

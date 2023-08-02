@@ -14,23 +14,6 @@ public:
 	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary", meta = (DefaultToSelf = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
 		static bool IsClient(const UObject* WorldContextObject);
 
-	/**
-	 * @brief 获取UTC时间戳
-	 * @return 时间戳，秒级
-	*/
-	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
-		static int64 GetTimestamp(); //统一用的UTC时间
-
-	/**
-	 * @brief 获取UTC时间戳
-	 * @return 时间戳，毫秒级
-	*/
-	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
-		static int64 GetTimestampMs();
-
-	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary")
-		static int GetTimeZone(); //当地时区
-
 	UFUNCTION(BlueprintPure, Category = "ExGameplayLibrary", meta = (DefaultToSelf = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
 		static FString GetLogPrefix(const UObject* WorldContextObject);
 

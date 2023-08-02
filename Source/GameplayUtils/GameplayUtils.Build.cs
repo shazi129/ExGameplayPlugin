@@ -7,7 +7,7 @@ public class GameplayUtils : ModuleRules
 	public GameplayUtils(ReadOnlyTargetRules Target) : base(Target)
 	{
         PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
-
+        bEnableExceptions = true;
         PublicIncludePaths.AddRange(
             new string[] {
             }
@@ -31,7 +31,9 @@ public class GameplayUtils : ModuleRules
                 "StaticMeshDescription",
                 "zlib",
                 "HTTP",
-                "Projects"
+                "Projects",
+                "StructUtils",
+                "MassEntity",
 				// ... add other public dependencies that you statically link with here ...
 			}
             );

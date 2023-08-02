@@ -35,8 +35,12 @@ FMemoryInfo UPlatformLibrary::GetMemoryInfo()
 	return MemoryInfo;
 }
 
-void UPlatformLibrary::ClipboardCopy(const FString& Value)
+void UPlatformLibrary::ClipboardCopy(const FString& Value, bool LogValue)
 {
+	if (LogValue)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s: %s"), *FString(__FUNCTION__), *Value);
+	}
 #if PLATFORM_WINDOWS
 	return FWindowsPlatformMisc::ClipboardCopy(*Value);
 #else

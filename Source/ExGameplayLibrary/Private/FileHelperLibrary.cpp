@@ -21,14 +21,38 @@ bool UFileHelperLibrary::DeleteFile(const FString& Filename)
 	return FPlatformFileManager::Get().GetPlatformFile().DeleteFile(*AbsFilePath);
 }
 
+bool UFileHelperLibrary::MoveFile(const FString& NewFilePath, const FString& OldFilePath)
+{
+	IPlatformFile& FileManager = FPlatformFileManager::Get().GetPlatformFile();
+	return FileManager.MoveFile(*NewFilePath, *OldFilePath);
+}
+
+TArray<FString> UFileHelperLibrary::GetFiles(const FString& Path)
+{
+	TArray<FString> Files;
+	IPlatformFile& FileManager = FPlatformFileManager::Get().GetPlatformFile();
+	FileManager.FindFiles(Files, *Path, nullptr);
+	return Files;
+}
+
 bool UFileHelperLibrary::LoadFileToArray(TArray<uint8>& Result, const FString& FileName, int Flags)
 {
 	return FFileHelper::LoadFileToArray(Result, *FileName, Flags);
 }
 
-bool UFileHelperLibrary::SaveArrayToFile(TArray<uint8>& Result, const FString& FileName)
+bool UFileHelperLibrary::LoadFileToString(FString& Result, const FString& FileName, int Flags)
 {
-	return FFileHelper::SaveArrayToFile(Result, *FileName);
+	return FFileHelper::LoadFileToString(Result, *FileName, FFileHelper::EHashOptions::None, Flags);
+}
+
+bool UFileHelperLibrary::SaveArrayToFile(TArray<uint8>& Array, const FString& FileName)
+{
+	return FFileHelper::SaveArrayToFile(Array, *FileName);
+}
+
+bool UFileHelperLibrary::SaveStringToFile(const FString& String, const FString& FileName, int EncodingOptions)
+{
+	return FFileHelper::SaveStringToFile(String, *FileName, static_cast<FFileHelper::EEncodingOptions>(EncodingOptions));
 }
 
 void UFileHelperLibrary::OpenFolder(const FString& FolderPath)
@@ -105,4 +129,9 @@ FString UFileHelperLibrary::TryConvertLongPackageNameToFilename(const FString& I
 		EXLIBRARY_LOG(Error, TEXT("%s convert[%s] error"), *FString(__FUNCTION__), *InLongPackageName);
 	}
 	return OutRelativePath;
+}
+
+FString UFileHelperLibrary::GetFileMD5(const FString& FilePath)
+{
+	return LexToString(FMD5Hash::HashFile(*FilePath));
 }
