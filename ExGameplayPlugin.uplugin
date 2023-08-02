@@ -71,7 +71,7 @@
 			"LoadingPhase": "Default"
 		}
 	],
-	
+
 	"Plugins": [
 		{
 			"Name": "GameplayAbilities",
@@ -91,7 +91,19 @@
 		},
 		{
 			"Name": "ContentBrowserAssetDataSource",
-			"Enabled":  true
+			"Enabled": true
+		},
+		{
+			"Name": "StructUtils",
+			"Enabled": true
+		},
+		{
+			"Name": "AnimToTexture",
+			"Enabled": true
+		},
+		{
+			"Name": "MassEntity",
+			"Enabled": true
 		}
 	]
 }
