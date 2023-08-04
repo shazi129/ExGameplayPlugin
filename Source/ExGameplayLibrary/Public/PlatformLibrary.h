@@ -41,5 +41,5 @@ public:
 		static FORCEINLINE double Seconds() { return FPlatformTime::Seconds(); }
 
 	UFUNCTION(BlueprintCallable, Category = "PlatformLibrary")
-		static void ClipboardCopy(const FString& Value, bool LogValue);
+		static void ClipboardCopy(const FString& Value, bool LogValue = false);
 };
