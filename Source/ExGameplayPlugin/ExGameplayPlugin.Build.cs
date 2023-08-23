@@ -39,7 +39,8 @@ public class ExGameplayPlugin : ModuleRules
 				"GameFeatures",
 				"Json",
 				"HTTP",
-				"AnimToTexture"
+				"AnimToTexture",
+                "GameplayUtils"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);

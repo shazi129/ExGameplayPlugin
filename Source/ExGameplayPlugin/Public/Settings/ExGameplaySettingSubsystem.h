@@ -19,7 +19,7 @@ public:
 
 private:
 	void OnCheatManagerCreate(UCheatManager* CheatManager);
-
+	void InitGlobalVariables();
 
 private:
 	FDelegateHandle CheatManagerCreateHandle;

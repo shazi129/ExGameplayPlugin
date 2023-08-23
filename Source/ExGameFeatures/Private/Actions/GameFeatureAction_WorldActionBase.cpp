@@ -56,6 +56,7 @@ void UGameFeatureAction_WorldActionBase::RemoveHandledWord(UWorld* InWorld)
 	{
 		if (HandledWorlds[i].WorldEntry == InWorld)
 		{
+			RemoveFromWorld(InWorld);
 			HandledWorlds.RemoveAt(i);
 		}
 	}

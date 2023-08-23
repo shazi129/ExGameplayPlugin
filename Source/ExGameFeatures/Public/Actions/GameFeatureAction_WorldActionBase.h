@@ -39,7 +39,8 @@ public:
 	void OnWorldTearDown(UWorld* InWorld);
 
 private:
-	virtual void AddToWorld(const FWorldContext& WorldContext) PURE_VIRTUAL(UGameFeatureAction_WorldActionBase::AddToWorld,);
+	virtual void AddToWorld(const FWorldContext& WorldContext) {}
+	virtual void RemoveFromWorld(const UWorld* World) {}
 
 	bool IsWorldHandled(UWorld* InWorld);
 	void HandleWorld(UWorld* InWorld);

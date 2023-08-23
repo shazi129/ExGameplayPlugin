@@ -7,26 +7,30 @@
 #include "GameFeatureAction_AddWorldSubsystem.generated.h"
 
 USTRUCT()
-struct FAddWorldSubsystemEntry
+struct EXGAMEFEATURES_API FAddWorldSubsystemEntry
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere)
-		TSoftClassPtr<UModularWorldSubsystem> SubsystemClass;
+		TSubclassOf<UModularWorldSubsystem> SubsystemClass;
 
-	UPROPERTY(EditAnywhere, Category = "Components")
+	UPROPERTY(EditAnywhere)
 		uint8 bInClient : 1;
 
-	UPROPERTY(EditAnywhere, Category = "Components")
+	UPROPERTY(EditAnywhere)
 		uint8 bInServer : 1;
+
+	UPROPERTY(EditAnywhere)
+		uint8 bDeactivateWhenWorldTeardown : 1;
 
 	FAddWorldSubsystemEntry()
 		: bInClient(true)
 		, bInServer(true)
+		, bDeactivateWhenWorldTeardown(false)
 	{
 	}
 };
-/*
+
 USTRUCT()
 struct FAddWorldSubsystemEntries
 {
@@ -39,15 +43,14 @@ struct FAddWorldSubsystemEntries
 		TArray<FAddWorldSubsystemEntry> Subsystems;
 };
 
-
 UCLASS(MinimalAPI, meta = (DisplayName = "Add World Subsystem"))
 class UGameFeatureAction_AddWorldSubsystem final : public UGameFeatureAction_WorldActionBase
 {
 	GENERATED_BODY()
 
 public:
-	//~ Begin UGameFeatureAction interface
 	virtual void OnGameFeatureDeactivating(FGameFeatureDeactivatingContext& Context) override;
+
 #if WITH_EDITORONLY_DATA
 	virtual void AddAdditionalAssetBundleData(FAssetBundleData& AssetBundleData) override;
 #endif
@@ -61,11 +64,14 @@ public:
 
 public:
 	UPROPERTY(EditAnywhere)
-		TArray<FAddWorldSubsystemEntries> EntriesList;
+		TArray<FAddWorldSubsystemEntries> SubystemEntriesList;
 
 private:
-	//~ Begin UGameFeatureAction_WorldActionBase interface
 	virtual void AddToWorld(const FWorldContext& WorldContext) override;
-	//~ End UGameFeatureAction_WorldActionBase interface
+	virtual void RemoveFromWorld(const UWorld* World) override;
+
+	void ClearSubystem(bool ClearAll=false);
+
+	TMap<TSubclassOf<UModularWorldSubsystem>, FAddWorldSubsystemEntry*> AddedSubsystems;
 };
-*/
+
