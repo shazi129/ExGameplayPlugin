@@ -7,7 +7,7 @@
 #include "Logging/LogMacros.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogAncientGameFeatures, Log, All);
-#define LOCTEXT_NAMESPACE "AncientGameFeatures"
+#define LOCTEXT_NAMESPACE "ExGameFeatures"
 
 //////////////////////////////////////////////////////////////////////
 // UGameFeatureAction_AddLevelInstances

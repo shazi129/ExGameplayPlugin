@@ -7,7 +7,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputMappingContext.h"
 
-#define LOCTEXT_NAMESPACE "TIKIGameFeatures"
+#define LOCTEXT_NAMESPACE "ExGameFeatures"
 
 //////////////////////////////////////////////////////////////////////
 // UGameFeatureAction_AddInputContextMapping
