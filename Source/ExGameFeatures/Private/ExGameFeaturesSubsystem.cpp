@@ -2,7 +2,6 @@
 #include "ExGameFeaturesModule.h"
 #include "GameFeaturesSubsystem.h"
 #include "ExGameFeaturesCheat.h"
-#include "Components/GameFrameworkComponentManager.h"
 
 void UExGameFeaturesSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {

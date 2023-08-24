@@ -12,6 +12,7 @@ void UGameFeatureAction_AddWorldSubsystem::OnGameFeatureDeactivating(FGameFeatur
 	ClearSubystem(true);
 }
 
+#if WITH_EDITORONLY_DATA
 void UGameFeatureAction_AddWorldSubsystem::AddAdditionalAssetBundleData(FAssetBundleData& AssetBundleData)
 {
 	if (UAssetManager::IsValid())
@@ -26,7 +27,9 @@ void UGameFeatureAction_AddWorldSubsystem::AddAdditionalAssetBundleData(FAssetBu
 		}
 	}
 }
+#endif
 
+#if WITH_EDITOR
 EDataValidationResult UGameFeatureAction_AddWorldSubsystem::IsDataValid(TArray<FText>& ValidationErrors)
 {
 	EDataValidationResult Result = CombineDataValidationResults(Super::IsDataValid(ValidationErrors), EDataValidationResult::Valid);
@@ -48,6 +51,7 @@ EDataValidationResult UGameFeatureAction_AddWorldSubsystem::IsDataValid(TArray<F
 
 	return Result;
 }
+#endif
 
 void UGameFeatureAction_AddWorldSubsystem::AddToWorld(const FWorldContext& WorldContext)
 {
@@ -97,7 +101,7 @@ void UGameFeatureAction_AddWorldSubsystem::AddToWorld(const FWorldContext& World
 
 				if (UModularWorldSubsystem* CDO = SubsystemEntry.SubsystemClass->GetDefaultObject<UModularWorldSubsystem>())
 				{
-					CDO->bShouldCreate = CDO->CanActivate(World);
+					CDO->bShouldCreate = CDO->NativeCanActivate(World);
 					if (CDO->ShouldCreateSubsystem(World))
 					{
 						FSubsystemCollectionBase::ActivateExternalSubsystem(SubsystemEntry.SubsystemClass);

@@ -15,7 +15,7 @@ public:
 
 	virtual void Initialize(FSubsystemCollectionBase& Collection);
 	virtual void Deinitialize();
-	virtual bool CanActivate(UObject* Outer);
+	virtual bool NativeCanActivate(UObject* Outer);
 
 private:
 	/**
@@ -25,13 +25,13 @@ private:
 
 public:
 	UFUNCTION(BlueprintImplementableEvent, DisplayName = "Initialize")
-		void BP_Initialize();
+		void ReceiveInitialize();
 
 	UFUNCTION(BlueprintImplementableEvent, DisplayName = "Deinitialize")
-		void BP_Deinitialize();
+		void ReceiveDeinitialize();
 
 	UFUNCTION(BlueprintNativeEvent, DisplayName = "CanActivate")
-		bool BP_CanActivate(UObject* Outer);
+		bool CanActivate(UObject* Outer);
 
 private:
 	UPROPERTY(Transient)

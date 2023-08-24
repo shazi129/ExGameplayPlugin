@@ -8,21 +8,21 @@ UModularWorldSubsystem::UModularWorldSubsystem()
 void UModularWorldSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-	BP_Initialize();
+	ReceiveInitialize();
 }
 
 void UModularWorldSubsystem::Deinitialize()
 {
 	Super::Deinitialize();
-	BP_Deinitialize();
+	ReceiveDeinitialize();
 }
 
-bool UModularWorldSubsystem::CanActivate(UObject* Outer)
+bool UModularWorldSubsystem::NativeCanActivate(UObject* Outer)
 {
-	return BP_CanActivate(Outer);
+	return CanActivate(Outer);
 }
 
-bool UModularWorldSubsystem::BP_CanActivate_Implementation(UObject* Outer)
+bool UModularWorldSubsystem::CanActivate_Implementation(UObject* Outer)
 {
 	return true;
 }

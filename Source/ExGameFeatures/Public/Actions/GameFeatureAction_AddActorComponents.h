@@ -2,7 +2,6 @@
 
 #include "Actions/GameFeatureAction_GameInstanceActionBase.h"
 #include "GameFeaturesSubsystem.h"
-#include "Components/GameFrameworkComponentManager.h"
 #include "GameFeatureAction_AddActorComponents.generated.h"
 
 USTRUCT()
