@@ -235,7 +235,7 @@ bool UObjectCacheSubsystem::DestroyObjectPool(UClass* Class, bool OnlyClearItems
 	return true;
 }
 
-UObject* UObjectCacheSubsystem::RetainObject(UClass* ObjectClass)
+UObject* UObjectCacheSubsystem::RetainObject(const UClass* ObjectClass)
 {
 	if (!ObjectClass)
 	{
@@ -255,14 +255,14 @@ UObject* UObjectCacheSubsystem::RetainObject(UClass* ObjectClass)
 	return nullptr;
 }
 
-bool UObjectCacheSubsystem::ReleaseObject(UObject* Object)
+bool UObjectCacheSubsystem::ReleaseObject(UObject* Object, const UClass* Class)
 {
 	if (!Object)
 	{
 		return true;
 	}
 
-	UClass* ObjectClass = Object->GetClass();
+	const UClass* ObjectClass = Class != nullptr ? Class : Object->GetClass();
 	for (FClassObjectCachePool* Pool : ClassObjectCachePool)
 	{
 		if (Pool && Pool->GetClass() == ObjectClass)

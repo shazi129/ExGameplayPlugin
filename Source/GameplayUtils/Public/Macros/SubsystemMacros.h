@@ -4,6 +4,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 
+#ifndef GET_GAMEINSTANCE_SUBSYSTEM
+
 #define  GET_GAMEINSTANCE_SUBSYSTEM(LogCategory, SubsystemType, WorldContextObject) \
 	const UGameInstance* GameInstance = Cast<UGameInstance>(WorldContextObject); \
 	if (GameInstance == nullptr) \
@@ -17,6 +19,10 @@
 	} \
 	return GameInstance->GetSubsystem<SubsystemType>();\
 
+#endif
+
+#ifndef DECLARE_GET_GAMEINSTANCE_SUBSYSTEM
+
 #define DECLARE_GET_GAMEINSTANCE_SUBSYSTEM(SubsystemType, LogCategory) \
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (WorldContext = "WorldContextObject", UnsafeDuringActorConstruction = "true")) \
 	static SubsystemType* GetSubsystem(const UObject* WorldContextObject) \
@@ -24,6 +30,9 @@
 		GET_GAMEINSTANCE_SUBSYSTEM(LogCategory, SubsystemType, WorldContextObject) \
 	} \
 
+#endif
+
+#ifndef GET_WORLD_SUBSYSTEM
 
 #define  GET_WORLD_SUBSYSTEM(LogCategory, SubsystemType, WorldContextObject) \
 	const UWorld* World = Cast<UWorld>(WorldContextObject); \
@@ -38,9 +47,15 @@
 	} \
 	return World->GetSubsystem<SubsystemType>();\
 
-#define DECLARE_GET_World_SUBSYSTEM(SubsystemType, LogCategory) \
+#endif
+
+#ifndef DECLARE_GET_WORLD_SUBSYSTEM
+
+#define DECLARE_GET_WORLD_SUBSYSTEM(SubsystemType, LogCategory) \
 	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (WorldContext = "WorldContextObject", UnsafeDuringActorConstruction = "true")) \
 	static SubsystemType* GetSubsystem(const UObject* WorldContextObject) \
 	{ \
 		GET_WORLD_SUBSYSTEM(LogCategory, SubsystemType, WorldContextObject) \
 	} \
+
+#endif

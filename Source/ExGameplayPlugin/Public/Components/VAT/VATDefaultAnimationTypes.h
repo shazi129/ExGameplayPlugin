@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "AnimToTextureDataAsset.h"
 #include "VATDefaultAnimationTypes.generated.h"
 
 //VAT默认动画类型

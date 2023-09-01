@@ -1,5 +1,43 @@
 #pragma once
 
+/**
+ * UE对象池，主要针对UObject及其各种基类
+ * 
+ * *****基本使用方式*****
+ * 
+ * 创建对象池：
+ * UObjectCacheSubsystem* CacheSubsystem = UObjectCacheSubsystem::GetSubsystem(this);
+ * CacheSubsystem->CreateObjectPool(FActorCachePool::StaticStruct(), BombClass, GetWorld(), 3);  //创建一个BombClass的Actor池
+ * 
+ * 获取一个对象
+ * BombActor = Cast<AIsomersBombActor>(CacheSubsystem->RetainObject(BombClass));
+ * 
+ * 回收一个对象
+ * CacheSubsystem->ReleaseObject(BombActor)
+ * 
+ * 销毁对象池：
+ * CacheSubsystem->DestroyObjectPool(BombClass);
+ * 
+ * *******一些特殊的对象**********
+ * 游戏中有些对象可能需要在 创建/获取/回收/销毁 时做一些回调操作，这时候就需要自定义对象池类型：
+ * 
+ * USTRUCT(BlueprintType)
+ * struct ISOMERSFRAMEWORK_API FIsomersBombCache : public FActorCachePool
+ * {
+ * 		GENERATED_BODY()
+ *	public:
+ * 		FIsomersBombCache() {}
+ * 		virtual void OnObjectCreate(UObject* Item) override;
+ * 		virtual void OnObjectDestroy(UObject* Item) override;
+ * 		virtual void OnObjectRetain(UObject* Item) override;
+ * 		virtual void OnObjectRelease(UObject* Item) override;
+ * };
+ * 
+ * 创建自定义对象池：
+ * CacheSubsystem->CreateObjectPool(FIsomersBombCache::StaticStruct(), BombClass, GetWorld(), 3)
+ *
+ */
+
 #include "CoreMinimal.h"
 #include "Macros/SubsystemMacros.h"
 #include "Subsystems/GameInstanceSubsystem.h"
@@ -64,20 +102,6 @@ protected:
 };
 
 USTRUCT(BlueprintType)
-struct GAMEPLAYUTILS_API FStructObjectCachePool
-{
-	GENERATED_BODY()
-
-protected:
-	//类型
-	UScriptStruct* ScriptStruct;
-	//内存
-	uint8* Memory;
-	//当前大小
-	int ItemSize;
-};
-
-USTRUCT(BlueprintType)
 struct GAMEPLAYUTILS_API FActorCachePool : public FClassObjectCachePool
 {
 	GENERATED_BODY()
@@ -95,7 +119,7 @@ class GAMEPLAYUTILS_API UObjectCacheSubsystem : public UGameInstanceSubsystem
 public:
 	DECLARE_GET_GAMEINSTANCE_SUBSYSTEM(UObjectCacheSubsystem, LogTemp)
 
-		virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize();
 	void OnWorldTearingDown(UWorld* World);
 
@@ -106,16 +130,13 @@ public:
 		bool DestroyObjectPool(UClass* Class, bool OnlyClearItems = true);
 
 	UFUNCTION(BlueprintCallable)
-		UObject* RetainObject(UClass* ObjectClass);
+		UObject* RetainObject(const UClass* ObjectClass);
 
 	UFUNCTION(BlueprintCallable)
-		bool ReleaseObject(UObject* Object);
+		bool ReleaseObject(UObject* Object, const UClass* Class=nullptr);
 
 private:
 	FDelegateHandle WorldBeginTearDownHandler;
 
 	TArray<FClassObjectCachePool*> ClassObjectCachePool;
-
-	UPROPERTY()
-		TArray<FStructObjectCachePool> StructObjectCachePool;
 };
