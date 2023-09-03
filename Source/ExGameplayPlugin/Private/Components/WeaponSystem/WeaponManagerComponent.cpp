@@ -47,6 +47,7 @@ FWeaponInfo* UWeaponManagerComponent::FindWeaponInfo(FGameplayTag WeaponType)
 
 void UWeaponManagerComponent::AddWeapon(FGameplayTag WeaponType, const FExAbilityCase& AbilityCase, AActor* WeaponActor, bool NeedAtivate)
 {
+/*
 	if (!OwnerASC)
 	{
 		UE_LOG(LogTemp, Error, TEXT("UWeaponManagerComponent::AddWeapon: owner have no asc"));
@@ -66,6 +67,7 @@ void UWeaponManagerComponent::AddWeapon(FGameplayTag WeaponType, const FExAbilit
 	{
 		ActivateWeapon(WeaponType);
 	}
+*/
 }
 
 

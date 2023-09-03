@@ -9,6 +9,7 @@
 #include "GameplayCueManager.h"
 #include "Engine/ActorChannel.h"
 
+
 void UExAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
 {
 	Super::InitAbilityActorInfo(InOwnerActor, InAvatarActor);
@@ -33,22 +34,12 @@ void UExAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActo
 void UExAbilitySystemComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	//�ռ�Owner���ϵ�Ability
-	const TSet<UActorComponent*>& OwnedComponents = GetOwner()->GetComponents();
-	for (UActorComponent* Component : OwnedComponents)
-	{
-		IExAbilityProvider* AbilityProvider = Cast<IExAbilityProvider>(Component);
-		if (AbilityProvider)
-		{
-			RegisterAbilityProvider(AbilityProvider);
-		}
-	}
+	RegisterAbilityProvider(this);
 }
 
 void UExAbilitySystemComponent::EndPlay(EEndPlayReason::Type EndPlayReason)
 {
-	RegistedProviders.Reset();
+	ClearAllProvider();
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -69,65 +60,6 @@ void UExAbilitySystemComponent::GetLifetimeReplicatedProps(TArray< FLifetimeProp
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 }
 
-void UExAbilitySystemComponent::CollectAbilitCases(TArray<FExAbilityCase>& Abilities) const
-{
-	for (const FExAbilityCase& Ability : DefaultAbilities)
-	{
-		Abilities.Add(Ability);
-	}
-}
-
-void UExAbilitySystemComponent::RegisterAbilityProvider(IExAbilityProvider* ProviderObject)
-{
-	if (ProviderObject == nullptr)
-	{
-		return;
-	}
-
-	if (GetOwner()->HasAuthority() == false)
-	{
-		EXABILITY_LOG(Log, TEXT("UExAbilitySystemComponent::RegisterAbilityProvider ignore, has no authority"));
-		return;
-	}
-
-	if (RegistedProviders.Contains(ProviderObject))
-	{
-		EXABILITY_LOG(Warning, TEXT("%s duplicate provider: %s"), *FString(__FUNCTION__), *GetNameSafe(Cast<UObject>(ProviderObject)));
-		return;
-	}
-	RegistedProviders.Add(ProviderObject);
-
-	TArray<FExAbilityCase> AbilityCases;
-	ProviderObject->CollectAbilitCases(AbilityCases);
-	for (const FExAbilityCase& AbilityCase : AbilityCases)
-	{
-		GiveAbilityByCase(AbilityCase, Cast<UObject>(ProviderObject));
-	}
-}
-
-void UExAbilitySystemComponent::UnregisterAbilityProvider(IExAbilityProvider* ProviderObject)
-{
-	RegistedProviders.Remove(ProviderObject);
-}
-
-FGameplayAbilitySpec* UExAbilitySystemComponent::FindAbilitySpecFromCase(const FExAbilityCase& AbilityCase)
-{
-	if (AbilityCase.IsValid() == false)
-	{
-		return nullptr;
-	}
-
-	for (FGameplayAbilitySpec& Spec : ActivatableAbilities.Items)
-	{
-		if (Spec.Ability == AbilityCase.AbilityClass->GetDefaultObject())
-		{
-			return &Spec;
-		}
-	}
-
-	return nullptr;
-}
-
 void UExAbilitySystemComponent::OnPawnControllerChanged(APawn* Pawn, AController* NewController)
 {
 	if (AbilityActorInfo && AbilityActorInfo->OwnerActor == Pawn && AbilityActorInfo->PlayerController != NewController)
@@ -135,73 +67,6 @@ void UExAbilitySystemComponent::OnPawnControllerChanged(APawn* Pawn, AController
 		// Reinit the cached ability actor info (specifically the player controller)
 		AbilityActorInfo->InitFromActor(AbilityActorInfo->OwnerActor.Get(), AbilityActorInfo->AvatarActor.Get(), this);
 	}
-}
-
-FGameplayAbilitySpecHandle UExAbilitySystemComponent::GiveAbilityByCase(const FExAbilityCase& AbilityCase, UObject* AbilityProvider)
-{
-	AActor* Owner = GetOwner();
-	if (!Owner)
-	{
-		ABILITY_LOG(Error, TEXT("%s error, ASC has no owner"), *FString(__FUNCTION__));
-		return FGameplayAbilitySpecHandle();
-	}
-
-	ENetRole LocalRole = Owner->GetLocalRole();
-	if (LocalRole == ENetRole::ROLE_Authority)
-	{
-		return GiveAbilityByCaseInternal(AbilityCase, AbilityProvider);
-	}
-	else if (LocalRole == ENetRole::ROLE_AutonomousProxy)
-	{
-		ServerGiveAbilityByCase(AbilityCase, AbilityProvider);
-		ABILITY_LOG(Log, TEXT("%s in ROLE_AutonomousProxy, result will be invalid"), *FString(__FUNCTION__));
-	}
-	else
-	{
-		ABILITY_LOG(Error, TEXT("%s cannot be used in role: %d"), *FString(__FUNCTION__), LocalRole);
-	}
-	return FGameplayAbilitySpecHandle();
-}
-
-FGameplayAbilitySpecHandle UExAbilitySystemComponent::GiveAbilityByCaseInternal(const FExAbilityCase& AbilityCase, UObject* AbilityProvider)
-{
-	if (!AbilityProvider)
-	{
-		AbilityProvider = this;
-	}
-
-	if (AbilityCase.IsValid() == false)
-	{
-		ABILITY_LOG(Error, TEXT("UExAbilitySystemComponent::GiveAbilityByCaseInternal error, AbilityCase Invalid"));
-		return FGameplayAbilitySpecHandle();
-	}
-
-	//理论上每个Ability只Give一次
-	if (FindAbilitySpecFromClass(AbilityCase.AbilityClass))
-	{
-		ABILITY_LOG(Warning, TEXT("%s , add duplicated class: %s, provider:%s"), *FString(__FUNCTION__), *GetNameSafe(AbilityCase.AbilityClass), *GetNameSafe(AbilityProvider));
-		return FGameplayAbilitySpecHandle();
-	}
-
-	FGameplayAbilitySpec Spec(AbilityCase.AbilityClass, AbilityCase.AbilityLevel, INDEX_NONE, (AbilityProvider));
-	const FGameplayAbilitySpecHandle& SpecHandle = GiveAbility(Spec);
-
-	if (AbilityCase.ActivateWhenGiven)
-	{
-		TryActivateAbility(SpecHandle);
-	}
-
-	return SpecHandle;
-}
-
-bool UExAbilitySystemComponent::ServerGiveAbilityByCase_Validate(const FExAbilityCase& AbilityCase, UObject* AbilityProvider = nullptr)
-{
-	return true;
-}
-
-void UExAbilitySystemComponent::ServerGiveAbilityByCase_Implementation(const FExAbilityCase& AbilityCase, UObject* AbilityProvider = nullptr)
-{
-	GiveAbilityByCaseInternal(AbilityCase, AbilityProvider);
 }
 
 void UExAbilitySystemComponent::ClearAbilityByClassInternal(TSubclassOf<UGameplayAbility> AbilityClass)
@@ -246,40 +111,6 @@ bool UExAbilitySystemComponent::ServerClearAbilityByClass_Validate(TSubclassOf<U
 void UExAbilitySystemComponent::ServerClearAbilityByClass_Implementation(TSubclassOf<UGameplayAbility> AbilityClass)
 {
 	ClearAbilityByClassInternal(AbilityClass);
-}
-
-void UExAbilitySystemComponent::TryActivateAbilityOnceWithEventData_Implementation(const FExAbilityCase& AbilityCase, const FGameplayEventData& TriggerEventData, UObject* SourceObj)
-{
-	FGameplayAbilitySpec* Spec = FindAbilitySpecFromCase(AbilityCase);
-	if (Spec && Spec->Handle.IsValid())
-	{
-		InternalTryActivateAbility(Spec->Handle, FPredictionKey(), nullptr, nullptr, &TriggerEventData);
-	}
-	else
-	{
-		EXABILITY_LOG(Error, TEXT("UExAbilitySystemComponent::TryActivateAbilityOnceWithEventData error, Spec invalid"));
-	}
-}
-
-bool UExAbilitySystemComponent::TryActivateAbilityOnceWithEventData_Validate(const FExAbilityCase& AbilityCase, const FGameplayEventData& TriggerEventData, UObject* SourceObj)
-{
-	return true;
-}
-
-void UExAbilitySystemComponent::TryActivateAbilityByCase(const FExAbilityCase& AbilityCase)
-{
-	FGameplayAbilitySpec* Spec = FindAbilitySpecFromCase(AbilityCase);
-	if (Spec && Spec->Handle.IsValid())
-	{
-		TryActivateAbility(Spec->Handle);
-	}
-	else
-	{
-		EXABILITY_LOG(Error, TEXT("UExAbilitySystemComponent::TryActivateAbilityByCase error, Handle for case is invalid"));
-		return;
-	}
-
-	
 }
 
 void UExAbilitySystemComponent::ExecuteGameplayCueLocal(const FGameplayTag GameplayCueTag, const FGameplayCueParameters & GameplayCueParameters)
@@ -356,3 +187,325 @@ bool UExAbilitySystemComponent::ReplicateSubobjects(UActorChannel* Channel, clas
 
 	return WroteSomething;
 }
+
+#pragma region Provider 相关
+
+void UExAbilitySystemComponent::CollectAbilitCases(TArray<FExAbilityCase>& Abilities) const
+{
+	for (const FExAbilityCase& Ability : DefaultAbilities)
+	{
+		Abilities.Add(Ability);
+	}
+}
+
+void UExAbilitySystemComponent::RegisterAbilityProvider(TScriptInterface<IExAbilityProvider> Provider)
+{
+	UObject* ProviderObject = Cast<UObject>(Provider.GetObject());
+	if (ProviderObject == nullptr)
+	{
+		EXABILITY_LOG(Error, TEXT("%s ignore, Provider is not a UObject"), *FString(__FUNCTION__));
+		return;
+	}
+
+	FAbilityProviderInfo ProviderInfo = Provider->GetProviderInfo();
+	for (const auto& CollectedAbilityInfo : AbilityProviderInfoList)
+	{
+		if (CollectedAbilityInfo.ProviderInfo == ProviderInfo)
+		{
+			EXABILITY_LOG(Error, TEXT("%s error, duplicated provider: %s"), *FString(__FUNCTION__), *ProviderInfo.ToString());
+			return;
+		}
+	}
+
+	FCollectedAbilityInfo* NewCollectedAbilityInfo = nullptr;
+	for (auto& CollectedAbilityInfo : AbilityProviderInfoList)
+	{
+		if (!CollectedAbilityInfo.IsVaild())
+		{
+			NewCollectedAbilityInfo = &CollectedAbilityInfo;
+			break;
+		}
+	}
+	if (!NewCollectedAbilityInfo)
+	{
+		AbilityProviderInfoList.Emplace();
+		NewCollectedAbilityInfo = &AbilityProviderInfoList.Last();
+	}
+
+	NewCollectedAbilityInfo->ProviderInfo = ProviderInfo;
+	Provider->CollectAbilitCases(NewCollectedAbilityInfo->AbilityCases);
+
+	if (!NewCollectedAbilityInfo->AbilityCases.IsEmpty())
+	{
+		RebuildAbilityCategory();
+	}
+
+	bool HasAuthority = GetOwner()->HasAuthority();
+	for (FExAbilityCase& AbilityCase : NewCollectedAbilityInfo->AbilityCases)
+	{
+		AbilityCase.SourceObject = ProviderObject;
+
+		//只有Authority的时候才giveability， 防止give两次
+		if (HasAuthority)
+		{
+			GiveAbilityByCase(AbilityCase);
+		}
+	}
+}
+
+void UExAbilitySystemComponent::UnregisterAbilityProvider(TScriptInterface<IExAbilityProvider> Provider)
+{
+	UObject* ProviderObject = Cast<UObject>(Provider.GetObject());
+	if (!ProviderObject)
+	{
+		EXABILITY_LOG(Error, TEXT("%s ignore, Invalide SourceObject"), *FString(__FUNCTION__));
+		return;
+	}
+
+	FAbilityProviderInfo ProviderInfo = Provider->GetProviderInfo();
+
+	FCollectedAbilityInfo* UnregisterAbilities = nullptr;
+	for (FCollectedAbilityInfo& CollectedAbilityInfo : AbilityProviderInfoList)
+	{
+		if (CollectedAbilityInfo.ProviderInfo == ProviderInfo)
+		{
+			UnregisterAbilities = &CollectedAbilityInfo;
+			break;
+		}
+	}
+
+	if (!UnregisterAbilities)
+	{
+		EXABILITY_LOG(Warning, TEXT("%s ignore, cannot find provider:%s"), *FString(__FUNCTION__), *ProviderInfo.ToString());
+		return;
+	}
+
+	ClearCollectedAbilities(*UnregisterAbilities, false);
+	RebuildAbilityCategory();
+}
+
+void UExAbilitySystemComponent::ClearAllProvider()
+{
+	for (FCollectedAbilityInfo& Info : AbilityProviderInfoList)
+	{
+		ClearCollectedAbilities(Info, false);
+	}
+	RebuildAbilityCategory();
+}
+
+void UExAbilitySystemComponent::ClearCollectedAbilities(FCollectedAbilityInfo& CollectedAbilityInfo, bool NeedRebuildCategory)
+{
+	//只有Authority的时候才clear ability， 防止clear两次
+	if (GetOwner()->HasAuthority())
+	{
+		for (FExAbilityCase& AbilityCase : CollectedAbilityInfo.AbilityCases)
+		{
+			ClearAbilityByClass(AbilityCase.AbilityClass);
+		}
+	}
+
+	CollectedAbilityInfo.Reset();
+	if (NeedRebuildCategory)
+	{
+		RebuildAbilityCategory();
+	}
+}
+
+#pragma endregion
+
+#pragma region 技能分类相关
+void UExAbilitySystemComponent::ActivateAbilityByCategory(const FGameplayTag& CategoryTag)
+{
+	if (!AbilityCategoryMap.Contains(CategoryTag))
+	{
+		EXABILITY_LOG(Error, TEXT("%s ignore, no ability actegory: %s"), *FString(__FUNCTION__), *CategoryTag.ToString());
+		return;
+	}
+
+	TArray<FAbilityCategoryIndex>& CategoryIndexList = AbilityCategoryMap[CategoryTag];
+	if (CategoryIndexList.Num() == 0)
+	{
+		EXABILITY_LOG(Error, TEXT("%s ignore, Empty actegory: %s"), *FString(__FUNCTION__), *CategoryTag.ToString());
+		return;
+	}
+
+	FAbilityCategoryIndex& CategoryIndex = CategoryIndexList[0];
+	if (CategoryIndex.AbilityCasePtr && CategoryIndex.AbilityCasePtr->CanActivate)
+	{
+		//如果没give， give一次
+		FGameplayAbilitySpec* Spec = FindAbilitySpecFromCase(*CategoryIndex.AbilityCasePtr);
+		if (!Spec)
+		{
+			GiveAbilityByCase(*CategoryIndex.AbilityCasePtr, true);
+		}
+		else
+		{
+			TryActivateAbilityByCase(*CategoryIndex.AbilityCasePtr);
+		}
+	}
+}
+
+void UExAbilitySystemComponent::RebuildAbilityCategory()
+{
+	AbilityCategoryMap.Reset();
+
+	for (FCollectedAbilityInfo& CollectedAbilityInfo : AbilityProviderInfoList)
+	{
+		if (CollectedAbilityInfo.IsVaild() == false || CollectedAbilityInfo.AbilityCases.IsEmpty())
+		{
+			continue;
+		}
+		for (FExAbilityCase& AbilityCase : CollectedAbilityInfo.AbilityCases)
+		{
+			for (FAbilityCategory& AbilityCategory : AbilityCase.AbilityCategories)
+			{
+				auto& AbilityCasePtrList = AbilityCategoryMap.FindOrAdd(AbilityCategory.CategoryTag);
+
+				AbilityCasePtrList.Emplace();
+				FAbilityCategoryIndex& CategoryIndex = AbilityCasePtrList.Last();
+				CategoryIndex.AbilityCasePtr = &AbilityCase;
+				CategoryIndex.CategoryPriority = AbilityCategory.Priority;
+			}
+		}
+	}
+
+	//排序
+	for (auto& AbilityCategoryItem : AbilityCategoryMap)
+	{
+		AbilityCategoryItem.Value.Sort([](const FAbilityCategoryIndex& A, const FAbilityCategoryIndex& B)
+		{
+				if (A.AbilityCasePtr->CanActivate != B.AbilityCasePtr->CanActivate)
+				{
+					return A.AbilityCasePtr->CanActivate > B.AbilityCasePtr->CanActivate;
+				}
+				return A.CategoryPriority > B.CategoryPriority;
+		});
+	}
+	
+}
+
+#pragma endregion
+
+#pragma region ////////////////////////////Ability Case 相关
+FGameplayAbilitySpecHandle UExAbilitySystemComponent::GiveAbilityByCase(const FExAbilityCase& AbilityCase, bool ActivateOnce)
+{
+	AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		ABILITY_LOG(Error, TEXT("%s error, ASC has no owner"), *FString(__FUNCTION__));
+		return FGameplayAbilitySpecHandle();
+	}
+
+	ENetRole LocalRole = Owner->GetLocalRole();
+	if (LocalRole == ENetRole::ROLE_Authority)
+	{
+		return GiveAbilityByCaseInternal(AbilityCase, ActivateOnce);
+	}
+	else if (LocalRole == ENetRole::ROLE_AutonomousProxy)
+	{
+		ServerGiveAbilityByCase(AbilityCase, ActivateOnce);
+		ABILITY_LOG(Log, TEXT("%s in ROLE_AutonomousProxy, result will be invalid"), *FString(__FUNCTION__));
+	}
+	else
+	{
+		ABILITY_LOG(Error, TEXT("%s cannot be used in role: %d"), *FString(__FUNCTION__), LocalRole);
+	}
+	return FGameplayAbilitySpecHandle();
+}
+
+FGameplayAbilitySpec* UExAbilitySystemComponent::FindAbilitySpecFromCase(const FExAbilityCase& AbilityCase)
+{
+	if (AbilityCase.IsValid() == false)
+	{
+		return nullptr;
+	}
+
+	for (FGameplayAbilitySpec& Spec : ActivatableAbilities.Items)
+	{
+		if (Spec.Ability == AbilityCase.AbilityClass->GetDefaultObject())
+		{
+			return &Spec;
+		}
+	}
+
+	return nullptr;
+}
+
+FGameplayAbilitySpecHandle UExAbilitySystemComponent::GiveAbilityByCaseInternal(const FExAbilityCase& AbilityCase, bool ActivateOnce)
+{
+	if (AbilityCase.IsValid() == false)
+	{
+		ABILITY_LOG(Error, TEXT("UExAbilitySystemComponent::GiveAbilityByCaseInternal error, AbilityCase Invalid"));
+		return FGameplayAbilitySpecHandle();
+	}
+
+	TObjectPtr<UObject> AbilityProvider = AbilityCase.SourceObject;
+	if (!AbilityProvider)
+	{
+		AbilityProvider = this;
+	}
+
+	bool ActivateWhenGive = ActivateOnce ? true : AbilityCase.ActivateWhenGiven;
+
+	//理论上每个Ability只Give一次
+	if (FindAbilitySpecFromClass(AbilityCase.AbilityClass))
+	{
+		ABILITY_LOG(Warning, TEXT("%s , add duplicated class: %s, provider:%s"), *FString(__FUNCTION__), *GetNameSafe(AbilityCase.AbilityClass), *GetNameSafe(AbilityProvider));
+		return FGameplayAbilitySpecHandle();
+	}
+
+	FGameplayAbilitySpec Spec(AbilityCase.AbilityClass, AbilityCase.AbilityLevel, INDEX_NONE, (AbilityProvider));
+	const FGameplayAbilitySpecHandle& SpecHandle = GiveAbility(Spec);
+
+	if (ActivateWhenGive)
+	{
+		TryActivateAbility(SpecHandle);
+	}
+
+	return SpecHandle;
+}
+
+bool UExAbilitySystemComponent::ServerGiveAbilityByCase_Validate(const FExAbilityCase& AbilityCase, bool ActivateOnce)
+{
+	return true;
+}
+
+void UExAbilitySystemComponent::ServerGiveAbilityByCase_Implementation(const FExAbilityCase& AbilityCase, bool ActivateOnce)
+{
+	GiveAbilityByCaseInternal(AbilityCase, ActivateOnce);
+}
+
+
+void UExAbilitySystemComponent::TryActivateAbilityOnceWithEventData_Implementation(const FExAbilityCase& AbilityCase, const FGameplayEventData& TriggerEventData, UObject* SourceObj)
+{
+	FGameplayAbilitySpec* Spec = FindAbilitySpecFromCase(AbilityCase);
+	if (Spec && Spec->Handle.IsValid())
+	{
+		InternalTryActivateAbility(Spec->Handle, FPredictionKey(), nullptr, nullptr, &TriggerEventData);
+	}
+	else
+	{
+		EXABILITY_LOG(Error, TEXT("UExAbilitySystemComponent::TryActivateAbilityOnceWithEventData error, Spec invalid"));
+	}
+}
+
+bool UExAbilitySystemComponent::TryActivateAbilityOnceWithEventData_Validate(const FExAbilityCase& AbilityCase, const FGameplayEventData& TriggerEventData, UObject* SourceObj)
+{
+	return true;
+}
+
+void UExAbilitySystemComponent::TryActivateAbilityByCase(const FExAbilityCase& AbilityCase)
+{
+	FGameplayAbilitySpec* Spec = FindAbilitySpecFromCase(AbilityCase);
+	if (Spec && Spec->Handle.IsValid())
+	{
+		TryActivateAbility(Spec->Handle);
+	}
+	else
+	{
+		EXABILITY_LOG(Error, TEXT("UExAbilitySystemComponent::TryActivateAbilityByCase error, Handle for case is invalid"));
+		return;
+	}
+}
+
+#pragma endregion
