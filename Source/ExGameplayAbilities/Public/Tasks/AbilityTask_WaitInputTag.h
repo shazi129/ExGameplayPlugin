@@ -6,7 +6,7 @@
 #include "AbilityTask_WaitInputTag.generated.h"
 
 UCLASS()
-class UAbilityTask_WaitInputTag : public UAbilityTask
+class EXGAMEPLAYABILITIES_API UAbilityTask_WaitInputTag : public UAbilityTask
 {
 	GENERATED_BODY()
 

@@ -5,6 +5,8 @@
 #include "ExGameplayAbility.generated.h"
 
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FExAbilityDelegate, const UGameplayAbility*, Ability);
+
 UCLASS(ClassGroup = (ExAbility), BlueprintType, Blueprintable, abstract, editinlinenew)
 class EXGAMEPLAYABILITIES_API UExGameplayAbility : public UGameplayAbility
 {
@@ -24,8 +26,8 @@ struct EXGAMEPLAYABILITIES_API FAbilityCategory
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 		FGameplayTag CategoryTag;
 
-	//技能在该类别中的优先级
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	//技能在该类别中的优先级。 TODO: 目前优先级按注册时间来, 越晚越高
+	UPROPERTY()
 		int Priority;
 };
 
@@ -51,6 +53,7 @@ public:
 	//在give时，是否立即Activate
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Abilities")
 		bool ActivateWhenGiven = false;
+
 #pragma endregion
 
 	//当前是否可以激活

@@ -33,10 +33,7 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(EEndPlayReason::Type EndPlayReason) override;
 	virtual void BeginDestroy() override;
-	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
-
-	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 
 public:
 
@@ -73,6 +70,14 @@ private:
 	
 	void ClearAbilityByClassInternal(TSubclassOf<UGameplayAbility> AbilityClass);
 
+#pragma region //////////////////////////// Override AbilitySystemComponent
+public:
+	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
+	virtual void NotifyAbilityActivated(const FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability) override;
+	virtual void NotifyAbilityEnded(FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, bool bWasCancelled) override;
+	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
+#pragma endregion
+
 #pragma region //////////////////////////// Provider 相关
 public:
 	//本身也是个Provider
@@ -90,7 +95,10 @@ protected:
 	virtual void ClearCollectedAbilities(FCollectedAbilityInfo& CollectedAbilityInfo, bool NeedRebuildCategory=false);
 
 private:
-	TArray<FCollectedAbilityInfo> AbilityProviderInfoList;
+	void ReCollectedAbilityInfo();
+
+private:
+	TArray<FCollectedAbilityInfo> CollectedAbilityInfoList;
 #pragma endregion
 
 #pragma region ////////////////////////////技能分类相关
@@ -102,7 +110,6 @@ private:
 	TMap<FGameplayTag, TArray<FAbilityCategoryIndex>> AbilityCategoryMap;
 	
 #pragma endregion
-
 
 #pragma region ////////////////////////////Ability Case 相关
 public:
@@ -120,7 +127,13 @@ public:
 	UFUNCTION(BlueprintCallable, Category = ExAbility)
 	void TryActivateAbilityByCase(const FExAbilityCase& AbilityCase);
 
+	FExAbilityCase* FindAbilityCaseByClass(TSubclassOf<UGameplayAbility> AbilityClass);
+
 private:
 	FGameplayAbilitySpecHandle GiveAbilityByCaseInternal(const FExAbilityCase& AbilityCase, bool ActivateOnce=false);
+	void RebuildAbilityCaseMap();
+private:
+	TMap<TSubclassOf<UGameplayAbility>, FExAbilityCase*> AbilityCaseMap;
 #pragma endregion
+
 };

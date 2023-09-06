@@ -30,3 +30,8 @@ FInstancedStruct UExGameplayAbilityLibrary::GetInstancedStructFromTargetData(con
 	}
 	return FInstancedStruct();
 }
+
+bool UExGameplayAbilityLibrary::IsAbilityCaseValid(const FExAbilityCase& AbilityCase)
+{
+	return AbilityCase.IsValid();
+}

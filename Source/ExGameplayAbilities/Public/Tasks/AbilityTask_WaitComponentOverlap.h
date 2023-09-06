@@ -6,7 +6,7 @@
 #include "AbilityTask_WaitComponentOverlap.generated.h"
 
 UCLASS()
-class UAbilityTask_WaitComponentOverlap : public UAbilityTask
+class EXGAMEPLAYABILITIES_API UAbilityTask_WaitComponentOverlap : public UAbilityTask
 {
 	GENERATED_BODY()
 

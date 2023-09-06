@@ -4,7 +4,7 @@
 #include "AbilityTask_ServerOnlyPlayMontageAndWait.generated.h"
 
 UCLASS()
-class UAbilityTask_ServerOnlyPlayMontageAndWait : public UAbilityTask_PlayMontageAndWait
+class EXGAMEPLAYABILITIES_API UAbilityTask_ServerOnlyPlayMontageAndWait : public UAbilityTask_PlayMontageAndWait
 {
 	GENERATED_BODY()
 

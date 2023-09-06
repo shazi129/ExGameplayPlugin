@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTagsManager.h"
 #include "ExGameplayAbilityTargetTypes.h"
+#include "ExGameplayAbility.h"
 #include "ExGameplayAbilityLibrary.generated.h"
 
 USTRUCT(BlueprintType)
@@ -23,4 +24,6 @@ public:
 	UFUNCTION(BlueprintPure)
 	static FInstancedStruct GetInstancedStructFromTargetData(const FGameplayAbilityTargetDataHandle& TargetData, int Index = 0);
 
+	UFUNCTION(BlueprintPure)
+	static bool IsAbilityCaseValid(const FExAbilityCase& AbilityCase);
 };

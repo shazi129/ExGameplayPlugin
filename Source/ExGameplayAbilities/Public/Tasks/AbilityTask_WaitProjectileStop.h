@@ -7,7 +7,7 @@
 #include "AbilityTask_WaitProjectileStop.generated.h"
 
 UCLASS()
-class UAbilityTask_WaitProjectileStop : public UAbilityTask
+class EXGAMEPLAYABILITIES_API UAbilityTask_WaitProjectileStop : public UAbilityTask
 {
 	GENERATED_BODY()
 

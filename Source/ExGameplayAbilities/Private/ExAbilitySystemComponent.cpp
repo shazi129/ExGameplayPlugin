@@ -9,28 +9,6 @@
 #include "GameplayCueManager.h"
 #include "Engine/ActorChannel.h"
 
-
-void UExAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
-{
-	Super::InitAbilityActorInfo(InOwnerActor, InAvatarActor);
-
-	if (AbilityActorInfo)
-	{
-		if (AbilityActorInfo->AnimInstance == nullptr)
-		{
-			AbilityActorInfo->AnimInstance = AbilityActorInfo->GetAnimInstance();
-		}
-
-		if (UGameInstance* GameInstance = InOwnerActor->GetGameInstance())
-		{
-			// Sign up for possess/unpossess events so that we can update the cached AbilityActorInfo accordingly
-			//GameInstance->GetOnPawnControllerChanged().AddDynamic(this, &UExAbilitySystemComponent::OnPawnControllerChanged);
-		}
-	}
-
-	//GrantDefaultAbilitiesAndAttributes();
-}
-
 void UExAbilitySystemComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -153,6 +131,40 @@ void  UExAbilitySystemComponent::ClientStopMontage_Implementation()
 	}
 }
 
+
+#pragma region //////////////////////////// Override AbilitySystemComponent
+
+void UExAbilitySystemComponent::InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor)
+{
+	Super::InitAbilityActorInfo(InOwnerActor, InAvatarActor);
+
+	if (AbilityActorInfo)
+	{
+		if (AbilityActorInfo->AnimInstance == nullptr)
+		{
+			AbilityActorInfo->AnimInstance = AbilityActorInfo->GetAnimInstance();
+		}
+
+		if (UGameInstance* GameInstance = InOwnerActor->GetGameInstance())
+		{
+			// Sign up for possess/unpossess events so that we can update the cached AbilityActorInfo accordingly
+			//GameInstance->GetOnPawnControllerChanged().AddDynamic(this, &UExAbilitySystemComponent::OnPawnControllerChanged);
+		}
+	}
+
+	//GrantDefaultAbilitiesAndAttributes();
+}
+
+void UExAbilitySystemComponent::NotifyAbilityActivated(const FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability)
+{
+	Super::NotifyAbilityActivated(Handle, Ability);
+}
+
+void UExAbilitySystemComponent::NotifyAbilityEnded(FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, bool bWasCancelled)
+{
+	Super::NotifyAbilityEnded(Handle, Ability, bWasCancelled);
+}
+
 bool UExAbilitySystemComponent::ReplicateSubobjects(UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags)
 {
 	bool WroteSomething = UGameplayTasksComponent::ReplicateSubobjects(Channel, Bunch, RepFlags);
@@ -188,7 +200,9 @@ bool UExAbilitySystemComponent::ReplicateSubobjects(UActorChannel* Channel, clas
 	return WroteSomething;
 }
 
-#pragma region Provider 相关
+#pragma endregion
+
+#pragma region //////////////////////////// Provider 相关
 
 void UExAbilitySystemComponent::CollectAbilitCases(TArray<FExAbilityCase>& Abilities) const
 {
@@ -208,7 +222,7 @@ void UExAbilitySystemComponent::RegisterAbilityProvider(TScriptInterface<IExAbil
 	}
 
 	FAbilityProviderInfo ProviderInfo = Provider->GetProviderInfo();
-	for (const auto& CollectedAbilityInfo : AbilityProviderInfoList)
+	for (const auto& CollectedAbilityInfo : CollectedAbilityInfoList)
 	{
 		if (CollectedAbilityInfo.ProviderInfo == ProviderInfo)
 		{
@@ -218,7 +232,7 @@ void UExAbilitySystemComponent::RegisterAbilityProvider(TScriptInterface<IExAbil
 	}
 
 	FCollectedAbilityInfo* NewCollectedAbilityInfo = nullptr;
-	for (auto& CollectedAbilityInfo : AbilityProviderInfoList)
+	for (auto& CollectedAbilityInfo : CollectedAbilityInfoList)
 	{
 		if (!CollectedAbilityInfo.IsVaild())
 		{
@@ -228,27 +242,36 @@ void UExAbilitySystemComponent::RegisterAbilityProvider(TScriptInterface<IExAbil
 	}
 	if (!NewCollectedAbilityInfo)
 	{
-		AbilityProviderInfoList.Emplace();
-		NewCollectedAbilityInfo = &AbilityProviderInfoList.Last();
+		CollectedAbilityInfoList.Emplace();
+		NewCollectedAbilityInfo = &CollectedAbilityInfoList.Last();
 	}
 
 	NewCollectedAbilityInfo->ProviderInfo = ProviderInfo;
-	Provider->CollectAbilitCases(NewCollectedAbilityInfo->AbilityCases);
 
+	//收集技能
+	Provider->CollectAbilitCases(NewCollectedAbilityInfo->AbilityCases);
 	if (!NewCollectedAbilityInfo->AbilityCases.IsEmpty())
 	{
-		RebuildAbilityCategory();
-	}
+		int RegisterTime = (int)(FPlatformTime::Seconds() * 1000.0f);
+		for (FExAbilityCase& AbilityCase : NewCollectedAbilityInfo->AbilityCases)
+		{
+			AbilityCase.SourceObject = ProviderObject;
+			for (auto& Category : AbilityCase.AbilityCategories)
+			{
+				Category.Priority = RegisterTime;
+			}
+		}
 
-	bool HasAuthority = GetOwner()->HasAuthority();
-	for (FExAbilityCase& AbilityCase : NewCollectedAbilityInfo->AbilityCases)
-	{
-		AbilityCase.SourceObject = ProviderObject;
+		//重建索引
+		ReCollectedAbilityInfo();
 
 		//只有Authority的时候才giveability， 防止give两次
-		if (HasAuthority)
+		if (GetOwner()->HasAuthority())
 		{
-			GiveAbilityByCase(AbilityCase);
+			for (FExAbilityCase& AbilityCase : NewCollectedAbilityInfo->AbilityCases)
+			{
+				GiveAbilityByCase(AbilityCase);
+			}
 		}
 	}
 }
@@ -265,7 +288,7 @@ void UExAbilitySystemComponent::UnregisterAbilityProvider(TScriptInterface<IExAb
 	FAbilityProviderInfo ProviderInfo = Provider->GetProviderInfo();
 
 	FCollectedAbilityInfo* UnregisterAbilities = nullptr;
-	for (FCollectedAbilityInfo& CollectedAbilityInfo : AbilityProviderInfoList)
+	for (FCollectedAbilityInfo& CollectedAbilityInfo : CollectedAbilityInfoList)
 	{
 		if (CollectedAbilityInfo.ProviderInfo == ProviderInfo)
 		{
@@ -281,16 +304,16 @@ void UExAbilitySystemComponent::UnregisterAbilityProvider(TScriptInterface<IExAb
 	}
 
 	ClearCollectedAbilities(*UnregisterAbilities, false);
-	RebuildAbilityCategory();
+	ReCollectedAbilityInfo();
 }
 
 void UExAbilitySystemComponent::ClearAllProvider()
 {
-	for (FCollectedAbilityInfo& Info : AbilityProviderInfoList)
+	for (FCollectedAbilityInfo& Info : CollectedAbilityInfoList)
 	{
 		ClearCollectedAbilities(Info, false);
 	}
-	RebuildAbilityCategory();
+	ReCollectedAbilityInfo();
 }
 
 void UExAbilitySystemComponent::ClearCollectedAbilities(FCollectedAbilityInfo& CollectedAbilityInfo, bool NeedRebuildCategory)
@@ -307,13 +330,19 @@ void UExAbilitySystemComponent::ClearCollectedAbilities(FCollectedAbilityInfo& C
 	CollectedAbilityInfo.Reset();
 	if (NeedRebuildCategory)
 	{
-		RebuildAbilityCategory();
+		ReCollectedAbilityInfo();
 	}
+}
+
+void UExAbilitySystemComponent::ReCollectedAbilityInfo()
+{
+	RebuildAbilityCaseMap();
+	RebuildAbilityCategory();
 }
 
 #pragma endregion
 
-#pragma region 技能分类相关
+#pragma region /////////////////////////////// 技能分类相关
 void UExAbilitySystemComponent::ActivateAbilityByCategory(const FGameplayTag& CategoryTag)
 {
 	if (!AbilityCategoryMap.Contains(CategoryTag))
@@ -349,7 +378,7 @@ void UExAbilitySystemComponent::RebuildAbilityCategory()
 {
 	AbilityCategoryMap.Reset();
 
-	for (FCollectedAbilityInfo& CollectedAbilityInfo : AbilityProviderInfoList)
+	for (FCollectedAbilityInfo& CollectedAbilityInfo : CollectedAbilityInfoList)
 	{
 		if (CollectedAbilityInfo.IsVaild() == false || CollectedAbilityInfo.AbilityCases.IsEmpty())
 		{
@@ -439,10 +468,10 @@ FGameplayAbilitySpecHandle UExAbilitySystemComponent::GiveAbilityByCaseInternal(
 		return FGameplayAbilitySpecHandle();
 	}
 
-	TObjectPtr<UObject> AbilityProvider = AbilityCase.SourceObject;
-	if (!AbilityProvider)
+	TObjectPtr<UObject> SourceObject = AbilityCase.SourceObject;
+	if (!SourceObject)
 	{
-		AbilityProvider = this;
+		SourceObject = this;
 	}
 
 	bool ActivateWhenGive = ActivateOnce ? true : AbilityCase.ActivateWhenGiven;
@@ -450,11 +479,11 @@ FGameplayAbilitySpecHandle UExAbilitySystemComponent::GiveAbilityByCaseInternal(
 	//理论上每个Ability只Give一次
 	if (FindAbilitySpecFromClass(AbilityCase.AbilityClass))
 	{
-		ABILITY_LOG(Warning, TEXT("%s , add duplicated class: %s, provider:%s"), *FString(__FUNCTION__), *GetNameSafe(AbilityCase.AbilityClass), *GetNameSafe(AbilityProvider));
+		ABILITY_LOG(Warning, TEXT("%s , add duplicated class: %s, provider:%s"), *FString(__FUNCTION__), *GetNameSafe(AbilityCase.AbilityClass), *GetNameSafe(SourceObject));
 		return FGameplayAbilitySpecHandle();
 	}
 
-	FGameplayAbilitySpec Spec(AbilityCase.AbilityClass, AbilityCase.AbilityLevel, INDEX_NONE, (AbilityProvider));
+	FGameplayAbilitySpec Spec(AbilityCase.AbilityClass, AbilityCase.AbilityLevel, INDEX_NONE, (SourceObject));
 	const FGameplayAbilitySpecHandle& SpecHandle = GiveAbility(Spec);
 
 	if (ActivateWhenGive)
@@ -506,6 +535,34 @@ void UExAbilitySystemComponent::TryActivateAbilityByCase(const FExAbilityCase& A
 		EXABILITY_LOG(Error, TEXT("UExAbilitySystemComponent::TryActivateAbilityByCase error, Handle for case is invalid"));
 		return;
 	}
+}
+
+void UExAbilitySystemComponent::RebuildAbilityCaseMap()
+{
+	AbilityCaseMap.Reset();
+	for (FCollectedAbilityInfo& AbilityInfo : CollectedAbilityInfoList)
+	{
+		for (FExAbilityCase& AbilityCase : AbilityInfo.AbilityCases)
+		{
+			if (AbilityCase.IsValid())
+			{
+				if (!AbilityCaseMap.Contains(AbilityCase.AbilityClass))
+				{
+					AbilityCaseMap.Add(AbilityCase.AbilityClass, &AbilityCase);
+				}
+				else
+				{
+					EXABILITY_LOG(Error, TEXT("%s error, Duplicate abilityCase[%s] in %s with others"), *FString(__FUNCTION__), 
+						*GetNameSafe(AbilityCase.AbilityClass), *AbilityInfo.ProviderInfo.ToString());
+				}
+			}
+		}
+	}
+}
+
+FExAbilityCase* UExAbilitySystemComponent::FindAbilityCaseByClass(TSubclassOf<UGameplayAbility> AbilityClass)
+{
+	return nullptr;
 }
 
 #pragma endregion
