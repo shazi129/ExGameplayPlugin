@@ -10,6 +10,7 @@
 #include "GameFramework/ExCharacterMovementComponent.h"
 #include "ExGameplayLibrary.h"
 #include "EngineUtils.h"
+#include "EnumHelperLibrary.h"
 
 void UExCheatManagerExtension::LogAndCopyToClipboard(const FString Value)
 {
@@ -104,7 +105,7 @@ void UExCheatManagerExtension::ShowCharacterUsage(ACharacter* Character)
 	{
 		Usage.Append(FString::Printf(TEXT("Character: %s\n"), *GetNameSafe(Character)));
 		Usage.Append(FString::Printf(TEXT("Controller: %s\n"), *GetNameSafe(PlayerController)));
-		Usage.Append(FString::Printf(TEXT("Role:%s\n"), *UExGameplayLibrary::NetRoleToString(Character->GetLocalRole())));
+		Usage.Append(FString::Printf(TEXT("Role:%s\n"), *UEnumHelperLibrary::NetRoleToString(Character->GetLocalRole())));
 	}
 	
 	Usage.Append(FString::Printf(TEXT("Character -ShowComponents\n")));
@@ -150,7 +151,7 @@ void UExCheatManagerExtension::ShowSceneUsage()
 	ENetMode NetMode = World->GetNetMode();
 
 	FString Usage;
-	Usage.Append(FString::Printf(TEXT("World: %s\t NetMode:%s\n"), *WorldName, *UExGameplayLibrary::NetModeToString(NetMode)));
+	Usage.Append(FString::Printf(TEXT("World: %s\t NetMode:%s\n"), *WorldName, *UEnumHelperLibrary::NetModeToString(NetMode)));
 	Usage.Append(FString::Printf(TEXT("Scene -ShowActorByName=ActorName\n")));
 	Usage.Append(FString::Printf(TEXT("\t -DestroyActorByName=ActorName\n")));
 	LogAndCopyToClipboard(Usage);
@@ -170,7 +171,7 @@ void UExCheatManagerExtension::ShowActorWithName(const FString& ActorName)
 			if (ActorName.IsEmpty() || ActorLable.Contains(ActorName))
 			{
 				Result += FString::Printf(TEXT("%s\tType:%s\tRole:%s\tAddr:%p\n"), *ActorLable, *ActorIt->GetClass()->GetName(),
-									*UExGameplayLibrary::NetRoleToString(ActorIt->GetLocalRole()), *ActorIt);
+									*UEnumHelperLibrary::NetRoleToString(ActorIt->GetLocalRole()), *ActorIt);
 			}
 		}
 	}
@@ -190,7 +191,7 @@ void UExCheatManagerExtension::DestroyActorByName(const FString& ActorName)
 			FString ActorLable = ActorIt->GetActorNameOrLabel();
 			if (ActorLable.Contains(ActorName))
 			{
-				Result += FString::Printf(TEXT("%s, Role:%s \n"), *ActorLable, *UExGameplayLibrary::NetRoleToString(ActorIt->GetLocalRole()));
+				Result += FString::Printf(TEXT("%s, Role:%s \n"), *ActorLable, *UEnumHelperLibrary::NetRoleToString(ActorIt->GetLocalRole()));
 				ActorIt->Destroy();
 			}
 		}

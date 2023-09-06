@@ -33,7 +33,6 @@ public:
 	UFUNCTION(BlueprintCallable)
 	virtual void SetRagdoll(bool Enable);
 
-
 private:
 	/** Camera boom positioning the camera behind the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
@@ -45,4 +44,14 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Ability, meta = (AllowPrivateAccess = "true"))
 		UAbilitySystemComponent* AbilitySystemComponent;
+
+
+public:
+	UFUNCTION(BlueprintCallable)
+		void SetMaxWalkSpeed(float Speed);
+
+private:
+	UFUNCTION(Server, reliable, WithValidation)
+	void ServerSetMaxWalkSpeed(float Speed);
+	void SetMaxWalkSpeedInternal(float Speed);
 };

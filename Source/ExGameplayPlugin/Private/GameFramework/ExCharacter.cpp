@@ -108,3 +108,31 @@ void AExCharacter::SetRagdoll(bool Enable)
 		SkeletalMesh->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	}
 }
+
+void AExCharacter::SetMaxWalkSpeed(float Speed)
+{
+	ENetRole LocalRole = GetLocalRole();
+	if (LocalRole == ENetRole::ROLE_Authority)
+	{
+		SetMaxWalkSpeedInternal(Speed);
+	}
+	else if (LocalRole == ENetRole::ROLE_AutonomousProxy)
+	{
+		ServerSetMaxWalkSpeed(Speed);
+	}
+}
+
+bool AExCharacter::ServerSetMaxWalkSpeed_Validate(float Speed)
+{
+	return true;
+}
+
+void AExCharacter::ServerSetMaxWalkSpeed_Implementation(float Speed)
+{
+	SetMaxWalkSpeedInternal(Speed);
+}
+
+void AExCharacter::SetMaxWalkSpeedInternal(float Speed)
+{
+	GetCharacterMovement()->MaxWalkSpeed = Speed;
+}
