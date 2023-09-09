@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-#include "Components/InteractItemComponent.h"
-#include "Components/InteractManagerComponent.h"
+#include "Interact/InteractItemComponent.h"
+#include "Interact/InteractManagerComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "ExGameplayLibrary.h"
 

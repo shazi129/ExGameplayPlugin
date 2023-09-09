@@ -15,14 +15,6 @@ class EXEDITORTOOLS_API UExEditorEngineLibrary : public UBlueprintFunctionLibrar
 	GENERATED_BODY()
 
 public:
-	/*
-	* 扩展自 UEditorLevelUtils::CopyOrMoveActorsToLevel
-	* 增加SrcLevel参数，用以实现在两个不同的Level上拷贝/移动Actor
-	*/
-	static int32 CopyOrMoveActorsToLevel(
-		ULevel* SrcLevel, const TArray<AActor*>& ActorsToMove, ULevel* DestLevel,
-		bool bMoveActors, bool bWarnAboutReferences = true, bool bWarnAboutRenaming = true,
-		bool bMoveAllOrFail = false, TArray<AActor*>* OutActors = nullptr);
 
 	/*
 	* 对AssetViewUtils::DeleteFolders的扩展

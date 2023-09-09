@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "Components/InteractItemComponent.h"
+#include "Interact/InteractItemComponent.h"
 #include "InteractManagerComponent.generated.h"
 
 /**

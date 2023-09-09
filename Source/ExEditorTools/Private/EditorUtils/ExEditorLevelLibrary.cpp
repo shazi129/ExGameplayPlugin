@@ -5,6 +5,7 @@
 
 bool UExEditorLevelLibrary::CopyWorldActors(const FString& SrcWorldPath, const FString& DestWorldPath)
 {
+	/*
 	UWorld* SrcWorld = nullptr;
 
 	UPackage* SrcLevelPackage = LoadPackage(NULL, *SrcWorldPath, LOAD_EditorOnly);
@@ -48,7 +49,7 @@ bool UExEditorLevelLibrary::CopyWorldActors(const FString& SrcWorldPath, const F
 	LoadedPackage.Add(DestWorld->GetPackage());
 	FText ErrorMsg;
 	UPackageTools::UnloadPackages(LoadedPackage, ErrorMsg);
-
+	*/
 	return true;
 }
 
