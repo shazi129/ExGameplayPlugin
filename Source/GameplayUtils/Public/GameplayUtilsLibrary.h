@@ -13,9 +13,22 @@ struct GAMEPLAYUTILS_API FFilterActorCondition
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<TSubclassOf<UActorComponent>> RequireComponentClasses;
 	
+	//Actor中不能有这些Component
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TArray<TSubclassOf<UActorComponent>> ExcludeComponentClasses;
+
 	//Actor必须属于在指定的Class
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<TSubclassOf<AActor>> ActorClasses;
+
+	//忽略的Actor
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	TArray<AActor*> IgnoreActors;
+
+	bool FilterActorClasses(AActor* Actor) const;
+	bool FilterExcludeComponentClasses(AActor* Actor) const;
+	bool FilterRequireComponentClasses(AActor* Actor) const;
+	bool FilterIgnoreActors(AActor* Actor) const;
 };
 
 UCLASS()

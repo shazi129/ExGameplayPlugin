@@ -2,6 +2,67 @@
 #include "GameplayUtilsModule.h"
 #include "Kismet/KismetSystemLibrary.h"
 
+bool FFilterActorCondition::FilterActorClasses(AActor* Actor) const
+{
+	if (!Actor) return false;
+	if (ActorClasses.IsEmpty())
+	{
+		return true;
+	}
+	for (auto& ActorClass : ActorClasses)
+	{
+		if (Actor->IsA(ActorClass))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool FFilterActorCondition::FilterExcludeComponentClasses(AActor* Actor) const
+{
+	if (!Actor) return false;
+	for (auto& ExcludeComponentClass : ExcludeComponentClasses)
+	{
+		if (Actor->GetComponentByClass(ExcludeComponentClass))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+bool FFilterActorCondition::FilterRequireComponentClasses(AActor* Actor) const
+{
+	if (!Actor) return false;
+	if (RequireComponentClasses.IsEmpty())
+	{
+		return true;
+	}
+
+	bool HasFound = false;
+	for (auto& RequireComponentClass : RequireComponentClasses)
+	{
+		if (Actor->GetComponentByClass(RequireComponentClass))
+		{
+			HasFound = true;
+			break;
+		}
+	}
+	return HasFound;
+}
+
+bool FFilterActorCondition::FilterIgnoreActors(AActor* Actor) const
+{
+	if (!Actor) return false;
+	if (IgnoreActors.IsEmpty() || !IgnoreActors.Contains(Actor))
+	{
+		return true;
+	}
+	return false;
+}
+
+
 bool UGameplayUtilsLibrary::ExecCommand(const FString& Command)
 {
 	if (!GEngine)
@@ -50,33 +111,23 @@ void UGameplayUtilsLibrary::FilterActors(const TArray<AActor*>& Actors, const FF
 			continue;
 		}
 
-		bool Matched = false;
-
-		//检查Actor的类
-		Matched = FilterCondition.ActorClasses.IsEmpty();
-		for (auto& ActorClass : FilterCondition.ActorClasses)
-		{
-			if (Actor->IsA(ActorClass))
-			{
-				Matched = true;
-				break;
-			}
-		}
-		if (!Matched)
+		//检查是否ignore
+		if (!FilterCondition.FilterIgnoreActors(Actor))
 		{
 			continue;
 		}
 
-		//检查组件
-		for (auto& RequireComponentClass : FilterCondition.RequireComponentClasses)
+		if (!FilterCondition.FilterExcludeComponentClasses(Actor))
 		{
-			if (Actor->GetComponentByClass(RequireComponentClass) == nullptr)
-			{
-				Matched = false;
-				break;
-			}
+			continue;
 		}
-		if (!Matched)
+
+		if (!FilterCondition.FilterRequireComponentClasses(Actor))
+		{
+			continue;
+		}
+
+		if (!FilterCondition.FilterActorClasses(Actor))
 		{
 			continue;
 		}
@@ -84,3 +135,4 @@ void UGameplayUtilsLibrary::FilterActors(const TArray<AActor*>& Actors, const FF
 		OutActors.Add(Actor);
 	}
 }
+
