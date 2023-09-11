@@ -22,6 +22,17 @@ struct EXGAMEPLAYABILITIES_API FAbilityCategoryIndex
 	int CategoryPriority;
 };
 
+//初始化Attribute的方式
+UENUM(BlueprintType)
+enum class EInitAttributeMethod : uint8
+{
+	//通过GameplayEffect来初始化
+	E_GameplayEffect		UMETA(DisplayName = "GameplayEffect"),
+
+	//通过DataTable来初始化
+	E_DataTable			UMETA(DisplayName = "DataTable"),
+};
+
 
 UCLASS(Blueprintable, ClassGroup = AbilitySystem, meta = (BlueprintSpawnableComponent))
 class EXGAMEPLAYABILITIES_API UExAbilitySystemComponent : public UAbilitySystemComponent, public IExAbilityProvider
@@ -29,6 +40,9 @@ class EXGAMEPLAYABILITIES_API UExAbilitySystemComponent : public UAbilitySystemC
 	GENERATED_BODY()
 
 public:
+
+	UExAbilitySystemComponent();
+
 	//override UAbilitySystemComponent
 	virtual void BeginPlay() override;
 	virtual void EndPlay(EEndPlayReason::Type EndPlayReason) override;
@@ -75,7 +89,6 @@ public:
 	virtual void InitAbilityActorInfo(AActor* InOwnerActor, AActor* InAvatarActor) override;
 	virtual void NotifyAbilityActivated(const FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability) override;
 	virtual void NotifyAbilityEnded(FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, bool bWasCancelled) override;
-	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 #pragma endregion
 
 #pragma region //////////////////////////// Provider 相关
@@ -135,5 +148,54 @@ private:
 private:
 	TMap<TSubclassOf<UGameplayAbility>, FExAbilityCase*> AbilityCaseMap;
 #pragma endregion
+
+
+#pragma region //////////////////////////////// Attribute 相关
+
+public:
+	UFUNCTION(BlueprintPure)
+	UOnAttributeValueChangeDelegateInfo* GetAttribuiteChangedDelegate(FGameplayAttribute Attribute);
+
+	UFUNCTION(BlueprintPure)
+	FGameplayAttributeData GetAttributeData(FGameplayAttribute Attribute);
+
+protected:
+	void InitDefaultAttributes();
+
+	virtual void OnAttributeChanged(const FOnAttributeChangeData& Data);
+
+	//默认的一些属性
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Attributes")
+	TArray<TSubclassOf<UAttributeSet>> DefaultAttributesClassList;
+
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Attributes")
+	EInitAttributeMethod InitAttributeMethod = EInitAttributeMethod::E_GameplayEffect;
+
+	//初始化默认属性的Effect
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Attributes", meta = (EditCondition = "InitAttributeMethod == EInitAttributeMethod::E_GameplayEffect", EditConditionHides))
+	TSubclassOf<UGameplayEffect> InitAttributesEffectClass;
+
+	//初始化默认属性的DataTable
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Attributes", meta = (EditCondition = "InitAttributeMethod == EInitAttributeMethod::E_DataTable", EditConditionHides))
+	UDataTable* InitAttributeDataTable;
+
+private:
+	TMap<TSubclassOf<UAttributeSet>, TObjectPtr<UAttributeSet>> AttributeSetObjectMap;
+
+	UPROPERTY(Transient)
+	TMap<FGameplayAttribute, UOnAttributeValueChangeDelegateInfo*> AttributeDelegateMap;
+#pragma endregion
+
+#pragma region //////////////////////////////// Effect 相关
+
+protected:
+
+	void InitDefaultEffects();
+
+	//默认的一些Effect，例如血量回复，默认的buff之类
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Effects")
+	TArray<TSubclassOf<UGameplayEffect>> DefaultEffectClassList;
+
+#pragma
 
 };

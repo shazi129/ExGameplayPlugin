@@ -13,8 +13,14 @@ class EXGAMEPLAYABILITIES_API UExGameplayAbility : public UGameplayAbility
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Replication")
-		bool OnlyReplateWhenActivate = false;
+	virtual bool CheckCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
+
+	/** Applies the ability's cost to the target */
+	virtual void ApplyCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const override;
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cost")
+		bool OverrideCheckCost = false;
 };
 
 USTRUCT(BlueprintType)

@@ -9,9 +9,22 @@
 #include "GameplayCueManager.h"
 #include "Engine/ActorChannel.h"
 
+UExAbilitySystemComponent::UExAbilitySystemComponent()
+{
+
+}
+
 void UExAbilitySystemComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//初始化默认的Attribute
+	InitDefaultAttributes();
+
+	//初始化默认的Effect
+	InitDefaultEffects();
+
+	//注册本身的技能
 	RegisterAbilityProvider(this);
 }
 
@@ -163,41 +176,6 @@ void UExAbilitySystemComponent::NotifyAbilityActivated(const FGameplayAbilitySpe
 void UExAbilitySystemComponent::NotifyAbilityEnded(FGameplayAbilitySpecHandle Handle, UGameplayAbility* Ability, bool bWasCancelled)
 {
 	Super::NotifyAbilityEnded(Handle, Ability, bWasCancelled);
-}
-
-bool UExAbilitySystemComponent::ReplicateSubobjects(UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags)
-{
-	bool WroteSomething = UGameplayTasksComponent::ReplicateSubobjects(Channel, Bunch, RepFlags);
-
-	for (const UAttributeSet* Set : GetSpawnedAttributes())
-	{
-		if (IsValid(Set))
-		{
-			WroteSomething |= Channel->ReplicateSubobject(const_cast<UAttributeSet*>(Set), *Bunch, *RepFlags);
-		}
-	}
-
-	for (UGameplayAbility* Ability : AllReplicatedInstancedAbilities)
-	{
-		if (IsValid(Ability))
-		{
-			UExGameplayAbility* ExAbility = Cast<UExGameplayAbility>(Ability);
-			if (ExAbility && ExAbility->OnlyReplateWhenActivate)
-			{
-				FGameplayAbilitySpec* Spec = FindAbilitySpecFromClass(Ability->GetClass());
-				if (Spec && Spec->IsActive())
-				{
-					WroteSomething |= Channel->ReplicateSubobject(Ability, *Bunch, *RepFlags);
-				}
-			}
-			else
-			{
-				WroteSomething |= Channel->ReplicateSubobject(Ability, *Bunch, *RepFlags);
-			}
-		}
-	}
-
-	return WroteSomething;
 }
 
 #pragma endregion
@@ -528,11 +506,14 @@ void UExAbilitySystemComponent::TryActivateAbilityByCase(const FExAbilityCase& A
 	FGameplayAbilitySpec* Spec = FindAbilitySpecFromCase(AbilityCase);
 	if (Spec && Spec->Handle.IsValid())
 	{
-		TryActivateAbility(Spec->Handle);
+		if (!TryActivateAbility(Spec->Handle))
+		{
+			EXABILITY_LOG(Error, TEXT("%s error, TryActivateAbility %s error"), *FString(__FUNCTION__), *GetNameSafe(AbilityCase.AbilityClass));
+		}
 	}
 	else
 	{
-		EXABILITY_LOG(Error, TEXT("UExAbilitySystemComponent::TryActivateAbilityByCase error, Handle for case is invalid"));
+		EXABILITY_LOG(Error, TEXT("%s error, Handle for case is invalid, %s"), *FString(__FUNCTION__), *GetNameSafe(AbilityCase.AbilityClass));
 		return;
 	}
 }
@@ -563,6 +544,176 @@ void UExAbilitySystemComponent::RebuildAbilityCaseMap()
 FExAbilityCase* UExAbilitySystemComponent::FindAbilityCaseByClass(TSubclassOf<UGameplayAbility> AbilityClass)
 {
 	return nullptr;
+}
+
+#pragma endregion
+
+
+#pragma region 
+
+//////////////////////////////// Attribute 相关
+
+UOnAttributeValueChangeDelegateInfo* UExAbilitySystemComponent::GetAttribuiteChangedDelegate(FGameplayAttribute Attribute)
+{
+	if (!Attribute.IsValid())
+	{
+		EXABILITY_LOG(Error, TEXT("%s error, Param Attribute is invalid"), *FString(__FUNCTION__))
+		return nullptr;
+	}
+
+	//先加进入
+	UOnAttributeValueChangeDelegateInfo* DelegateInfo = nullptr;
+	if (!AttributeDelegateMap.Contains(Attribute))
+	{
+		DelegateInfo = NewObject<UOnAttributeValueChangeDelegateInfo>(this, UOnAttributeValueChangeDelegateInfo::StaticClass());
+		AttributeDelegateMap.Add(Attribute, DelegateInfo);
+	}
+	else
+	{
+		DelegateInfo = AttributeDelegateMap[Attribute];
+	}
+
+	//如果没有绑定, 绑定
+	if (!DelegateInfo->BindHandle.IsValid())
+	{
+		const UAttributeSet* AttributeSet = GetAttributeSet(Attribute.GetAttributeSetClass());
+		if (AttributeSet)
+		{
+			DelegateInfo->BindHandle = GetGameplayAttributeValueChangeDelegate(Attribute).AddUObject(this, &UExAbilitySystemComponent::OnAttributeChanged);
+		}
+		else
+		{
+			EXABILITY_LOG(Warning, TEXT("%s, Attribute[%s] does not exist"), *FString(__FUNCTION__), *Attribute.GetName());
+		}
+	}
+	return DelegateInfo;
+}
+
+FGameplayAttributeData UExAbilitySystemComponent::GetAttributeData(FGameplayAttribute Attribute)
+{
+	const UAttributeSet* Attributeset =  GetAttributeSet(Attribute.GetAttributeSetClass());
+	if (Attributeset)
+	{
+		FStructProperty* Property = FindFieldChecked<FStructProperty>(Attribute.GetAttributeSetClass(), FName(Attribute.AttributeName));
+		if (FGameplayAttribute::IsGameplayAttributeDataProperty(Property))
+		{
+			const FGameplayAttributeData* DataPtr = Property->ContainerPtrToValuePtr<FGameplayAttributeData>(Attributeset);
+			if (DataPtr)
+			{
+				return *DataPtr;
+			}
+		}
+					
+	}
+	return FGameplayAttributeData();
+}
+
+void UExAbilitySystemComponent::InitDefaultAttributes()
+{
+	for (auto& AttributesClass : DefaultAttributesClassList)
+	{
+		//AttributeSet只能挂在Actor上
+		UAttributeSet* AttributeSet = NewObject<UAttributeSet>(this->GetOwner(), AttributesClass);
+		if (AttributeSet)
+		{
+			AddSpawnedAttribute(AttributeSet);
+			AttributeSetObjectMap.Add(AttributeSet->GetClass(), AttributeSet);
+		}
+	}
+
+	//如果回掉没绑上，现在再绑一次
+	for (auto& DelegateInfoItem : AttributeDelegateMap)
+	{
+		UOnAttributeValueChangeDelegateInfo* DelegateInfo = DelegateInfoItem.Value;
+		if (DelegateInfo && !DelegateInfo->BindHandle.IsValid())
+		{
+			DelegateInfo->BindHandle = GetGameplayAttributeValueChangeDelegate(DelegateInfoItem.Key).AddUObject(this, &UExAbilitySystemComponent::OnAttributeChanged);
+		}
+	}
+
+	//初始化Attribute
+	if (InitAttributeMethod == EInitAttributeMethod::E_GameplayEffect && InitAttributesEffectClass)
+	{
+		FGameplayEffectSpecHandle SpecHandle = MakeOutgoingSpec(InitAttributesEffectClass, 1, MakeEffectContext());
+		if (SpecHandle.IsValid())
+		{
+			FActiveGameplayEffectHandle EffectHandle = ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+			if (!EffectHandle.IsValid())
+			{
+				EXABILITY_LOG(Warning, TEXT("%s ApplyGameplayEffectSpecToSelf return invalide handle"), *FString(__FUNCTION__));
+			}
+		}
+		else
+		{
+			EXABILITY_LOG(Error, TEXT("%s error, MakeOutgoingSpec error"), *FString(__FUNCTION__));
+		}
+	}
+	else if (InitAttributeMethod == EInitAttributeMethod::E_DataTable && InitAttributeDataTable)
+	{
+		static const FString Context = FString(TEXT("UAttribute::BindToMetaDataTable"));
+		for (auto& AttributeSetItem : AttributeSetObjectMap)
+		{
+			FGameplayAttribute GameplayAttribute;
+			FExOnAttributeChangeData ExOnAttributeChangeData;
+
+			//改编自UAttributeSet::InitFromMetaDataTable， 增加通知
+			for (TFieldIterator<FProperty> It(AttributeSetItem.Value->GetClass(), EFieldIteratorFlags::IncludeSuper); It; ++It)
+			{
+				FProperty* Property = *It;
+				if (FGameplayAttribute::IsGameplayAttributeDataProperty(Property))
+				{
+					FString RowNameStr = FString::Printf(TEXT("%s.%s"), *Property->GetOwnerVariant().GetName(), *Property->GetName());
+					FAttributeMetaData* MetaData = InitAttributeDataTable->FindRow<FAttributeMetaData>(FName(*RowNameStr), Context, false);
+					if (MetaData)
+					{
+						FStructProperty* StructProperty = CastField<FStructProperty>(Property);
+						check(StructProperty);
+						FGameplayAttributeData* DataPtr = StructProperty->ContainerPtrToValuePtr<FGameplayAttributeData>(AttributeSetItem.Value);
+						check(DataPtr);
+						DataPtr->SetBaseValue(MetaData->BaseValue);
+						DataPtr->SetCurrentValue(MetaData->BaseValue);
+
+						GameplayAttribute.SetUProperty(Property);
+						ExOnAttributeChangeData.Set(0, MetaData->BaseValue);
+						if (AttributeDelegateMap.Contains(GameplayAttribute))
+						{
+							UOnAttributeValueChangeDelegateInfo* DelegateInfo = AttributeDelegateMap[GameplayAttribute];
+							DelegateInfo->Delegate.Broadcast(ExOnAttributeChangeData);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void UExAbilitySystemComponent::OnAttributeChanged(const FOnAttributeChangeData& Data)
+{
+	if (AttributeDelegateMap.Contains(Data.Attribute))
+	{
+		UOnAttributeValueChangeDelegateInfo* DelegateInfo = AttributeDelegateMap[Data.Attribute];
+		DelegateInfo->Delegate.Broadcast(FExOnAttributeChangeData(Data));
+	}
+}
+#pragma endregion
+
+
+#pragma region //////////////////////////////// Effect 相关
+
+void UExAbilitySystemComponent::InitDefaultEffects()
+{
+	for (auto& EffectClass : DefaultEffectClassList)
+	{
+		FGameplayEffectSpecHandle SpecHandle = MakeOutgoingSpec(EffectClass, 1, MakeEffectContext());
+		if (SpecHandle.IsValid())
+		{
+			FActiveGameplayEffectHandle EffectHandle = ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+			if (!EffectHandle.IsValid())
+			{
+				EXABILITY_LOG(Warning, TEXT("%s ApplyGameplayEffectSpecToSelf return invalide handle"), *FString(__FUNCTION__));
+			}
+		}
+	}
 }
 
 #pragma endregion
