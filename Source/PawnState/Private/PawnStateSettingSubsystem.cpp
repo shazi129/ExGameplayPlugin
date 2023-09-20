@@ -1,3 +1,5 @@
+/*
+
 #include "PawnStateSettingSubsystem.h"
 #include "PawnStateLibrary.h"
 #include "Engine/LevelStreaming.h"
@@ -155,7 +157,7 @@ void UPawnStateSettingSubsystem::OnWorldTearingDown(UWorld* World)
 	if (StateInfo && StateInfo->WorldState && StateInfo->WorldState->PawnState.IsValid())
 	{
 		ACharacter* Character = UGameplayStatics::GetPlayerCharacter(World, 0);
-		UPawnStateLibrary::LeavePawnState(Character, FPawnStateInstance(StateInfo->WorldState, World, nullptr));
+		UPawnStateLibrary::LeavePawnState(Character, FPawnStateInstance(StateInfo->WorldState->PawnState.PawnStateTag, World, nullptr));
 	}
 }
 
@@ -175,7 +177,7 @@ void UPawnStateSettingSubsystem::OnLevelAdded(ULevel* Level, UWorld* World)
 	{
 		PAWNSTATE_LOG(Log, TEXT("%s World[%s] Level[%s] PawnState[%s]"), *FString(__FUNCTION__), *WorldName, *LevelName, *PawnState->ToString());
 		ACharacter* Character = UGameplayStatics::GetPlayerCharacter(World, 0);
-		UPawnStateLibrary::EnterPawnState(Character, FPawnStateInstance(PawnState, Level, nullptr));
+		UPawnStateLibrary::EnterPawnState(Character, FPawnStateInstance(PawnState->PawnState.PawnStateTag, Level, nullptr));
 	}
 	else
 	{
@@ -199,7 +201,7 @@ void UPawnStateSettingSubsystem::OnLevelRemoved(ULevel* Level, UWorld* World)
 	{
 		PAWNSTATE_LOG(Log, TEXT("%s World[%s] Level[%s] PawnState[%s]"), *FString(__FUNCTION__), *WorldName, *LevelName, *PawnState->ToString());
 		ACharacter* Character = UGameplayStatics::GetPlayerCharacter(World, 0);
-		UPawnStateLibrary::LeavePawnState(Character, FPawnStateInstance(PawnState, Level, nullptr));
+		UPawnStateLibrary::LeavePawnState(Character, FPawnStateInstance(PawnState->PawnState.PawnStateTag, Level, nullptr));
 	}
 	else
 	{
@@ -207,21 +209,22 @@ void UPawnStateSettingSubsystem::OnLevelRemoved(ULevel* Level, UWorld* World)
 	}
 }
 
-const UPawnStateAsset* UPawnStateSettingSubsystem::GetGlobalPawnStateAsset(FGameplayTag PawnStateTag)
-{
-	if (PawnStateTag.IsValid() == false)
-	{
-		PAWNSTATE_LOG(Error, TEXT("%s error, Invalid PawnState Tag"), *FString(__FUNCTION__));
-		return nullptr;
-	}
+//const UPawnStateAsset* UPawnStateSettingSubsystem::GetGlobalPawnStateAsset(FGameplayTag PawnStateTag)
+//{
+//	if (PawnStateTag.IsValid() == false)
+//	{
+//		PAWNSTATE_LOG(Error, TEXT("%s error, Invalid PawnState Tag"), *FString(__FUNCTION__));
+//		return nullptr;
+//	}
+//
+//	for (const UPawnStateAsset* Asset : GetDefault<UPawnStateSettings>()->GlobalPawnStateAssets.Assets)
+//	{
+//		if (Asset->PawnState.PawnStateTag == PawnStateTag)
+//		{
+//			return Asset;
+//		}
+//	}
+//	return nullptr;
+//}
 
-	for (const UPawnStateAsset* Asset : GetDefault<UPawnStateSettings>()->GlobalPawnStateAssets.Assets)
-	{
-		if (Asset->PawnState.PawnStateTag == PawnStateTag)
-		{
-			return Asset;
-		}
-	}
-	return nullptr;
-}
-
+*/

@@ -1,3 +1,4 @@
+/*
 #pragma once 
 
 #include "CoreMinimal.h"
@@ -17,8 +18,8 @@ public:
 	UFUNCTION(BlueprintPure)
 	static UPawnStateSettingSubsystem* GetSubsystem(const UObject* WorldContextObject);
 
-	UFUNCTION(BlueprintPure)
-	const UPawnStateAsset* GetGlobalPawnStateAsset(FGameplayTag PawnStateTag);
+	//UFUNCTION(BlueprintPure)
+	//const UPawnStateAsset* GetGlobalPawnStateAsset(FGameplayTag PawnStateTag);
 
 	const FWorldPawnStateInfo* GetWorldStateInfo(UWorld* InWorld);
 
@@ -39,4 +40,8 @@ private:
 
 	FDelegateHandle PostWorldInitHandle;
 	FDelegateHandle WorldBeginTearDownHandler;
+
+
 };
+
+*/

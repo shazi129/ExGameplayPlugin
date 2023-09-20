@@ -32,9 +32,11 @@ public class ExGameplayAbilities : ModuleRules
                 "GameplayTags",
                 "GameplayTasks",
 				"ExGameplayLibrary",
+				"DeveloperSettings",
 				"EnhancedInput",
 				"ExInputSystem",
-				"StructUtils"
+				"StructUtils",
+				"PawnState"
 			}
 			);
 			

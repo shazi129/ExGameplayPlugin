@@ -14,19 +14,13 @@ struct PAWNSTATE_API FWorldPawnStateInfo
 		TSoftObjectPtr<UWorld> MainWorld;
 
 	UPROPERTY(EditAnywhere)
+		FGameplayTag WorldPawnState;
+
+	UPROPERTY()
 		UPawnStateAsset* WorldState;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY()
 		TMap<FName, UPawnStateAsset*> LevelState;
-};
-
-USTRUCT(BlueprintType)
-struct PAWNSTATE_API FPawnStateAssets
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-		TArray<UPawnStateAsset*> Assets;
 };
 
 UCLASS(Config = Gameplay, defaultconfig, meta = (DisplayName = "PawnState"))
@@ -44,5 +38,5 @@ public:
 		TArray<FWorldPawnStateInfo> WorldPawnStates;
 
 	UPROPERTY(Config, EditAnywhere, Category = "Basic")
-		FPawnStateAssets GlobalPawnStateAssets;
+		TArray<TSoftObjectPtr<UPawnStateAssets>> GlobalPawnStateAssets;
 };

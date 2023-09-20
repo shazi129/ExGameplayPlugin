@@ -8,6 +8,8 @@
 #include "AbilitySystemLog.h"
 #include "GameplayCueManager.h"
 #include "Engine/ActorChannel.h"
+#include "PawnStateComponent.h"
+#include "PawnStateSubsystem.h"
 
 UExAbilitySystemComponent::UExAbilitySystemComponent()
 {
@@ -26,10 +28,15 @@ void UExAbilitySystemComponent::BeginPlay()
 
 	//注册本身的技能
 	RegisterAbilityProvider(this);
+
+	//激活失败回调
+	BindToAbilityFailedDelegate();
 }
 
 void UExAbilitySystemComponent::EndPlay(EEndPlayReason::Type EndPlayReason)
 {
+	UnbindAbilityFailedDelegate();
+	
 	ClearAllProvider();
 	Super::EndPlay(EndPlayReason);
 }
@@ -118,6 +125,22 @@ void UExAbilitySystemComponent::AddGameplayCueLocal(const FGameplayTag GameplayC
 void UExAbilitySystemComponent::RemoveGameplayCueLocal(const FGameplayTag GameplayCueTag, const FGameplayCueParameters & GameplayCueParameters)
 {
 	UAbilitySystemGlobals::Get().GetGameplayCueManager()->HandleGameplayCue(GetOwner(), GameplayCueTag, EGameplayCueEvent::Type::Removed, GameplayCueParameters);
+}
+
+bool UExAbilitySystemComponent::CanActivateAbility(TSubclassOf<UGameplayAbility> AbilityClass)
+{
+	UGameplayAbility* CDO = Cast<UGameplayAbility>(AbilityClass->GetDefaultObject());
+	UPawnStateSubsystem* PawnStateSubsystem = UPawnStateSubsystem::GetSubsystem(this);
+
+	//UPawnStateComponent* PawnStateComponent = Cast<UPawnStateComponent>(GetOwner()->GetComponentByClass(UPawnStateComponent::StaticClass()));
+	//if (PawnStateComponent)
+	//{
+	//	for (const FGameplayTag& AbilityTag : CDO->AbilityTags)
+	//	{
+	//		if (PawnStateComponent->CanEnterPawnState(AbilityTag, ))
+	//	}
+	//}
+	return true;
 }
 
 void UExAbilitySystemComponent::ClientPlayMontage_Implementation(
@@ -336,17 +359,25 @@ void UExAbilitySystemComponent::ActivateAbilityByCategory(const FGameplayTag& Ca
 		return;
 	}
 
-	FAbilityCategoryIndex& CategoryIndex = CategoryIndexList[0];
-	if (CategoryIndex.AbilityCasePtr && CategoryIndex.AbilityCasePtr->CanActivate)
+	EXABILITY_LOG(Log, TEXT("%s Category %s Num:%d"), *FString(__FUNCTION__), *CategoryTag.ToString(), CategoryIndexList.Num());
+	for (FAbilityCategoryIndex& CategoryIndex : CategoryIndexList)
 	{
-		//如果没give， give一次
-		FGameplayAbilitySpec* Spec = FindAbilitySpecFromCase(*CategoryIndex.AbilityCasePtr);
-		if (!Spec)
+		if (CategoryIndex.AbilityCasePtr && CategoryIndex.AbilityCasePtr->IsValid() && CategoryIndex.AbilityCasePtr->CanActivate)
 		{
-			GiveAbilityByCase(*CategoryIndex.AbilityCasePtr, true);
-		}
-		else
-		{
+			if (!CanActivateAbility(CategoryIndex.AbilityCasePtr->AbilityClass))
+			{
+				EXABILITY_LOG(Log, TEXT("%s ignore ability %s"), *FString(__FUNCTION__), *GetNameSafe(CategoryIndex.AbilityCasePtr->AbilityClass));
+				continue;
+			}
+
+			//如果没give， give一次
+			FGameplayAbilitySpec* Spec = FindAbilitySpecFromCase(*CategoryIndex.AbilityCasePtr);
+			if (!Spec)
+			{
+				GiveAbilityByCase(*CategoryIndex.AbilityCasePtr, true);
+				continue;
+			}
+			
 			TryActivateAbilityByCase(*CategoryIndex.AbilityCasePtr);
 		}
 	}
@@ -608,8 +639,34 @@ FGameplayAttributeData UExAbilitySystemComponent::GetAttributeData(FGameplayAttr
 	return FGameplayAttributeData();
 }
 
+void UExAbilitySystemComponent::SetAttributeValue(FGameplayAttribute Attribute, float Value)
+{
+	ENetRole LocalRole = GetOwner()->GetLocalRole();
+	ABILITY_LOG(Log, TEXT("%s in %d"), *FString(__FUNCTION__), LocalRole);
+
+	if (LocalRole == ENetRole::ROLE_Authority)
+	{
+		SetNumericAttributeBase(Attribute, Value);
+	}
+	else if (LocalRole == ENetRole::ROLE_AutonomousProxy)
+	{
+		ServerSetAttributeValue(Attribute, Value);
+	}
+}
+
+bool UExAbilitySystemComponent::ServerSetAttributeValue_Validate(FGameplayAttribute Attribute, float Value)
+{
+	return true;
+}
+void UExAbilitySystemComponent::ServerSetAttributeValue_Implementation(FGameplayAttribute Attribute, float Value)
+{
+	SetNumericAttributeBase(Attribute, Value);
+}
+
+
 void UExAbilitySystemComponent::InitDefaultAttributes()
 {
+	//创建Attribute
 	for (auto& AttributesClass : DefaultAttributesClassList)
 	{
 		//AttributeSet只能挂在Actor上
@@ -627,7 +684,15 @@ void UExAbilitySystemComponent::InitDefaultAttributes()
 		UOnAttributeValueChangeDelegateInfo* DelegateInfo = DelegateInfoItem.Value;
 		if (DelegateInfo && !DelegateInfo->BindHandle.IsValid())
 		{
-			DelegateInfo->BindHandle = GetGameplayAttributeValueChangeDelegate(DelegateInfoItem.Key).AddUObject(this, &UExAbilitySystemComponent::OnAttributeChanged);
+			FOnGameplayAttributeValueChange& AttributeValueChangeDelegate = GetGameplayAttributeValueChangeDelegate(DelegateInfoItem.Key);
+			DelegateInfo->BindHandle = AttributeValueChangeDelegate.AddUObject(this, &UExAbilitySystemComponent::OnAttributeChanged);
+
+			//触发一遍
+			float BaseValue = GetAttributeData(DelegateInfoItem.Key).GetBaseValue();
+			FOnAttributeChangeData ChangeData;
+			ChangeData.NewValue = BaseValue;
+			ChangeData.OldValue = BaseValue;
+			OnAttributeChanged(ChangeData);
 		}
 	}
 
@@ -685,20 +750,171 @@ void UExAbilitySystemComponent::InitDefaultAttributes()
 			}
 		}
 	}
+
+	//确保AttributeEvent 有回调
+	for (auto& AttributeChangeEventItem : AttributeChangeEventMap)
+	{
+		GetAttribuiteChangedDelegate(AttributeChangeEventItem.Key);
+	}
 }
 
 void UExAbilitySystemComponent::OnAttributeChanged(const FOnAttributeChangeData& Data)
 {
+	if (GetOwner()->GetLocalRole() == ENetRole::ROLE_AutonomousProxy)
+	{
+		EXABILITY_LOG(Log, TEXT("%s, OldValue:%f, NewValue:%f"), *FString(__FUNCTION__), Data.OldValue, Data.NewValue);
+	}
+
 	if (AttributeDelegateMap.Contains(Data.Attribute))
 	{
 		UOnAttributeValueChangeDelegateInfo* DelegateInfo = AttributeDelegateMap[Data.Attribute];
 		DelegateInfo->Delegate.Broadcast(FExOnAttributeChangeData(Data));
 	}
+
+	if (FAttributeChangeEvent* ChangeEventPtr = AttributeChangeEventMap.Find(Data.Attribute))
+	{
+		for (FAttributeChangeEventItem& EventItem : ChangeEventPtr->EventItemList)
+		{
+			HandleAttributeChangeEvent(EventItem, Data);
+		}
+	}
+
+	//TODO: 处理Attribute Event消息, 目前只做了减少的处理，例如体力小于0时触发，大于100时结束。反过来的还没做
+	// 以tradeup为标志，true时表示以上升趋势触发，false时表示以下降趋势触发
+	bool TradeUp = true;
+	if (Data.OldValue > Data.NewValue) //值减少
+	{
+		if (FAttributeChangeEvent* ChangeEventPtr = AttributeChangeEventMap.Find(Data.Attribute))
+		{
+			for (FAttributeChangeEventItem& EventItem : ChangeEventPtr->EventItemList)
+			{
+				TradeUp = EventItem.ApplyThreshold - EventItem.RemoveThreshold > 0 ? true : false;
+				if(TradeUp)
+				{
+					//相等的话，默认不开启
+					if (EventItem.RemoveThreshold == EventItem.ApplyThreshold  //不需要开启remove
+						|| Data.NewValue > EventItem.RemoveThreshold           //数值不符
+						|| !EventItem.EffectHandle.WasSuccessfullyApplied() //没有apply过
+						)
+					{
+						continue;
+					}
+
+					if (EventItem.EffectHandle.IsValid()) //instant effect不需要移除
+						{
+							RemoveActiveGameplayEffect(EventItem.EffectHandle);
+						}
+					EventItem.EffectHandle = FActiveGameplayEffectHandle();
+				} else
+				{
+					if (EventItem.EffectClass == nullptr || Data.NewValue > EventItem.ApplyThreshold)
+					{
+						continue;
+					}
+
+					//当前有同样的Effect在跑，清除老的
+					if (GetGameplayEffectCount(EventItem.EffectClass, this) > 0)
+					{
+						RemoveActiveGameplayEffectBySourceEffect(EventItem.EffectClass, this);
+					}
+
+					EventItem.EffectHandle = ApplyGameplayEffectClass(EventItem.EffectClass);
+				}
+			}
+		}
+	}
+	else if (Data.OldValue < Data.NewValue)//值增加
+	{
+		if (FAttributeChangeEvent* ChangeEventPtr = AttributeChangeEventMap.Find(Data.Attribute))
+		{
+			for (FAttributeChangeEventItem& EventItem : ChangeEventPtr->EventItemList)
+			{
+				TradeUp = EventItem.ApplyThreshold - EventItem.RemoveThreshold > 0 ? true : false;
+				if(TradeUp)
+				{
+					if (EventItem.EffectClass == nullptr || Data.NewValue < EventItem.ApplyThreshold)
+					{
+						continue;
+					}
+
+					//当前有同样的Effect在跑，清除老的
+					if (GetGameplayEffectCount(EventItem.EffectClass, this) > 0)
+					{
+						RemoveActiveGameplayEffectBySourceEffect(EventItem.EffectClass, this);
+					}
+
+					EventItem.EffectHandle = ApplyGameplayEffectClass(EventItem.EffectClass);
+				} else
+				{
+					//相等的话，默认不开启
+					if (EventItem.RemoveThreshold == EventItem.ApplyThreshold  //不需要开启remove
+						|| Data.NewValue < EventItem.RemoveThreshold           //数值不符
+						|| !EventItem.EffectHandle.WasSuccessfullyApplied() //没有apply过
+						)
+					{
+						continue;
+					}
+
+					if (EventItem.EffectHandle.IsValid()) //instant effect不需要移除
+						{
+						RemoveActiveGameplayEffect(EventItem.EffectHandle);
+						}
+					EventItem.EffectHandle = FActiveGameplayEffectHandle();
+				}
+			}
+		}
+	}
 }
+
+void UExAbilitySystemComponent::HandleAttributeChangeEvent(FAttributeChangeEventItem& EventItem, const FOnAttributeChangeData& Data)
+{
+	bool NeedApply = false;
+	bool NeedRemove = false;
+
+
+	if (EventItem.EventType == EAttributeChangeEventType::E_Decrease)
+	{
+		NeedApply = Data.NewValue < Data.OldValue;
+	}
+	else if (EventItem.EventType == EAttributeChangeEventType::E_Increase)
+	{
+		NeedApply = Data.NewValue > Data.OldValue;
+	}
+	else if (EventItem.EventType == EAttributeChangeEventType::E_Threshold)
+	{
+		float Ratio = EventItem.RemoveThreshold > EventItem.ApplyThreshold ? 1 : -1;
+
+	}
+
+
+	if (NeedApply)
+	{
+		EventItem.EffectHandle = ApplyGameplayEffectClass(EventItem.EffectClass);
+	}
+	else if (NeedRemove)
+	{
+		if (EventItem.EffectHandle.IsValid()) //instant effect不需要移除
+		{
+			RemoveActiveGameplayEffect(EventItem.EffectHandle);
+		}
+		EventItem.EffectHandle = FActiveGameplayEffectHandle();
+	}
+}
+
 #pragma endregion
 
 
 #pragma region //////////////////////////////// Effect 相关
+
+FActiveGameplayEffectHandle UExAbilitySystemComponent::ApplyGameplayEffectClass(TSubclassOf<UGameplayEffect> EffectClass)
+{
+	FGameplayEffectSpecHandle SpecHandle = MakeOutgoingSpec(EffectClass, 1, MakeEffectContext());
+	if (SpecHandle.IsValid())
+	{
+		return ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+	}
+	return FActiveGameplayEffectHandle();
+}
 
 void UExAbilitySystemComponent::InitDefaultEffects()
 {
@@ -717,3 +933,39 @@ void UExAbilitySystemComponent::InitDefaultEffects()
 }
 
 #pragma endregion
+
+#pragma region //////////////////////////////// 技能失败回调
+void UExAbilitySystemComponent::BindToAbilityFailedDelegate()  
+{  
+	AbilityFailedHandle = AbilityFailedCallbacks.AddUObject(this, &UExAbilitySystemComponent::OnAbilityFailed);  
+}
+
+void UExAbilitySystemComponent::UnbindAbilityFailedDelegate()
+{
+	AbilityFailedCallbacks.Remove(AbilityFailedHandle);
+}
+
+void UExAbilitySystemComponent::OnAbilityFailed(const UGameplayAbility* FailedAbility, const FGameplayTagContainer& FailTags)
+{
+	auto ExAbility = Cast<UExGameplayAbility>(FailedAbility);
+	if(ExAbility)
+	{
+		ExAbility->OnAbilityFailed(FailTags);
+	}
+}
+#pragma endregion 
+
+
+#pragma region /////////////////////////////////一些运行时状态
+const UExGameplayAbility* UExAbilitySystemComponent::GetCurrentApplyCostAbility()
+{
+	return CurrentApplyCostAbility;
+}
+
+void UExAbilitySystemComponent::SetCurrentApplyCostAbility(const UExGameplayAbility* Ability)
+{
+	CurrentApplyCostAbility = Ability;
+}
+
+#pragma endregion 
+

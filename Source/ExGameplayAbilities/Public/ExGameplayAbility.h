@@ -7,20 +7,42 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FExAbilityDelegate, const UGameplayAbility*, Ability);
 
+
+UCLASS(BlueprintType, Blueprintable)
+class EXGAMEPLAYABILITIES_API UExGameplayAbilityChecker : public UObject
+{
+	GENERATED_BODY()
+
+public:	
+	UFUNCTION(BlueprintImplementableEvent)
+	bool Check(const class UExGameplayAbility* Ability, const FGameplayAbilityActorInfo& ActorInfo) const;
+};
+
+
 UCLASS(ClassGroup = (ExAbility), BlueprintType, Blueprintable, abstract, editinlinenew)
 class EXGAMEPLAYABILITIES_API UExGameplayAbility : public UGameplayAbility
 {
 	GENERATED_BODY()
 
 public:
+	//激活失败通知
+	UFUNCTION(BlueprintImplementableEvent)
+	void OnAbilityFailed(const FGameplayTagContainer& FailTags) const;
+	
+	/** Checks cost. returns true if we can pay for the ability. False if not */
 	virtual bool CheckCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags = nullptr) const override;
 
 	/** Applies the ability's cost to the target */
 	virtual void ApplyCost(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const override;
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cost")
-		bool OverrideCheckCost = false;
+	//使用自定义的逻辑进行CheckCost
+	UPROPERTY(EditAnywhere, Category = "Costs|Advanced", meta=(EditCondition="CostGameplayEffectClass != nullptr"))
+		bool OverrideCostCheck = false;
+
+	//CheckCost的自定义逻辑
+	UPROPERTY(EditAnywhere, Category = "Costs|Advanced", meta = (EditCondition = "OverrideCostCheck && CostGameplayEffectClass != nullptr"))
+		TArray<TSubclassOf<UExGameplayAbilityChecker>> OverrideCostCheckers;
 };
 
 USTRUCT(BlueprintType)

@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "PawnStateTypes.h"
+#include "AbilitySystemComponent.h"
 #include "PawnStateComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPawnStateDelegate, const FPawnStateInstance&, PawnStateInstance);
@@ -29,20 +30,19 @@ public:
 	UFUNCTION(BlueprintPure)
 		FString ToString();
 
-	UFUNCTION(BlueprintCallable)
-		bool CanEnterPawnState(const FPawnStateInstance& PawnStateInstance);
+	virtual bool CanEnterPawnState(const FGameplayTag& PawnState, FString& ErrMsg);
 
 	UFUNCTION(BlueprintCallable)
-		bool EnterPawnState(const FPawnStateInstance& PawnStateInstance);
+		bool TryEnterPawnStateByAssets(const TArray<UPawnStateAsset*>& Assets, UPARAM(ref) TArray<int32>& Handles, UObject* SourceObject = nullptr, UObject* Instigator = nullptr);
 
 	UFUNCTION(BlueprintCallable)
-		bool LeavePawnState(const FPawnStateInstance& PawnStateInstance);
+		bool LeavePawnState(int InstID, UObject* Instigator=nullptr);
+
+	UFUNCTION(BlueprintCallable)
+		bool LeaveAllPawnStateTag(FGameplayTag PawnState, UObject* Instigator = nullptr);
 
 	UFUNCTION(BlueprintCallable)
 		bool HasPawnStateTag(FGameplayTag PawnStateTag);
-
-	UFUNCTION(BlueprintCallable)
-		bool HasPawnStateInstance(const FPawnStateInstance& PawnStateInstance);
 
 	UFUNCTION(BlueprintCallable)
 		UPawnStateEvent* GetEnterEventByTag(FGameplayTag PawnStateTag);
@@ -50,26 +50,27 @@ public:
 	UFUNCTION(BlueprintCallable)
 		UPawnStateEvent* GetLeaveEventByTag(FGameplayTag PawnStateTag);
 
-	UFUNCTION(BlueprintCallable)
-		UPawnStateEvent* GetEnterEvent(const UPawnStateAsset* PawnStateAsset);
-
-	UFUNCTION(BlueprintCallable)
-		UPawnStateEvent* GetLeaveEvent(const UPawnStateAsset* PawnStateAsset);
-
-	UPROPERTY(BlueprintAssignable)
-		FPawnStateDelegate ChangeDelegate;
-
 	const TArray<FPawnStateInstance>& GetPawnStateInstances();
 
-private:
+public:
 	void RebuildCurrentTag();
-	bool InternalCanEnterPawnState(const FPawnStateInstance& PawnStateInstance, FString* ErrMsg);
-	bool InternalLeavePawnState(const FPawnStateInstance& PawnStateInstance, UObject* Instigator=nullptr);
+	virtual int InternalEnterPawnState(const FGameplayTag& NewPawnStateTag, UObject* SourceObject = nullptr, UObject* Instigator = nullptr);
+	virtual int InternalEnterPawnState(const FPawnState& PawnState, UObject* SourceObject = nullptr, UObject* Instigator = nullptr);
+	virtual bool InternalLeavePawnState(const FPawnStateInstance& PawnStateInstance, UObject* Instigator=nullptr);
 
 private:
+	UPROPERTY(Transient)
+	TMap<FGameplayTag, UPawnStateEvent*> PawnStateEnterEvent;
+
+	UPROPERTY(Transient)
+	TMap<FGameplayTag, UPawnStateEvent*> PawnStateLeaveEvent;
+
+	//角色身上是否挂了ASC， 如果挂了，得考虑ASC的逻辑
+	TObjectPtr<UAbilitySystemComponent> AbilitySystemComponent;
+
+	//本地记录的PawnState信息
 	TArray<FPawnStateInstance> PawnStateInstances;
 	FGameplayTagContainer CurrentPawnStateTags;
 
-	TMap<FGameplayTag, UPawnStateEvent*> PawnStateEnterEvent;
-	TMap<FGameplayTag, UPawnStateEvent*> PawnStateLeaveEvent;
+	static std::atomic<int32> InstanceIDGenerator;
 };

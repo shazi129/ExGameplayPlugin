@@ -21,21 +21,20 @@ public:
 		static bool HasPawnStateTag(AActor* Actor, FGameplayTag PawnStateTag);
 
 	UFUNCTION(BlueprintPure)
-		static bool CanEnterPawnState(AActor* Actor, const FPawnStateInstance& PawnStateInstance);
+		static bool CanEnterPawnStateAsset(AActor* Actor, const UPawnStateAsset* Asset);
+
+	UFUNCTION(BlueprintPure)
+		static bool CanEnterPawnState(AActor* Actor, const FGameplayTag& PawnStateTag);
 
 	UFUNCTION(BlueprintCallable)
-		static bool EnterPawnState(AActor* Actor, const FPawnStateInstance& PawnStateInstance);
+		static int32 EnterPawnState(AActor* Actor, const FGameplayTag& PawnStateTag, UObject* SourceObject=nullptr, UObject* Instigator=nullptr);
 
 	UFUNCTION(BlueprintCallable)
-		static bool LeavePawnState(AActor* Actor, const FPawnStateInstance& PawnStateInstance);
+		static bool LeavePawnState(AActor* Actor, int32 InstanceID, UObject* Instigator = nullptr);
 
 	UFUNCTION(BlueprintPure)
 		static UPawnStateEvent* GetEnterEventByTag(AActor* Actor, FGameplayTag PawnStateTag);
 
 	UFUNCTION(BlueprintPure)
 		static UPawnStateEvent* GetLeaveEventByTag(AActor* Actor, FGameplayTag PawnStateTag);
-
-	UFUNCTION(BlueprintPure)
-		static FPawnStateInstance GetGlobalPawnStateInstance(FName PawnStateTagName, UObject* SourceObject);
-
 };

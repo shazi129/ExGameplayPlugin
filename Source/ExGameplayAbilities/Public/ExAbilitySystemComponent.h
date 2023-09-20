@@ -33,6 +33,56 @@ enum class EInitAttributeMethod : uint8
 	E_DataTable			UMETA(DisplayName = "DataTable"),
 };
 
+//Attribute变化类型
+UENUM(BlueprintType)
+enum class EAttributeChangeEventType : uint8
+{
+	//阈值类型
+	E_Threshold		UMETA(DisplayName = "Threshold"),
+
+	//增加类型
+	E_Increase			UMETA(DisplayName = "Increase"),
+
+	//减少类型
+	E_Decrease			UMETA(DisplayName = "Decrease"),
+};
+
+//Attribut变化的一些事件
+USTRUCT(BlueprintType)
+struct EXGAMEPLAYABILITIES_API FAttributeChangeEventItem
+{
+	GENERATED_BODY()
+
+	//监听的事件类型
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	EAttributeChangeEventType EventType = EAttributeChangeEventType::E_Threshold;
+
+	//触发的GameplayEffect
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSubclassOf<UGameplayEffect> EffectClass;
+
+	//触发阈值
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "EventType == EAttributeChangeEventType::E_Threshold", EditConditionHides))
+	float ApplyThreshold;
+
+	//移除阈值
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (EditCondition = "EventType == EAttributeChangeEventType::E_Threshold", EditConditionHides))
+	float RemoveThreshold;
+
+	//
+
+	FActiveGameplayEffectHandle EffectHandle;
+};
+
+USTRUCT(BlueprintType)
+struct EXGAMEPLAYABILITIES_API FAttributeChangeEvent
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<FAttributeChangeEventItem> EventItemList;
+};
+
 
 UCLASS(Blueprintable, ClassGroup = AbilitySystem, meta = (BlueprintSpawnableComponent))
 class EXGAMEPLAYABILITIES_API UExAbilitySystemComponent : public UAbilitySystemComponent, public IExAbilityProvider
@@ -75,6 +125,7 @@ public:
 	UFUNCTION(BlueprintCallable, Client, Reliable)
 		void ClientStopMontage();
 
+	virtual bool CanActivateAbility(TSubclassOf<UGameplayAbility> AbilityClass);
 
 protected:
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category="Abilites")
@@ -116,6 +167,7 @@ private:
 
 #pragma region ////////////////////////////技能分类相关
 public:
+	UFUNCTION(BlueprintCallable)
 	void ActivateAbilityByCategory(const FGameplayTag& CategoryTag);
 
 private:
@@ -141,7 +193,7 @@ public:
 	void TryActivateAbilityByCase(const FExAbilityCase& AbilityCase);
 
 	FExAbilityCase* FindAbilityCaseByClass(TSubclassOf<UGameplayAbility> AbilityClass);
-
+	
 private:
 	FGameplayAbilitySpecHandle GiveAbilityByCaseInternal(const FExAbilityCase& AbilityCase, bool ActivateOnce=false);
 	void RebuildAbilityCaseMap();
@@ -159,27 +211,39 @@ public:
 	UFUNCTION(BlueprintPure)
 	FGameplayAttributeData GetAttributeData(FGameplayAttribute Attribute);
 
-protected:
-	void InitDefaultAttributes();
+	UFUNCTION(BlueprintCallable)
+	void SetAttributeValue(FGameplayAttribute Attribute, float Value);
 
-	virtual void OnAttributeChanged(const FOnAttributeChangeData& Data);
+	UFUNCTION(BlueprintCallable, Server, reliable, WithValidation, Category = ExAbility)
+	void ServerSetAttributeValue(FGameplayAttribute Attribute, float Value);
+
+protected:
 
 	//默认的一些属性
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Attributes")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Attributes")
 	TArray<TSubclassOf<UAttributeSet>> DefaultAttributesClassList;
 
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Attributes")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Attributes")
 	EInitAttributeMethod InitAttributeMethod = EInitAttributeMethod::E_GameplayEffect;
 
 	//初始化默认属性的Effect
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Attributes", meta = (EditCondition = "InitAttributeMethod == EInitAttributeMethod::E_GameplayEffect", EditConditionHides))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Attributes", meta = (EditCondition = "InitAttributeMethod == EInitAttributeMethod::E_GameplayEffect", EditConditionHides))
 	TSubclassOf<UGameplayEffect> InitAttributesEffectClass;
 
 	//初始化默认属性的DataTable
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Attributes", meta = (EditCondition = "InitAttributeMethod == EInitAttributeMethod::E_DataTable", EditConditionHides))
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Attributes", meta = (EditCondition = "InitAttributeMethod == EInitAttributeMethod::E_DataTable", EditConditionHides))
 	UDataTable* InitAttributeDataTable;
 
-private:
+	//Attribute变化的事件
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Attributes|ChangeEvent")
+	TMap<FGameplayAttribute, FAttributeChangeEvent> AttributeChangeEventMap;
+
+protected:
+	void InitDefaultAttributes();
+	virtual void OnAttributeChanged(const FOnAttributeChangeData& Data);
+	virtual void HandleAttributeChangeEvent(FAttributeChangeEventItem& EventItem, const FOnAttributeChangeData& Data);
+
+protected:
 	TMap<TSubclassOf<UAttributeSet>, TObjectPtr<UAttributeSet>> AttributeSetObjectMap;
 
 	UPROPERTY(Transient)
@@ -188,14 +252,43 @@ private:
 
 #pragma region //////////////////////////////// Effect 相关
 
+public:
+	virtual FActiveGameplayEffectHandle ApplyGameplayEffectClass(TSubclassOf<UGameplayEffect> EffectClass);
+
 protected:
 
 	void InitDefaultEffects();
 
 	//默认的一些Effect，例如血量回复，默认的buff之类
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Effects")
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly, Category = "Effects")
 	TArray<TSubclassOf<UGameplayEffect>> DefaultEffectClassList;
 
-#pragma
+#pragma endregion
+
+#pragma region //////////////////////////////// 技能失败回调
+public:
+	UFUNCTION(Category = "Ability")  
+	void OnAbilityFailed(const UGameplayAbility* FailedAbility, const FGameplayTagContainer& FailTags);
+
+	
+private:
+	UFUNCTION(BlueprintCallable, Category = "Ability")  
+	void BindToAbilityFailedDelegate();
+
+	UFUNCTION(BlueprintCallable, Category = "Ability")
+	void UnbindAbilityFailedDelegate();
+	
+	FDelegateHandle AbilityFailedHandle;
+#pragma endregion
+
+#pragma region /////////////////////////////////一些运行时状态
+public:
+	UFUNCTION(BlueprintPure)
+	const UExGameplayAbility* GetCurrentApplyCostAbility();
+
+	void SetCurrentApplyCostAbility(const UExGameplayAbility* Ability);
+protected:
+	TObjectPtr<const UExGameplayAbility> CurrentApplyCostAbility;
+#pragma endregion
 
 };

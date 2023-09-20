@@ -1,5 +1,5 @@
 #include "PawnStateLibrary.h"
-#include "PawnStateSettingSubsystem.h"
+#include "PawnStateSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/Character.h"
 #include "PawnStateModule.h"
@@ -8,9 +8,9 @@
 
 UPawnStateComponent* UPawnStateLibrary::GetLocalPawnStateComponent(const UObject* WorldContextObject)
 {
-	if (ACharacter* Character = UGameplayStatics::GetPlayerCharacter(WorldContextObject, 0))
+	if (APawn* Pawn = UGameplayStatics::GetPlayerPawn(WorldContextObject, 0))
 	{
-		return  UPawnStateLibrary::GetPawnStateComponent(Character);
+		return  UPawnStateLibrary::GetPawnStateComponent(Pawn);
 	}
 	return nullptr;
 }
@@ -36,42 +36,50 @@ bool UPawnStateLibrary::HasPawnStateTag(AActor* Actor, FGameplayTag PawnStateTag
 	return false;
 }
 
-bool UPawnStateLibrary::CanEnterPawnState(AActor* Actor, const FPawnStateInstance& PawnStateInstance)
+bool UPawnStateLibrary::CanEnterPawnStateAsset(AActor* Actor, const UPawnStateAsset* Asset)
 {
-	if (UPawnStateComponent* Component = UPawnStateLibrary::GetPawnStateComponent(Actor))
+	if (UPawnStateSubsystem* PawnStateSubsystem = UPawnStateSubsystem::GetSubsystem(Actor))
 	{
-		return Component->CanEnterPawnState(PawnStateInstance);
-	}
-	else
-	{
-		PAWNSTATE_LOG(Error, TEXT("%s[%s], cannot get pawn state component for actor[%s]"), *FString(__FUNCTION__), *PawnStateInstance.ToString(), *GetNameSafe(Actor));
-	}
-
-	return false;
-}
-
-bool UPawnStateLibrary::EnterPawnState(AActor* Actor, const FPawnStateInstance& PawnStateInstance)
-{
-	if (UPawnStateComponent* Component = UPawnStateLibrary::GetPawnStateComponent(Actor))
-	{
-		return Component->EnterPawnState(PawnStateInstance);
-	}
-	else
-	{
-		PAWNSTATE_LOG(Error, TEXT("%s[%s], cannot get pawn state component for actor[%s]"), *FString(__FUNCTION__), *PawnStateInstance.ToString(), *GetNameSafe(Actor));
+		if (PawnStateSubsystem->CheckAssetValid(Asset))
+		{
+			return UPawnStateLibrary::CanEnterPawnState(Actor, Asset->PawnState.PawnStateTag);
+		}
 	}
 	return false;
 }
 
-bool UPawnStateLibrary::LeavePawnState(AActor* Actor, const FPawnStateInstance& PawnStateInstance)
+bool UPawnStateLibrary::CanEnterPawnState(AActor* Actor, const FGameplayTag& PawnStateTag)
 {
 	if (UPawnStateComponent* Component = UPawnStateLibrary::GetPawnStateComponent(Actor))
 	{
-		return Component->LeavePawnState(PawnStateInstance);
+		FString ErrMsg;
+		return Component->CanEnterPawnState(PawnStateTag, ErrMsg);
+	}
+	return false;
+}
+
+int32 UPawnStateLibrary::EnterPawnState(AActor* Actor, const FGameplayTag& PawnStateTag, UObject* SourceObject, UObject* Instigator)
+{
+	if (UPawnStateComponent* Component = UPawnStateLibrary::GetPawnStateComponent(Actor))
+	{
+		return Component->InternalEnterPawnState(PawnStateTag, SourceObject, Instigator);
 	}
 	else
 	{
-		PAWNSTATE_LOG(Error, TEXT("%s[%s], cannot get pawn state component for actor[%s]"), *FString(__FUNCTION__), *PawnStateInstance.ToString(), *GetNameSafe(Actor));
+		PAWNSTATE_LOG(Error, TEXT("%s[%s], cannot get pawn state component for actor[%s]"), *FString(__FUNCTION__), *PawnStateTag.ToString(), *GetNameSafe(Actor));
+	}
+	return 0;
+}
+
+bool UPawnStateLibrary::LeavePawnState(AActor* Actor, int32 InstanceID, UObject* Instigator)
+{
+	if (UPawnStateComponent* Component = UPawnStateLibrary::GetPawnStateComponent(Actor))
+	{
+		return Component->LeavePawnState(InstanceID, Instigator);
+	}
+	else
+	{
+		PAWNSTATE_LOG(Error, TEXT("%s, cannot get pawn state component for actor[%s]"), *FString(__FUNCTION__), *GetNameSafe(Actor));
 	}
 	return false;
 }
@@ -100,21 +108,4 @@ UPawnStateEvent* UPawnStateLibrary::GetLeaveEventByTag(AActor* Actor, FGameplayT
 		PAWNSTATE_LOG(Error, TEXT("%s[%s], cannot get pawn state component for actor[%s]"), *FString(__FUNCTION__), *PawnStateTag.ToString(), *GetNameSafe(Actor));
 	}
 	return nullptr;
-}
-
-FPawnStateInstance UPawnStateLibrary::GetGlobalPawnStateInstance(FName PawnStateTagName, UObject* SourceObject)
-{
-	UPawnStateSettingSubsystem* SubSystem = UPawnStateSettingSubsystem::GetSubsystem(SourceObject);
-	if (SubSystem == nullptr)
-	{
-		PAWNSTATE_LOG(Error, TEXT("%s error, cannot get subsystem by object[%s]"), *FString(__FUNCTION__), *GetNameSafe(SourceObject));
-		return FPawnStateInstance();
-	}
-
-	FGameplayTag PawnStateTag = UExGameplayLibrary::RequestGameplayTag(PawnStateTagName);
-	if (const UPawnStateAsset* Asset = SubSystem->GetGlobalPawnStateAsset(PawnStateTag))
-	{
-		return FPawnStateInstance(Asset, SourceObject);
-	}
-	return FPawnStateInstance();
 }

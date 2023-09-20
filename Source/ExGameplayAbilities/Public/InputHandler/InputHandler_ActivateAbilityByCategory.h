@@ -13,6 +13,7 @@ class EXGAMEPLAYABILITIES_API UInputHandler_ActivateAbilityByCategory : public U
 
 public:
 	virtual void NativeExecute(const FInputActionValue& inputValue) override;
+	virtual void CopyFrom(const UInputActionHandler* Other);
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

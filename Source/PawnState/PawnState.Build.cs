@@ -31,7 +31,8 @@ public class PawnState : ModuleRules
 				"Core",
                 "ExGameplayLibrary",
                 "GameplayTags",
-                "DeveloperSettings"
+                "DeveloperSettings",
+                "GameplayAbilities"
 				// ... add other public dependencies that you statically link with here ...
             }
 			);

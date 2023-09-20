@@ -1,4 +1,8 @@
 #include "ExGameplayAbilityLibrary.h"
+
+#include "AbilitySystemBlueprintLibrary.h"
+#include "AbilitySystemComponent.h"
+#include "AbilitySystemGlobals.h"
 #include "ExGameplayAbilityTargetTypes.h"
 
 TArray<int64> UExGameplayAbilityLibrary::GetInt64ArrayFromTargetData(const FGameplayAbilityTargetDataHandle& TargetData, int Index)
@@ -15,7 +19,6 @@ TArray<int64> UExGameplayAbilityLibrary::GetInt64ArrayFromTargetData(const FGame
 	}
 
 	return Result;
-
 }
 
 FInstancedStruct UExGameplayAbilityLibrary::GetInstancedStructFromTargetData(const FGameplayAbilityTargetDataHandle& TargetData, int Index)
@@ -34,4 +37,30 @@ FInstancedStruct UExGameplayAbilityLibrary::GetInstancedStructFromTargetData(con
 bool UExGameplayAbilityLibrary::IsAbilityCaseValid(const FExAbilityCase& AbilityCase)
 {
 	return AbilityCase.IsValid();
+}
+
+UAbilitySystemComponent* UExGameplayAbilityLibrary::GetInstigatorASCWithGESpec(const FGameplayEffectSpec& Spec)
+{
+	const FGameplayEffectContextHandle& Context = Spec.GetContext();
+	return Context.GetInstigatorAbilitySystemComponent();
+}
+
+FActiveGameplayEffectHandle UExGameplayAbilityLibrary::ApplyGameplayEffectToSelfAndSetSourceObject(UAbilitySystemComponent* Target, TSubclassOf<UGameplayEffect> GameplayEffectClass, float Level, FGameplayEffectContextHandle EffectContext,
+                                                                                                   AActor* Attacker, float InAttackCoefficient, float InHitCoefficient, float InRelativeVelocity, float InWeight)
+{
+	if (!Target)
+	{
+		return FActiveGameplayEffectHandle();
+	}
+	if (!EffectContext.IsValid())
+	{
+		EffectContext = Target->MakeEffectContext();
+	}
+	EffectContext.AddSourceObject(Attacker);
+	FGameplayEffectSpecHandle Spec = Target->MakeOutgoingSpec(GameplayEffectClass, Level, EffectContext);
+	UAbilitySystemBlueprintLibrary::AssignSetByCallerMagnitude(Spec, FName(TEXT("AttackCoefficient")), InAttackCoefficient);
+	UAbilitySystemBlueprintLibrary::AssignSetByCallerMagnitude(Spec, FName(TEXT("HitCoefficient")), InHitCoefficient);
+	UAbilitySystemBlueprintLibrary::AssignSetByCallerMagnitude(Spec, FName(TEXT("RelativeVelocity")), InRelativeVelocity);
+	UAbilitySystemBlueprintLibrary::AssignSetByCallerMagnitude(Spec, FName(TEXT("Weight")), InWeight);
+	return Target->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 }

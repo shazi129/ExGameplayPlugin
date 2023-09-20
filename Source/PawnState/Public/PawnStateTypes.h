@@ -3,10 +3,28 @@
 #include "GameplayTags.h"
 #include "PawnStateTypes.generated.h"
 
+//PawnState间的关系
+UENUM(BlueprintType)
+enum class EPawnStateRelation : uint8
+{
+	//共存
+	E_Coexist		UMETA(DisplayName = "Coexist"),
+
+	//禁止
+	E_Block			UMETA(DisplayName = "Block"),
+
+	//互斥
+	E_Mutex		    UMETA(DisplayName = "Mutex"),
+};
+
+//pawnstate配置信息
 USTRUCT(BlueprintType)
 struct PAWNSTATE_API FPawnState
 {
 	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+		FString Desc;
 
 	//本State持有的tag
 	UPROPERTY(EditAnywhere)
@@ -33,8 +51,7 @@ struct PAWNSTATE_API FPawnState
 		FGameplayTagContainer CancelledTags;
 
 	FPawnState() {}
-
-	FPawnState(FGameplayTag InPawnStateTag)
+	FPawnState(const FGameplayTag& InPawnStateTag)
 		: PawnStateTag(InPawnStateTag)
 	{
 
@@ -51,6 +68,7 @@ struct PAWNSTATE_API FPawnState
 	}
 };
 
+//一个PawnState的配置
 UCLASS(BlueprintType)
 class PAWNSTATE_API UPawnStateAsset : public UDataAsset
 {
@@ -61,71 +79,63 @@ public:
 		FPawnState PawnState;
 
 	UFUNCTION(BlueprintCallable)
-	FString ToString()
-	{
-		return PawnState.PawnStateTag.ToString();
-	}
+		FString ToString()
+		{
+			return PawnState.PawnStateTag.ToString();
+		}
 };
 
+//PawnState配置集合
+UCLASS(BlueprintType)
+class PAWNSTATE_API UPawnStateAssets : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere)
+	TArray<TSoftObjectPtr<UPawnStateAsset>> PawnStates;
+};
+
+//PawnState对应的Instance
 USTRUCT(BlueprintType)
 struct PAWNSTATE_API FPawnStateInstance
 {
 	GENERATED_BODY()
 
+	//对应的PawnState
+	UPROPERTY(BlueprintReadOnly)
+	FGameplayTag PawnStateTag;
+
 	//PawnState持有者，炸弹(SouceObject)会使人受伤害(PawnState)
 	UPROPERTY(BlueprintReadOnly)
-	UObject* SourceObject = nullptr;
+	TObjectPtr<UObject> SourceObject = nullptr;
 
-	//PawnState出发这，玩家(Instigator)扔炸弹使人受伤害(PawnState)
+	//PawnState发出者，玩家(Instigator)扔炸弹使人受伤害(PawnState)
 	UPROPERTY(BlueprintReadOnly)
-	UObject* Instigator = nullptr;
+	TObjectPtr<UObject> Instigator = nullptr;
 
+	//对应的PawnStateAsset
 	UPROPERTY(BlueprintReadOnly)
-	FPawnState PawnState;
+	TObjectPtr<UPawnStateAsset> PawnStateAsset;
 
+	//实例ID
 	UPROPERTY(BlueprintReadOnly)
-		bool bFromAsset = false;
+	int32 InstanceID = -1;
 
-	FPawnStateInstance()
-	{
-	}
-
-	FPawnStateInstance(const FPawnStateInstance& Other)
-	{
-		PawnState = Other.PawnState;
-		SourceObject = Other.SourceObject;
-		Instigator = Other.Instigator;
-	}
-
-	FPawnStateInstance(const UPawnStateAsset* InPawnStateAsset, UObject* InSourceObject, UObject* InInstigator=nullptr)
-	{
-		bFromAsset = true;
-		PawnState = InPawnStateAsset->PawnState;
-		SourceObject = InSourceObject;
-		Instigator = InInstigator;
-	}
-
-	FPawnStateInstance(FGameplayTag PawnStateTag, UObject* InSourceObject, UObject* InInstigator = nullptr)
-	{
-		PawnState.PawnStateTag = PawnStateTag;
-		SourceObject = InSourceObject;
-		Instigator = InInstigator;
-	}
+	FPawnStateInstance(){}
 
 	bool operator==(const FPawnStateInstance& Other) const
 	{
-		return PawnState == Other.PawnState
-			&& SourceObject == Other.SourceObject
-			&& Instigator == Other.Instigator;
+		return InstanceID == Other.InstanceID;
 	}
 
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("[%s|%s|%s]"), *PawnState.PawnStateTag.ToString(), *GetNameSafe(SourceObject), *GetNameSafe(Instigator));
+		return FString::Printf(TEXT("[%s|%s|%s|%s]"), *PawnStateTag.ToString(), *GetNameSafe(PawnStateAsset), *GetNameSafe(SourceObject), *GetNameSafe(Instigator));
 	}
 
 	bool IsValid() const
 	{
-		return PawnState.IsValid() && SourceObject != nullptr;
+		return PawnStateTag.IsValid() || InstanceID <= 0;
 	}
 };

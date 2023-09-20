@@ -11,5 +11,10 @@ class PAWNSTATE_API UPawnStateCheatExtension : public UCheatManagerExtension
 
 public:
 	UFUNCTION(Exec)
-		void DebugPawnState();
+	void PawnState(const FString& Param);
+
+private:
+	void ShowPawnStateUsage();
+	void ShowPawnState();
+	void ShowASCTags();
 };
