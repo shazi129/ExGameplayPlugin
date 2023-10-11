@@ -27,7 +27,7 @@ public:
 		static bool CanEnterPawnState(AActor* Actor, const FGameplayTag& PawnStateTag);
 
 	UFUNCTION(BlueprintCallable)
-		static int32 EnterPawnState(AActor* Actor, const FGameplayTag& PawnStateTag, UObject* SourceObject=nullptr, UObject* Instigator=nullptr);
+		static int32 TryEnterPawnState(AActor* Actor, const FGameplayTag& PawnStateTag, UObject* SourceObject=nullptr, UObject* Instigator=nullptr);
 
 	UFUNCTION(BlueprintCallable)
 		static bool LeavePawnState(AActor* Actor, int32 InstanceID, UObject* Instigator = nullptr);

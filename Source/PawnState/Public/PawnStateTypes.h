@@ -1,7 +1,51 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameplayTags.h"
+#include "InstancedStruct.h"
+#include "InstancedStructArray.h"
 #include "PawnStateTypes.generated.h"
+
+USTRUCT(BlueprintType)
+struct PAWNSTATE_API FRPCParamater
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	int ErrCode = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	FString ErrMsg;
+};
+
+//PawnState事件触发时机
+UENUM(BlueprintType)
+enum class EPawnStateEventTriggerType : uint8
+{
+	//在PawnState进入时触发
+	E_Enter		UMETA(DisplayName = "Enter"),
+
+	//在PawnState退出时触发
+	E_Leave		UMETA(DisplayName = "Leave"),
+
+	//进入退出都会触发
+	E_Always	UMETA(DisplayName = "Always"),
+};
+
+//PawnState变化时触发的事件
+USTRUCT(BlueprintType)
+struct PAWNSTATE_API FPawnStateEventItem
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, meta = (EditCondition = "ShowBasicConfig", EditConditionHides))
+	EPawnStateEventTriggerType TriggerType = EPawnStateEventTriggerType::E_Enter;
+
+	UPROPERTY()
+	bool ShowBasicConfig = true;
+
+	virtual ~FPawnStateEventItem(){}
+	virtual void Execute(EPawnStateEventTriggerType InTriggerType, const FPawnStateInstance& PawnStateInstance, class UPawnStateComponent* PawnStateComponnt) {}
+};
 
 //PawnState间的关系
 UENUM(BlueprintType)
@@ -15,57 +59,9 @@ enum class EPawnStateRelation : uint8
 
 	//互斥
 	E_Mutex		    UMETA(DisplayName = "Mutex"),
-};
 
-//pawnstate配置信息
-USTRUCT(BlueprintType)
-struct PAWNSTATE_API FPawnState
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere)
-		FString Desc;
-
-	//本State持有的tag
-	UPROPERTY(EditAnywhere)
-		FGameplayTag PawnStateTag;
-
-	//本State激活所需要的tag
-	UPROPERTY(EditAnywhere)
-		FGameplayTagContainer RequiredTags;
-
-	//如果被激活，持有这些tag的State将被限制激活
-	UPROPERTY(EditAnywhere)
-		FGameplayTagContainer BlockOtherTags;
-
-	//如果存在这些tag， 本State被限制激活
-	UPROPERTY(EditAnywhere)
-		FGameplayTagContainer ActivateBlockedTags;
-
-	//如果本State被激活，持有这些tag的State将退出
-	UPROPERTY(EditAnywhere)
-		FGameplayTagContainer CancelOtherTags;
-
-	//如果持有这些tag的State激活， 本State会退出
-	UPROPERTY(EditAnywhere)
-		FGameplayTagContainer CancelledTags;
-
-	FPawnState() {}
-	FPawnState(const FGameplayTag& InPawnStateTag)
-		: PawnStateTag(InPawnStateTag)
-	{
-
-	}
-
-	bool IsValid() const
-	{
-		return PawnStateTag.IsValid();
-	}
-
-	bool operator==(const FPawnState& Other) const
-	{
-		return PawnStateTag == Other.PawnStateTag;
-	}
+	//互斥
+	E_Require		UMETA(DisplayName = "Require"),
 };
 
 //一个PawnState的配置
@@ -75,25 +71,65 @@ class PAWNSTATE_API UPawnStateAsset : public UDataAsset
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
-		FPawnState PawnState;
 
 	UFUNCTION(BlueprintCallable)
-		FString ToString()
-		{
-			return PawnState.PawnStateTag.ToString();
-		}
+	FString ToString()
+	{
+		return StateTag.ToString();
+	}
+
+	UPROPERTY(EditAnywhere)
+		FGameplayTag StateTag;
+
+	//本State激活所需要的前置State
+	UPROPERTY(EditAnywhere, meta = (DisplayThumbnail = "false"))
+		TArray<TSoftObjectPtr<UPawnStateAsset>> RequiredStates;
+
+	//如果本State被激活，这些State将被限制激活
+	UPROPERTY(EditAnywhere, meta = (DisplayThumbnail = "false"))
+		TArray<TSoftObjectPtr<UPawnStateAsset>> BlockOtherStates;
+
+	//如果存在这些tag， 本State被限制激活
+	UPROPERTY(EditAnywhere, meta = (DisplayThumbnail = "false"))
+		TArray<TSoftObjectPtr<UPawnStateAsset>> ActivateBlockedStates;
+
+	//如果本State被激活，持有这些tag的State将退出
+	UPROPERTY(EditAnywhere, meta = (DisplayThumbnail = "false"))
+		TArray<TSoftObjectPtr<UPawnStateAsset>> CancelOtherStates;
+
+	//如果持有这些tag的State激活， 本State会退出
+	UPROPERTY(EditAnywhere, meta = (DisplayThumbnail = "false"))
+		TArray<TSoftObjectPtr<UPawnStateAsset>> CancelledStates;
+
+	//State相关事件
+	UPROPERTY(EditAnywhere, meta = (BaseStruct = "/Script/PawnState.PawnStateEventItem", ExcludeBaseStruct))
+		TArray<FInstancedStruct> EventList;
+};
+
+USTRUCT(BlueprintType)
+struct PAWNSTATE_API FPawnStateEntry
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere)
+	FGameplayTag StateTag;
+
+	UPROPERTY(EditAnywhere)
+	FString Description;
+
+	UPROPERTY(EditAnywhere, meta = (DisplayThumbnail = "false"))
+	TSoftObjectPtr<UPawnStateAsset> StateAssetPtr;
 };
 
 //PawnState配置集合
 UCLASS(BlueprintType)
-class PAWNSTATE_API UPawnStateAssets : public UDataAsset
+class PAWNSTATE_API UPawnStateSet : public UDataAsset
 {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
-	TArray<TSoftObjectPtr<UPawnStateAsset>> PawnStates;
+	UPROPERTY(EditAnywhere, meta = (DisplayThumbnail = "false", TitleProperty = "{StateTag}:{Description} -> {StateAssetPtr}"))
+	TArray<FPawnStateEntry> StateSet;
 };
 
 //PawnState对应的Instance
@@ -108,34 +144,27 @@ struct PAWNSTATE_API FPawnStateInstance
 
 	//PawnState持有者，炸弹(SouceObject)会使人受伤害(PawnState)
 	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<UObject> SourceObject = nullptr;
+	TSoftObjectPtr<UObject> SourceObject = nullptr;
 
 	//PawnState发出者，玩家(Instigator)扔炸弹使人受伤害(PawnState)
 	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<UObject> Instigator = nullptr;
-
-	//对应的PawnStateAsset
-	UPROPERTY(BlueprintReadOnly)
-	TObjectPtr<UPawnStateAsset> PawnStateAsset;
+	TSoftObjectPtr<UObject> Instigator = nullptr;
 
 	//实例ID
-	UPROPERTY(BlueprintReadOnly)
-	int32 InstanceID = -1;
+	TArray<int> IDList;
 
 	FPawnStateInstance(){}
 
-	bool operator==(const FPawnStateInstance& Other) const
-	{
-		return InstanceID == Other.InstanceID;
-	}
-
 	FString ToString() const
 	{
-		return FString::Printf(TEXT("[%s|%s|%s|%s]"), *PawnStateTag.ToString(), *GetNameSafe(PawnStateAsset), *GetNameSafe(SourceObject), *GetNameSafe(Instigator));
+		return FString::Printf(TEXT("[%s|%s|%s|%d]"), *PawnStateTag.ToString(), *GetNameSafe(SourceObject.Get()), *GetNameSafe(Instigator.Get()), IDList.Num());
 	}
 
 	bool IsValid() const
 	{
-		return PawnStateTag.IsValid() || InstanceID <= 0;
+		return PawnStateTag.IsValid();
 	}
 };
+
+
+

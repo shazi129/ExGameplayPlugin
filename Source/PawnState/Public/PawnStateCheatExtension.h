@@ -13,8 +13,15 @@ public:
 	UFUNCTION(Exec)
 	void PawnState(const FString& Param);
 
+	static FString GetPawnStateDebugString(class UPawnStateComponent* Component);
+	static FString GetASCTagsDebugString(AActor* Actor);
+
 private:
 	void ShowPawnStateUsage();
 	void ShowPawnState();
 	void ShowASCTags();
+	void ShowConfig();
+
+	void ShowPawnStateServer();
+	void ShowASCTagsServer();
 };

@@ -3,7 +3,14 @@
 #include "CoreMinimal.h"
 #include "PawnStateSettings.h"
 #include "Subsystems/GameInstanceSubsystem.h"
+#include "PawnStateComponent.h"
+#include "NativeGameplayTags.h"
 #include "PawnStateSubsystem.generated.h"
+
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_GetServerStates);
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_GetServerTags);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FNotifyMsgDelegate, const FGameplayTag&, MsgTag, const FInstancedStruct&, MsgBody);
 
 UCLASS(BlueprintType)
 class PAWNSTATE_API UPawnStateSubsystem : public UGameInstanceSubsystem
@@ -15,22 +22,51 @@ public:
 	virtual void Deinitialize() override;
 
 	static UPawnStateSubsystem* GetSubsystem(const UObject* WorldContextObject);
-	const FPawnState& GetPawnState(const FGameplayTag& PawnState);
-	bool CheckAssetValid(const UPawnStateAsset* PawnStateAsset);
+
+	const UPawnStateAsset* GetPawnStateAsset(const FGameplayTag& StateTag);
+
+	/**
+	 * @brief 判断能否进入一个State
+	 * @param NewStateTag  要进入的State
+	 * @param ExistStateTags  当前已存在的State
+	 * @param ErrorMsg 不能进入的提示
+	 * @return  是否能进入
+	*/
+	bool CanEnterPawnState(const FGameplayTag& NewStateTag, const FGameplayTagContainer& ExistStateTags, FString& ErrorMsg);
+
+	/**
+	 * @brief 从现有的State中收集
+	 * @param NewStateTag 
+	 * @param ExistStateTags 
+	 * @param OutMutexState 
+	*/
+	void CollectMutexState(const FGameplayTag& NewStateTag, const FGameplayTagContainer& ExistStateTags, FGameplayTagContainer& OutMutexState);
 
 	EPawnStateRelation GetRelation(const FGameplayTag& NewPawnStateTag, const FGameplayTag& ExistPawnStateTag);
 
+	const TMap<FGameplayTag, TMap<FGameplayTag, EPawnStateRelation>>& GetRelationConfig(){return StateRelations;}
 
-	void OnCheatCreate(UCheatManager* CheatManager);
+	bool LoadPawnStateAsset(UPawnStateAsset* Asset);
 
 private:
 	void LoadGlobalPawnStateConfig();
-	void LoadPawnStateAssets(TSoftObjectPtr<UPawnStateAssets> PawnStateAssets);
+	void LoadPawnStateAssets(TSoftObjectPtr<UPawnStateSet> PawnStateSet);
+	
 
 	UPROPERTY(Transient)
 	TMap<FGameplayTag, UPawnStateAsset*> GlobalPawnStateConfig;
 
-	FPawnState InvalidPawnState;
+	TMap<FGameplayTag, TMap<FGameplayTag, EPawnStateRelation>> StateRelations;
 
+#pragma region /////////////////////////////////////Cheate相关////////////////
+public:
+	void OnCheatCreate(UCheatManager* CheatManager);
+
+	void HandleServerMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody);
+	void HandleClientMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody);
+
+private:
 	FDelegateHandle CheatCreateHandle;
+
+#pragma endregion
 };

@@ -3,10 +3,20 @@
 #include "PawnStateModule.h"
 #include "PawnStateSettings.h"
 #include "PawnStateCheatExtension.h"
+#include "ExMacros.h"
 
 UPawnStateSubsystem* UPawnStateSubsystem::GetSubsystem(const UObject* WorldContextObject)
 {
 	GET_GAMEINSTANCE_SUBSYSTEM(LogPawnState, UPawnStateSubsystem, WorldContextObject)
+}
+
+const UPawnStateAsset* UPawnStateSubsystem::GetPawnStateAsset(const FGameplayTag& StateTag)
+{
+	if (GlobalPawnStateConfig.Contains(StateTag))
+	{
+		return GlobalPawnStateConfig[StateTag];
+	}
+	return nullptr;
 }
 
 void UPawnStateSubsystem::Initialize(FSubsystemCollectionBase& Collection)
@@ -20,14 +30,6 @@ void UPawnStateSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 #endif
 }
 
-void UPawnStateSubsystem::OnCheatCreate(UCheatManager* CheatManager)
-{
-	if (CheatManager)
-	{
-		CheatManager->AddCheatManagerExtension(NewObject<UPawnStateCheatExtension>(CheatManager, UPawnStateCheatExtension::StaticClass()));
-	}
-}
-
 void UPawnStateSubsystem::Deinitialize()
 {
 	Super::Deinitialize();
@@ -38,110 +40,222 @@ void UPawnStateSubsystem::Deinitialize()
 	}
 }
 
-
-const FPawnState& UPawnStateSubsystem::GetPawnState(const FGameplayTag& PawnState)
+bool UPawnStateSubsystem::CanEnterPawnState(const FGameplayTag& NewStateTag, const FGameplayTagContainer& ExistStateTags, FString& ErrorMsg)
 {
-	if (GlobalPawnStateConfig.Contains(PawnState))
+	auto RelationConfig = StateRelations.Find(NewStateTag);
+	if (!RelationConfig)
 	{
-		if (GlobalPawnStateConfig[PawnState])
+		return true;
+	}
+
+	//校验block
+	for (const FGameplayTag& ExistTag : ExistStateTags)
+	{
+		EPawnStateRelation* Relation = RelationConfig->Find(ExistTag);
+		if (Relation && *Relation == EPawnStateRelation::E_Block)
 		{
-			return GlobalPawnStateConfig[PawnState]->PawnState;
+			ErrorMsg = FString::Printf(TEXT("%s was blocked by %s"), *NewStateTag.ToString(), *ExistTag.ToString());
+			return false;
 		}
 	}
-	return InvalidPawnState;
+
+	//校验Require
+	for (auto& RelactionItem : *RelationConfig)
+	{
+		if (RelactionItem.Value == EPawnStateRelation::E_Require && RelactionItem.Key.MatchesAny(ExistStateTags))
+		{
+			ErrorMsg = FString::Printf(TEXT("%s miss require: %s"), *NewStateTag.ToString(), *RelactionItem.Key.ToString());
+			return false;
+		}
+	}
+
+	return true;
 }
 
-bool UPawnStateSubsystem::CheckAssetValid(const UPawnStateAsset* PawnStateAsset)
+void UPawnStateSubsystem::CollectMutexState(const FGameplayTag& NewStateTag, const FGameplayTagContainer& ExistStateTags, FGameplayTagContainer& OutMutexState)
 {
-	if (!PawnStateAsset || !PawnStateAsset->PawnState.IsValid())
-	{
-		return false;
-	}
-	
-	auto GlobalAssetPtr = GlobalPawnStateConfig.Find(PawnStateAsset->PawnState.PawnStateTag);
-	if (!GlobalAssetPtr)
-	{
-		return false;
-	}
-	return *GlobalAssetPtr == PawnStateAsset;
 }
 
 EPawnStateRelation UPawnStateSubsystem::GetRelation(const FGameplayTag& NewPawnStateTag, const FGameplayTag& ExistPawnStateTag)
 {
-	//合法性check
-	const FPawnState& NewPawnState = GetPawnState(NewPawnStateTag);
-	const FPawnState& ExistPawnState = GetPawnState(ExistPawnStateTag);
-	if (!NewPawnState.IsValid() || !ExistPawnState.IsValid())
+	if (StateRelations.Contains(NewPawnStateTag) && StateRelations[NewPawnStateTag].Contains(ExistPawnStateTag))
 	{
-		return EPawnStateRelation::E_Block;
+		return StateRelations[NewPawnStateTag][ExistPawnStateTag];
 	}
-
-	//block检查
-	if (NewPawnStateTag.MatchesAny(ExistPawnState.BlockOtherTags)) //别人block我
-	{
-		return EPawnStateRelation::E_Block;
-	}
-	else if (ExistPawnState.PawnStateTag.MatchesAny(NewPawnState.ActivateBlockedTags)) //我主动被block
-	{
-		return EPawnStateRelation::E_Block;
-	}
-
-	//mutex检查
-	if (NewPawnStateTag.MatchesAny(ExistPawnState.CancelOtherTags)) //别人mutex我
-	{
-		return EPawnStateRelation::E_Mutex;
-	}
-	else if (ExistPawnState.PawnStateTag.MatchesAny(NewPawnState.CancelledTags)) //我主动mutex他人
-	{
-		return EPawnStateRelation::E_Mutex;
-	}
-
 	return EPawnStateRelation::E_Coexist;
 }
 
-
 void UPawnStateSubsystem::LoadGlobalPawnStateConfig()
 {
-	for (auto& AssertsParthPtr : GetDefault<UPawnStateSettings>()->GlobalPawnStateAssets)
+	for (auto& AssertsParthPtr : GetDefault<UPawnStateSettings>()->GlobalPawnStateSets)
 	{
 		LoadPawnStateAssets(AssertsParthPtr);
 	}
 }
 
-void UPawnStateSubsystem::LoadPawnStateAssets(TSoftObjectPtr<UPawnStateAssets> PawnStateAssets)
+void UPawnStateSubsystem::LoadPawnStateAssets(TSoftObjectPtr<UPawnStateSet> PawnStateSet)
 {
-	if (PawnStateAssets.IsNull())
+	if (PawnStateSet.IsNull())
 	{
 		return;
 	}
 
-	UPawnStateAssets* Assets = PawnStateAssets.LoadSynchronous();
-	if (!Assets)
+	UPawnStateSet* StateSetAssets = PawnStateSet.LoadSynchronous();
+	if (!StateSetAssets)
 	{
 		return;
 	}
 
-	for (auto& PawnStatePathPtr : Assets->PawnStates)
+	for (FPawnStateEntry& PawnStateEntry : StateSetAssets->StateSet)
 	{
-		if (PawnStatePathPtr.IsNull())
+		if (PawnStateEntry.StateAssetPtr.IsNull())
 		{
 			continue;
 		}
 
-		UPawnStateAsset* Asset = PawnStatePathPtr.LoadSynchronous();
-		if (!Assets || !Asset->PawnState.IsValid())
+		UPawnStateAsset* StateAsset = PawnStateEntry.StateAssetPtr.LoadSynchronous();
+		if (!StateAsset || !StateAsset->StateTag.IsValid())
 		{
 			continue;
 		}
 
-		FGameplayTag& NewTag = Asset->PawnState.PawnStateTag;
-		if (GlobalPawnStateConfig.Contains(NewTag))
+		LoadPawnStateAsset(StateAsset);
+	}
+}
+
+bool UPawnStateSubsystem::LoadPawnStateAsset(UPawnStateAsset* Asset)
+{
+	if (GlobalPawnStateConfig.Contains(Asset->StateTag))
+	{
+		UPawnStateAsset* DuplicateAsset = GlobalPawnStateConfig[Asset->StateTag];
+		if (DuplicateAsset != Asset)
 		{
-			PAWNSTATE_LOG(Log, TEXT("%s error pawnstate: %s, %s"), *FString(__FUNCTION__), *GetNameSafe(Asset), *GetNameSafe(GlobalPawnStateConfig[NewTag]));
+			PAWNSTATE_LOG(Error, TEXT("%s error, duplicate state asset[%s] %s --> %s"), *FString(__FUNCTION__), *Asset->StateTag.ToString(), *GetNameSafe(DuplicateAsset), *GetNameSafe(Asset));
+			return false;
+		}
+		return true;
+	}
+
+	GlobalPawnStateConfig.Add(Asset->StateTag, Asset);
+
+	//构建关系表
+	auto& RelationMap = StateRelations.FindOrAdd(Asset->StateTag);
+
+	//自己被block的情况
+	for (auto& ActivateBlockPtr : Asset->ActivateBlockedStates)
+	{
+		UPawnStateAsset* ActivateBlockAsset = ActivateBlockPtr.LoadSynchronous();
+		if (!ActivateBlockAsset || !ActivateBlockAsset->StateTag.IsValid())
+		{
+			PAWNSTATE_LOG(Error, TEXT("%s error, %s cannot load ActivateBlockAsset %s"), *FString(__FUNCTION__), *GetNameSafe(Asset), *ActivateBlockPtr.ToString());
 			continue;
 		}
 
-		GlobalPawnStateConfig.Add(NewTag, Asset);
+		RelationMap.FindOrAdd(ActivateBlockAsset->StateTag) = EPawnStateRelation::E_Block;
+	}
+
+	//block别人的情况
+	for (auto& BlockOtherPtr : Asset->BlockOtherStates)
+	{
+		UPawnStateAsset* BlockOtherAsset = BlockOtherPtr.LoadSynchronous();
+		if (!BlockOtherAsset || !BlockOtherAsset->StateTag.IsValid())
+		{
+			PAWNSTATE_LOG(Error, TEXT("%s error, %s cannot loca BlockOtherState %s"), *FString(__FUNCTION__), *GetNameSafe(Asset), *BlockOtherPtr.ToString());
+			continue;
+		}
+
+		auto& BlockOtherMap = StateRelations.FindOrAdd(BlockOtherAsset->StateTag);
+		BlockOtherMap.FindOrAdd(Asset->StateTag) = EPawnStateRelation::E_Block;
+	}
+
+	//自己被mutex的情况
+	for (auto& CancelledStatePtr : Asset->CancelledStates)
+	{
+		UPawnStateAsset* CancelledStateAsset = CancelledStatePtr.LoadSynchronous();
+		if (!CancelledStateAsset || !CancelledStateAsset->StateTag.IsValid())
+		{
+			PAWNSTATE_LOG(Error, TEXT("%s error, %s cannot load CancelledStates %s"), *FString(__FUNCTION__), *GetNameSafe(Asset), *CancelledStatePtr.ToString());
+			continue;
+		}
+
+		RelationMap.FindOrAdd(CancelledStateAsset->StateTag) = EPawnStateRelation::E_Mutex;
+	}
+
+	//mutex别人的情况
+	for (auto& CancelOtherPtr : Asset->CancelOtherStates)
+	{
+		UPawnStateAsset* CancelOtherAsset = CancelOtherPtr.LoadSynchronous();
+		if (!CancelOtherAsset || !CancelOtherAsset->StateTag.IsValid())
+		{
+			PAWNSTATE_LOG(Error, TEXT("%s error, %s cannot load CancelOtherStates %s"), *FString(__FUNCTION__), *GetNameSafe(Asset), *CancelOtherPtr.ToString());
+			continue;
+		}
+
+		auto& CancelOtherMap = StateRelations.FindOrAdd(CancelOtherAsset->StateTag);
+		CancelOtherMap.FindOrAdd(Asset->StateTag) = EPawnStateRelation::E_Mutex;
+	}
+
+	//require的情况
+	for (auto& RequireStatePtr : Asset->RequiredStates)
+	{
+		UPawnStateAsset* RequireStateAsset = RequireStatePtr.LoadSynchronous();
+		if (!RequireStateAsset || !RequireStateAsset->StateTag.IsValid())
+		{
+			PAWNSTATE_LOG(Error, TEXT("%s error, %s cannot load RequiredStates %s"), *FString(__FUNCTION__), *GetNameSafe(Asset), *RequireStatePtr.ToString());
+			continue;
+		}
+
+		RelationMap.FindOrAdd(RequireStateAsset->StateTag) = EPawnStateRelation::E_Require;
+	}
+
+	return true;
+}
+
+void UPawnStateSubsystem::OnCheatCreate(UCheatManager* CheatManager)
+{
+	if (CheatManager)
+	{
+		CheatManager->AddCheatManagerExtension(NewObject<UPawnStateCheatExtension>(CheatManager, UPawnStateCheatExtension::StaticClass()));
+	}
+}
+
+
+void UPawnStateSubsystem::HandleServerMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
+{
+	FInstancedStruct ResponseBody;
+	ResponseBody.InitializeAs<FRPCParamater>();
+	FRPCParamater& Paramater = ResponseBody.GetMutable<FRPCParamater>();
+
+	if (MsgTag == TAG_GetServerStates)
+	{
+		Paramater.ErrMsg = UPawnStateCheatExtension::GetPawnStateDebugString(Component);
+	}
+	else if (MsgTag == TAG_GetServerTags)
+	{
+		Paramater.ErrMsg = UPawnStateCheatExtension::GetASCTagsDebugString(Component->GetOwner());
+	}
+	else
+	{
+		Paramater.ErrMsg = FString::Printf(TEXT("Invalid Msg Tag:%s"), *MsgTag.ToString());
+	}
+
+	if (Component)
+	{
+		Component->SendMsgToClient(MsgTag, ResponseBody);
+	}
+}
+
+void UPawnStateSubsystem::HandleClientMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
+{
+	if (MsgBody.GetScriptStruct() == FRPCParamater::StaticStruct())
+	{
+		const FRPCParamater& Paramater = MsgBody.GetMutable<FRPCParamater>();
+		LOG_AND_COPY(LogTemp, Log, Paramater.ErrMsg);
+	}
+	else
+	{
+		FString Error = FString::Printf(TEXT("Unrecongnize Msg Tag: %s"), *MsgTag.ToString());
+		LOG_AND_COPY(LogTemp, Log, Error);
 	}
 }
 

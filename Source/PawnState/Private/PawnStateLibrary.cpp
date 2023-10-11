@@ -40,9 +40,9 @@ bool UPawnStateLibrary::CanEnterPawnStateAsset(AActor* Actor, const UPawnStateAs
 {
 	if (UPawnStateSubsystem* PawnStateSubsystem = UPawnStateSubsystem::GetSubsystem(Actor))
 	{
-		if (PawnStateSubsystem->CheckAssetValid(Asset))
+		if (Asset && Asset->StateTag.IsValid())
 		{
-			return UPawnStateLibrary::CanEnterPawnState(Actor, Asset->PawnState.PawnStateTag);
+			return UPawnStateLibrary::CanEnterPawnState(Actor, Asset->StateTag);
 		}
 	}
 	return false;
@@ -58,11 +58,11 @@ bool UPawnStateLibrary::CanEnterPawnState(AActor* Actor, const FGameplayTag& Paw
 	return false;
 }
 
-int32 UPawnStateLibrary::EnterPawnState(AActor* Actor, const FGameplayTag& PawnStateTag, UObject* SourceObject, UObject* Instigator)
+int32 UPawnStateLibrary::TryEnterPawnState(AActor* Actor, const FGameplayTag& PawnStateTag, UObject* SourceObject, UObject* Instigator)
 {
 	if (UPawnStateComponent* Component = UPawnStateLibrary::GetPawnStateComponent(Actor))
 	{
-		return Component->InternalEnterPawnState(PawnStateTag, SourceObject, Instigator);
+		return Component->TryEnterPawnState(PawnStateTag, SourceObject, Instigator);
 	}
 	else
 	{

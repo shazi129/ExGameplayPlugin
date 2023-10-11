@@ -3,6 +3,7 @@
 #include "ExGameplayLibrary.h"
 #include "PawnStateModule.h"
 #include "PawnStateSubsystem.h"
+#include "Net/UnrealNetwork.h"
 
 std::atomic<int32> UPawnStateComponent::InstanceIDGenerator = 0;
 
@@ -10,7 +11,7 @@ void UPawnStateComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AbilitySystemComponent = Cast<UAbilitySystemComponent>(GetOwner()->GetComponentByClass(UAbilitySystemComponent::StaticClass()));
+	SetIsReplicated(true);
 
 	//加入World的PawnState
 	UWorld* World = this->GetWorld();
@@ -37,6 +38,12 @@ void UPawnStateComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	PawnStateLeaveEvent.Empty();
 }
 
+void UPawnStateComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION(UPawnStateComponent, CurrentPawnStateTags, COND_SimulatedOnly)
+}
+
 FString UPawnStateComponent::ToString()
 {
 	return CurrentPawnStateTags.ToString();
@@ -51,41 +58,7 @@ bool UPawnStateComponent::CanEnterPawnState(const FGameplayTag& NewPawnStateTag,
 	}
 
 	UPawnStateSubsystem* PawnSateSubsystem = UPawnStateSubsystem::GetSubsystem(this);
-	const FPawnState& NewPawnState = PawnSateSubsystem->GetPawnState(NewPawnStateTag);
-	if (!NewPawnState.IsValid())
-	{
-		ErrMsg = FString::Printf(TEXT("Cannot find pawn state by tag: %s"), *NewPawnStateTag.ToString());
-		return false;
-	}	
-
-	//检查相互block
-	for (auto& ExistPawnStateTag : CurrentPawnStateTags)
-	{
-		const FPawnState& ExistPawnState = PawnSateSubsystem->GetPawnState(NewPawnStateTag);
-		if (!ExistPawnState.IsValid())
-		{
-			continue;
-		}
-
-		if (ExistPawnState.PawnStateTag.MatchesAny(NewPawnState.ActivateBlockedTags))
-		{
-			ErrMsg = FString::Printf(TEXT("%s was blocked by %s"), *NewPawnStateTag.ToString(), *ExistPawnState.PawnStateTag.ToString());
-			return false;
-		}
-		else if (NewPawnStateTag.MatchesAny(ExistPawnState.BlockOtherTags))
-		{
-			ErrMsg = FString::Printf(TEXT("%s was blocked by %s"), *NewPawnStateTag.ToString(), *ExistPawnState.PawnStateTag.ToString());
-			return false;
-		}
-	}
-
-	//检查依赖
-	if (NewPawnState.RequiredTags.Num() > 0 && !CurrentPawnStateTags.HasAll(NewPawnState.RequiredTags))
-	{
-		ErrMsg = FString::Printf(TEXT("%s require check failed"), *NewPawnStateTag.ToString());
-		return false;
-	}
-	return true;
+	return PawnSateSubsystem->CanEnterPawnState(NewPawnStateTag, CurrentPawnStateTags, ErrMsg);
 }
 
 void UPawnStateComponent::RebuildCurrentTag()
@@ -99,105 +72,106 @@ void UPawnStateComponent::RebuildCurrentTag()
 
 int UPawnStateComponent::InternalEnterPawnState(const FGameplayTag& NewPawnStateTag, UObject* SourceObject, UObject* Instigator)
 {
-	UPawnStateSubsystem* PawnStateSubsystem = UPawnStateSubsystem::GetSubsystem(this);
-	const FPawnState& GlobalPawnState = PawnStateSubsystem->GetPawnState(NewPawnStateTag);
-	if (GlobalPawnState.IsValid())
-	{
-		return InternalEnterPawnState(GlobalPawnState, SourceObject, Instigator);
-	}
-	else
-	{
-		return InternalEnterPawnState(FPawnState(NewPawnStateTag), SourceObject, Instigator);
-	}
-}
+	SourceObject = SourceObject != nullptr ? SourceObject : this;
 
-int UPawnStateComponent::InternalEnterPawnState(const FPawnState& PawnState, UObject* SourceObject, UObject* Instigator)
-{
-	if (!PawnState.IsValid())
+	//如果已经存在，只需要增加基数
+	FPawnStateInstance* SameInstance = FindPawnStateInstance(NewPawnStateTag, SourceObject, Instigator);
+	if (SameInstance)
 	{
-		return 0;
+		SameInstance->IDList.Add(++InstanceIDGenerator);
+		PAWNSTATE_LOG(Log, TEXT("%s: %s, Role:%d"), *FString(__FUNCTION__), *SameInstance->ToString(), GetOwner()->GetLocalRole());
+
+		return InstanceIDGenerator;
 	}
 
 	UPawnStateSubsystem* PawnStateSubsystem = UPawnStateSubsystem::GetSubsystem(this);
-	const FGameplayTag& PawnStateTag = PawnState.PawnStateTag;
-	SourceObject = SourceObject == nullptr ? SourceObject : this;
-	PAWNSTATE_LOG(Log, TEXT("%s: %s"), *FString(__FUNCTION__), *PawnStateTag.ToString());
 
 	//使互斥的PawnState退出
-	TArray<FPawnStateInstance*> RemovedInstance;
+	TArray<FGameplayTag> RemovedStates;
 	for (FPawnStateInstance& Instance : PawnStateInstances)
 	{
-		const FPawnState& ExistPawnState = PawnStateSubsystem->GetPawnState(Instance.PawnStateTag);
-		if (!ExistPawnState.IsValid())
+		EPawnStateRelation Relation = PawnStateSubsystem->GetRelation(Instance.PawnStateTag, NewPawnStateTag);
+		if (Relation == EPawnStateRelation::E_Mutex)
 		{
-			RemovedInstance.Add(&Instance);
-		}
-		else if (ExistPawnState.CancelledTags.HasTagExact(PawnStateTag))
-		{
-			RemovedInstance.Add(&Instance);
-		}
-		else if (PawnState.CancelOtherTags.HasTagExact(ExistPawnState.PawnStateTag))
-		{
-			RemovedInstance.Add(&Instance);
+			RemovedStates.Add(Instance.PawnStateTag);
 		}
 	}
 
 	//互斥的发起者
 	UObject* MutexInstigator = Instigator ? Instigator : SourceObject;
-	for (FPawnStateInstance* Instance : RemovedInstance)
+	for (const FGameplayTag& State : RemovedStates)
 	{
-		InternalLeavePawnState(*Instance, MutexInstigator);
+		LeaveAllPawnStateTag(State, MutexInstigator);
 	}
 
 	//加入新的PawnState
 	PawnStateInstances.Emplace();
 	FPawnStateInstance& NewInstance = PawnStateInstances.Last();
-	NewInstance.PawnStateTag = PawnStateTag;
+	NewInstance.PawnStateTag = NewPawnStateTag;
 	NewInstance.SourceObject = SourceObject;
 	NewInstance.Instigator = Instigator;
-	NewInstance.InstanceID = ++InstanceIDGenerator;
+	NewInstance.IDList.Add(++InstanceIDGenerator);
+	PAWNSTATE_LOG(Log, TEXT("%s: %s, Role:%d"), *FString(__FUNCTION__), *NewInstance.ToString(), GetOwner()->GetLocalRole());
 
 	RebuildCurrentTag();
 
-	//如果有ASC 添加到ASC中
-	if (AbilitySystemComponent)
-	{
-		AbilitySystemComponent->UpdateTagMap(PawnStateTag, 1);
-	}
-
-	UPawnStateEvent* Event = GetEnterEventByTag(PawnStateTag);
+	UPawnStateEvent* Event = GetEnterEventByTag(NewPawnStateTag);
 	if (Event && Event->Delegate.IsBound())
 	{
 		Event->Delegate.Broadcast(NewInstance);
 	}
 
-	return NewInstance.InstanceID;
+	HandleStateEvent(EPawnStateEventTriggerType::E_Enter, NewInstance);
+
+	return InstanceIDGenerator;
+}
+
+int UPawnStateComponent::TryEnterPawnState(FGameplayTag PawnStateTag, UObject* SourceObject, UObject* Instigator)
+{
+	FString ErrorMsg;
+	if (!CanEnterPawnState(PawnStateTag, ErrorMsg))
+	{
+		PAWNSTATE_LOG(Error, TEXT("%s cannot enter %s: %s"), *FString(__FUNCTION__), *PawnStateTag.ToString(), *ErrorMsg);
+		return 0;
+	}
+	return InternalEnterPawnState(PawnStateTag, SourceObject, Instigator);
 }
 
 bool UPawnStateComponent::TryEnterPawnStateByAssets(const TArray<UPawnStateAsset*>& Assets, UPARAM(ref) TArray<int32>& Handles, UObject* SourceObject, UObject* Instigator)
+{
+	static TArray<FGameplayTag> AssetTags;
+	AssetTags.Reset();
+
+	for (auto& PawnStateAsset : Assets)
+	{
+		if (!PawnStateAsset || !PawnStateAsset->StateTag.IsValid())
+		{
+			return false;
+		}
+
+		AssetTags.Add(PawnStateAsset->StateTag);
+	}
+	return TryEnterPawnStateByTags(AssetTags, Handles, SourceObject, Instigator);
+}
+
+bool UPawnStateComponent::TryEnterPawnStateByTags(const TArray<FGameplayTag>& PawnStateTags, UPARAM(ref)TArray<int32>& Handles, UObject* SourceObject, UObject* Instigator)
 {
 	UPawnStateSubsystem* PawnStateSubsystem = UPawnStateSubsystem::GetSubsystem(this);
 	FString ErrorMsg;
 	Handles.Reset();
 
-	for (auto& PawnStateAsset : Assets)
+	for (auto& PawnStateTag : PawnStateTags)
 	{
-		if (!PawnStateSubsystem->CheckAssetValid(PawnStateAsset))
+		if (!CanEnterPawnState(PawnStateTag, ErrorMsg))
 		{
-			PAWNSTATE_LOG(Error, TEXT("%s cannot enter %s: Invalid Asset"), *FString(__FUNCTION__), *GetNameSafe(PawnStateAsset));
-			return false;
-		}
-
-		if (!CanEnterPawnState(PawnStateAsset->PawnState.PawnStateTag, ErrorMsg))
-		{
-			PAWNSTATE_LOG(Error, TEXT("%s cannot enter %s: %s"), *FString(__FUNCTION__), *GetNameSafe(PawnStateAsset), *ErrorMsg);
+			PAWNSTATE_LOG(Error, TEXT("%s cannot enter %s: %s"), *FString(__FUNCTION__), *PawnStateTag.ToString(), *ErrorMsg);
 			return false;
 		}
 	}
 
-	for (auto& PawnStateAsset : Assets)
+	for (auto& PawnStateTag : PawnStateTags)
 	{
-		int Handle = InternalEnterPawnState(PawnStateAsset->PawnState.PawnStateTag, SourceObject, Instigator);
+		int Handle = InternalEnterPawnState(PawnStateTag, SourceObject, Instigator);
 		Handles.Add(Handle);
 	}
 
@@ -206,62 +180,84 @@ bool UPawnStateComponent::TryEnterPawnStateByAssets(const TArray<UPawnStateAsset
 
 bool UPawnStateComponent::LeavePawnState(int InstID, UObject* Instigator)
 {
-	for (auto& PawnStateInst : PawnStateInstances)
-	{
-		if (PawnStateInst.InstanceID == InstID)
-		{
-			return InternalLeavePawnState(PawnStateInst, Instigator);
-		}
-	}
-	return true;
+	return InternalLeavePawnState(InstID, Instigator);
 }
 
 bool UPawnStateComponent::LeaveAllPawnStateTag(FGameplayTag PawnStateTag, UObject* Instigator)
 {
-	TArray<FPawnStateInstance*> RemovedInstance;
+	TArray<int32> RemovedInstanceID;
 	for (auto& PawnStateInst : PawnStateInstances)
 	{
 		if (PawnStateTag == PawnStateInst.PawnStateTag)
 		{
-			RemovedInstance.Add(&PawnStateInst);
+			RemovedInstanceID.Append(PawnStateInst.IDList);
 		}
 	}
-	for (FPawnStateInstance* Instance : RemovedInstance)
+	for (int32 InstanceID : RemovedInstanceID)
 	{
-		InternalLeavePawnState(*Instance, Instigator);
+		InternalLeavePawnState(InstanceID, Instigator);
 	}
 	return false;
 }
 
-bool UPawnStateComponent::InternalLeavePawnState(const FPawnStateInstance& PawnStateInstance,UObject* Instigator)
+bool UPawnStateComponent::InternalLeavePawnState(int InstanceID, UObject* Instigator)
 {
+	//先移除再回调，防止回调中还有移除操作
+	FPawnStateInstance InstancdRemove;
+
 	for (int i = PawnStateInstances.Num() - 1; i >= 0; i--)
 	{
-		if (PawnStateInstances[i] == PawnStateInstance)
+		int Index = PawnStateInstances[i].IDList.Find(InstanceID);
+		if (Index >= 0)
 		{
-			PAWNSTATE_LOG(Log, TEXT("%s: %s"), *FString(__FUNCTION__), *PawnStateInstances[i].ToString());
-
-			FPawnStateInstance Instance(PawnStateInstances[i]);
-			Instance.Instigator = Instigator;
-
-			if (AbilitySystemComponent)
+			PawnStateInstances[i].IDList.RemoveAt(Index);
+			if (PawnStateInstances[i].IDList.IsEmpty())
 			{
-				AbilitySystemComponent->UpdateTagMap(Instance.PawnStateTag, -1);
+				InstancdRemove = PawnStateInstances[i];
+				PawnStateInstances.RemoveAt(i);
 			}
-
-			UPawnStateEvent* Event = GetLeaveEventByTag(PawnStateInstance.PawnStateTag);
-			if (Event && Event->Delegate.IsBound())
+			else
 			{
-				Event->Delegate.Broadcast(Instance);
+				PAWNSTATE_LOG(Log, TEXT("%s: %s, Role:%d"), *FString(__FUNCTION__), *PawnStateInstances[i].ToString(), GetOwner()->GetLocalRole());
 			}
-
-			PawnStateInstances.RemoveAt(i);
-			RebuildCurrentTag();
-
 			break;
 		}
 	}
+
+	if (InstancdRemove.IsValid())
+	{
+		InstancdRemove.Instigator =  Instigator;
+		PAWNSTATE_LOG(Log, TEXT("%s: %s, Role:%d"), *FString(__FUNCTION__), *InstancdRemove.ToString(), GetOwner()->GetLocalRole());
+
+		UPawnStateEvent* Event = GetLeaveEventByTag(InstancdRemove.PawnStateTag);
+		if (Event && Event->Delegate.IsBound())
+		{
+			Event->Delegate.Broadcast(InstancdRemove);
+		}
+		HandleStateEvent(EPawnStateEventTriggerType::E_Leave, InstancdRemove);
+		RebuildCurrentTag();
+	}
 	return true;
+}
+
+void UPawnStateComponent::HandleStateEvent(EPawnStateEventTriggerType TriggerType, const FPawnStateInstance& Instance)
+{
+	//相关事件，只针对定义了PawnState的tag
+	const UPawnStateAsset* PawnStateAsset = UPawnStateSubsystem::GetSubsystem(this)->GetPawnStateAsset(Instance.PawnStateTag);
+	if (!PawnStateAsset)
+	{
+		return;
+	}
+
+	for (auto& InstancedStruct : PawnStateAsset->EventList)
+	{
+		const UScriptStruct* StructType = InstancedStruct.GetScriptStruct();
+		if (StructType->IsChildOf(FPawnStateEventItem::StaticStruct()))
+		{
+			FPawnStateEventItem& EventItem = InstancedStruct.GetMutable<FPawnStateEventItem>();
+			EventItem.Execute(TriggerType, Instance, this);
+		}
+	}
 }
 
 bool UPawnStateComponent::HasPawnStateTag(FGameplayTag PawnStateTag)
@@ -311,3 +307,38 @@ const TArray<FPawnStateInstance>& UPawnStateComponent::GetPawnStateInstances()
 {
 	return PawnStateInstances;
 }
+
+FPawnStateInstance* UPawnStateComponent::FindPawnStateInstance(const FGameplayTag& PawnStateTag, UObject* SourceObject, UObject* Instigator)
+{
+	for (FPawnStateInstance& Instance : PawnStateInstances)
+	{
+		if (Instance.PawnStateTag == PawnStateTag && Instance.SourceObject == SourceObject && Instance.Instigator == Instigator)
+		{
+			return &Instance;
+		}
+	}
+	return nullptr;
+}
+
+bool UPawnStateComponent::SendMsgToServer_Validate(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
+{
+	return true;
+}
+
+void UPawnStateComponent::SendMsgToServer_Implementation(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
+{
+	UPawnStateSubsystem* PawnStateSystem = UPawnStateSubsystem::GetSubsystem(this);
+	PawnStateSystem->HandleServerMsg(this, MsgTag, MsgBody);
+}
+
+bool UPawnStateComponent::SendMsgToClient_Validate(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
+{
+	return true;
+}
+
+void UPawnStateComponent::SendMsgToClient_Implementation(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
+{
+	UPawnStateSubsystem* PawnStateSystem = UPawnStateSubsystem::GetSubsystem(this);
+	PawnStateSystem->HandleClientMsg(this, MsgTag, MsgBody);
+}
+

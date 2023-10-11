@@ -38,5 +38,5 @@ public:
 		TArray<FWorldPawnStateInfo> WorldPawnStates;
 
 	UPROPERTY(Config, EditAnywhere, Category = "Basic")
-		TArray<TSoftObjectPtr<UPawnStateAssets>> GlobalPawnStateAssets;
+		TArray<TSoftObjectPtr<UPawnStateSet>> GlobalPawnStateSets;
 };
