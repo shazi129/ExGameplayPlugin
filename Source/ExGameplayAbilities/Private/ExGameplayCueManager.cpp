@@ -3,7 +3,7 @@
 #include "AbilitySystemGlobals.h"
 #include "GameplayCueSet.h"
 #include "GameplayTagsManager.h"
-#include "AssetRegistry/AssetRegistryModule.h"
+#include "AssetRegistryModule.h"
 
 UExGameplayCueManager::UExGameplayCueManager(class FObjectInitializer const& Initializer)
 	:Super(Initializer)

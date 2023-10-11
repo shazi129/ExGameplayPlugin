@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AttributeSet.h"
+#include "AbilitySystemComponent.h"
 #include "ExAttributeSet.generated.h"
 
 #define ATTRIBUTE_ACCESSORS(ClassName, PropertyName) \
@@ -8,42 +9,6 @@
 	GAMEPLAYATTRIBUTE_VALUE_GETTER(PropertyName) \
 	GAMEPLAYATTRIBUTE_VALUE_SETTER(PropertyName) \
 	GAMEPLAYATTRIBUTE_VALUE_INITTER(PropertyName)
-
-/**
- * 对FOnAttributeChangeData的扩展，使其可以在蓝图使用 
- */
-USTRUCT(BlueprintType)
-struct EXGAMEPLAYABILITIES_API FExOnAttributeChangeData
-{
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadOnly)
-	float OldValue;
-
-	UPROPERTY(BlueprintReadOnly)
-	float NewValue;
-
-	FExOnAttributeChangeData();
-	FExOnAttributeChangeData(const FOnAttributeChangeData& ChangeData);
-	void Set(float InOldValue, float InNewValue);
-};
-
-//定义一个可以通知到蓝图的Attribute更改回调
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttributeValueChangeDelegate, const FExOnAttributeChangeData&,  ChangeData);
-
-//
-UCLASS(BlueprintType)
-class EXGAMEPLAYABILITIES_API UOnAttributeValueChangeDelegateInfo : public UObject
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(BlueprintAssignable)
-	FOnAttributeValueChangeDelegate Delegate;
-
-	//绑定到FOnGameplayAttributeValueChange的回调，用于析构时解绑
-	FDelegateHandle BindHandle;
-};
 
 UCLASS()
 class EXGAMEPLAYABILITIES_API UExAttributeSet : public UAttributeSet

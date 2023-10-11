@@ -50,13 +50,32 @@ FActiveGameplayEffectHandle UExGameplayAbilityLibrary::ApplyGameplayEffectToSelf
 {
 	if (!Target)
 	{
+		UE_LOG(LogTemp, Error, TEXT("ApplyGameplayEffect Target is Null"));
 		return FActiveGameplayEffectHandle();
+	}
+	if (!Attacker)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("ApplyGameplayEffect Attacker is Null"));
+	}
+	if (!EffectContext.IsValid())
+	{
+		if (Attacker)
+		{
+			UAbilitySystemComponent* SourceASC = static_cast<UAbilitySystemComponent*>(Attacker->GetComponentByClass(UAbilitySystemComponent::StaticClass()));
+			if (SourceASC)
+			{
+				EffectContext = SourceASC->MakeEffectContext();
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("ApplyGameplayEffect AttackerASC is Null"));
+			}
+		}
 	}
 	if (!EffectContext.IsValid())
 	{
 		EffectContext = Target->MakeEffectContext();
 	}
-	EffectContext.AddSourceObject(Attacker);
 	FGameplayEffectSpecHandle Spec = Target->MakeOutgoingSpec(GameplayEffectClass, Level, EffectContext);
 	UAbilitySystemBlueprintLibrary::AssignSetByCallerMagnitude(Spec, FName(TEXT("AttackCoefficient")), InAttackCoefficient);
 	UAbilitySystemBlueprintLibrary::AssignSetByCallerMagnitude(Spec, FName(TEXT("HitCoefficient")), InHitCoefficient);
