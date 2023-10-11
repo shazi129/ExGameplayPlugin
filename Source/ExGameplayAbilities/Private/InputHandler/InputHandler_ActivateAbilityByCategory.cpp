@@ -35,12 +35,3 @@ void UInputHandler_ActivateAbilityByCategory::NativeExecute(const FInputActionVa
 
 	ASC->ActivateAbilityByCategory(CategoryTag);
 }
-
-void UInputHandler_ActivateAbilityByCategory::CopyFrom(const UInputActionHandler* Other)
-{
-	Super::CopyFrom(Other);
-	if (const UInputHandler_ActivateAbilityByCategory* OtherHandler = Cast<const UInputHandler_ActivateAbilityByCategory>(Other))
-	{
-		CategoryTag = OtherHandler->CategoryTag;
-	}
-}
