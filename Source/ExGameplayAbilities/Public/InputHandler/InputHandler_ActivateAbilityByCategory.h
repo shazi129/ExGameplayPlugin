@@ -17,4 +17,8 @@ public:
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTag CategoryTag;
+
+	//是否需要将这个行为发送到server端， 默认在主控端执行
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool ToServer = false;
 };

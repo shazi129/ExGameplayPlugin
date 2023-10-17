@@ -51,12 +51,12 @@ bool UExGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Han
 {
 	do
 	{
-		if (!ActorInfo || !AbilityStateAsset)
+		if (!ActorInfo)
 		{
 			break;
 		}
-
 		const AActor* AvatarActor = ActorInfo->AvatarActor.Get();
+
 		UPawnStateComponent* PawnStateComponent = Cast<UPawnStateComponent>(AvatarActor->GetComponentByClass(UPawnStateComponent::StaticClass()));
 		if (!PawnStateComponent)
 		{
@@ -69,16 +69,25 @@ bool UExGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Han
 			break;
 		}
 
-		if (!PawnStateSubsystem->LoadPawnStateAsset(AbilityStateAsset))
+		//如果配置了PawnState
+		if (PawnStateSubsystem->LoadPawnStateAsset(AbilityStateAsset))
 		{
-			break;
+			FString  ErrorMsg;
+			if (!PawnStateComponent->CanEnterPawnState(AbilityStateAsset->StateTag, ErrorMsg))
+			{
+				EXABILITY_LOG(Log, TEXT("%s check %s failed: %s"), *FString(__FUNCTION__), *GetNameSafe(this), *ErrorMsg);
+				return false;
+			}
 		}
 
-		FString  ErrorMsg;
-		if (!PawnStateComponent->CanEnterPawnState(AbilityStateAsset->StateTag, ErrorMsg))
+		//GAS的Block和PawnState的block互通
+		for (const auto& GameplayTag : ActivationBlockedTags)
 		{
-			EXABILITY_LOG(Log, TEXT("%s check %s failed: %s"), *FString(__FUNCTION__), *GetNameSafe(this), *ErrorMsg);
-			return false;
+			if (PawnStateComponent->HasPawnStateTag(GameplayTag))
+			{
+				EXABILITY_LOG(Log, TEXT("%s check %s failed: Activation blocked by %s"), *FString(__FUNCTION__), *GetNameSafe(this), *GameplayTag.ToString());
+				return false;
+			}
 		}
 	}
 	while(false);

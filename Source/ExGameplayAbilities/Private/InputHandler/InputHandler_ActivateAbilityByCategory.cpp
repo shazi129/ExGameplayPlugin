@@ -33,5 +33,12 @@ void UInputHandler_ActivateAbilityByCategory::NativeExecute(const FInputActionVa
 		return;
 	}
 
-	ASC->ActivateAbilityByCategory(CategoryTag);
+	if (ToServer)
+	{
+		ASC->ServerActivateAbilityByCategory(CategoryTag);
+	}
+	else
+	{
+		ASC->ActivateAbilityByCategory(CategoryTag);
+	}
 }

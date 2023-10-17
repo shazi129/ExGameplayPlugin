@@ -119,16 +119,20 @@ void FAddAttributeEvent::Execute(EPawnStateEventTriggerType InTriggerType, const
 	}
 
 	//客户端还是服务侧
-	bool InServer = PawnStateCompnent->GetWorld()->GetNetMode() == ENetMode::NM_DedicatedServer;
-	if (EventMode == EEAttributeChangeEventMode::E_OnlyClient && InServer)
+	ENetMode NetMode = PawnStateCompnent->GetWorld()->GetNetMode();
+	if (NetMode != ENetMode::NM_Standalone) //Standalone既算Client也算Server
 	{
-		return;
+		bool InServer = PawnStateCompnent->GetWorld()->GetNetMode() == ENetMode::NM_DedicatedServer;
+		if (EventMode == EEAttributeChangeEventMode::E_OnlyClient && InServer)
+		{
+			return;
+		}
+		else if (EventMode == EEAttributeChangeEventMode::E_OnlyServer && !InServer)
+		{
+			return;
+		}
 	}
-	else if (EventMode == EEAttributeChangeEventMode::E_OnlyServer && !InServer)
-	{
-		return;
-	}
-
+	
 	AActor* Owner = PawnStateCompnent->GetOwner();
 	if (!Owner || Owner->GetLocalRole() == ENetRole::ROLE_SimulatedProxy)
 	{
@@ -158,3 +162,23 @@ void FAddAttributeEvent::Execute(EPawnStateEventTriggerType InTriggerType, const
 		}
 	}
 }
+
+FExOnAttributeChangeData::FExOnAttributeChangeData()
+	: OldValue(0)
+	, NewValue(0)
+{
+}
+
+FExOnAttributeChangeData::FExOnAttributeChangeData(const FOnAttributeChangeData& ChangeData)
+	: Attribute(ChangeData.Attribute)
+	, OldValue(ChangeData.OldValue)
+	, NewValue(ChangeData.NewValue)
+{
+}
+
+void FExOnAttributeChangeData::Set(float InOldValue, float InNewValue)
+{
+	OldValue = InOldValue;
+	NewValue = InNewValue;
+}
+

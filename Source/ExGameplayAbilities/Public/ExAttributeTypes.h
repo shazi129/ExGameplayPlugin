@@ -133,6 +133,9 @@ struct EXGAMEPLAYABILITIES_API FExOnAttributeChangeData
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadOnly)
+	FGameplayAttribute Attribute;
+
+	UPROPERTY(BlueprintReadOnly)
 	float OldValue;
 
 	UPROPERTY(BlueprintReadOnly)

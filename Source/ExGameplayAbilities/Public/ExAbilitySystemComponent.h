@@ -121,7 +121,11 @@ private:
 
 #pragma region ////////////////////////////技能分类相关
 public:
-	UFUNCTION(BlueprintCallable)
+
+	UFUNCTION(BlueprintCallable, Server, reliable, Category = ExAbility)
+	void ServerActivateAbilityByCategory(const FGameplayTag& CategoryTag);
+
+	UFUNCTION(BlueprintCallable, Category = ExAbility)
 	void ActivateAbilityByCategory(const FGameplayTag& CategoryTag);
 
 private:

@@ -1,25 +1,6 @@
 #include "ExAttributeSet.h"
 #include "GameplayEffectExtension.h"
 
-FExOnAttributeChangeData::FExOnAttributeChangeData()
-	: OldValue(0)
-	, NewValue(0)
-{
-}
-
-FExOnAttributeChangeData::FExOnAttributeChangeData(const FOnAttributeChangeData& ChangeData)
-	: OldValue(ChangeData.OldValue)
-	, NewValue(ChangeData.NewValue)
-{
-}
-
-void FExOnAttributeChangeData::Set(float InOldValue, float InNewValue)
-{
-	OldValue = InOldValue;
-	NewValue = InNewValue;
-}
-
-
 UExBaseAttributeSet::UExBaseAttributeSet()
 {
 }

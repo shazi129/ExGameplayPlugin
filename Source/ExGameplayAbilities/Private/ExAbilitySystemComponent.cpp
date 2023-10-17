@@ -372,7 +372,13 @@ void UExAbilitySystemComponent::ReCollectedAbilityInfo()
 
 #pragma endregion
 
-#pragma region /////////////////////////////// 技能分类相关
+#pragma region 
+void UExAbilitySystemComponent::ServerActivateAbilityByCategory_Implementation(const FGameplayTag& CategoryTag)
+{
+	ActivateAbilityByCategory(CategoryTag);
+}
+
+/////////////////////////////// 技能分类相关
 void UExAbilitySystemComponent::ActivateAbilityByCategory(const FGameplayTag& CategoryTag)
 {
 	if (!AbilityCategoryMap.Contains(CategoryTag))
