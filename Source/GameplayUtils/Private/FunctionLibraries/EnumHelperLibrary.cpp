@@ -1,4 +1,13 @@
-#include "EnumHelperLibrary.h"
+#include "FunctionLibraries/EnumHelperLibrary.h"
+
+FString UEnumHelperLibrary::GetEnumDisplayName(UEnum* EnumType, int64 EnumValue)
+{
+	if (EnumType == nullptr)
+	{
+		return "";
+	}
+	return EnumType->GetNameStringByValue(EnumValue);
+}
 
 FString UEnumHelperLibrary::NetRoleToString(ENetRole NetRole)
 {

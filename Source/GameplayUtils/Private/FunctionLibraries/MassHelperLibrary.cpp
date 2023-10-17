@@ -1,4 +1,4 @@
-#include "MassHelperLibrary.h"
+#include "FunctionLibraries/MassHelperLibrary.h"
 #include "MassEntitySubsystem.h"
 #include "GameplayUtilsModule.h"
 #include "MassExecutor.h"

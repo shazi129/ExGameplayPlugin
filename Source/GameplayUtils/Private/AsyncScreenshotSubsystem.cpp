@@ -1,6 +1,6 @@
 #include "AsyncScreenshotSubsystem.h"
 #include "ImageUtils.h"
-#include "GameplayUtilsLibrary.h"
+#include "FunctionLibraries/GameplayUtilsLibrary.h"
 
 void UAsyncScreenshotSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 {
