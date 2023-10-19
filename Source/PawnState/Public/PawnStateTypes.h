@@ -2,20 +2,14 @@
 #include "CoreMinimal.h"
 #include "GameplayTags.h"
 #include "InstancedStruct.h"
-#include "InstancedStructArray.h"
+#include "NativeGameplayTags.h"
 #include "PawnStateTypes.generated.h"
 
-USTRUCT(BlueprintType)
-struct PAWNSTATE_API FRPCParamater
-{
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite)
-	int ErrCode = 0;
-
-	UPROPERTY(BlueprintReadWrite)
-	FString ErrMsg;
-};
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_PawnState_Run);
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_GetServerStates);
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_RetServerStates);
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_GetServerTags);
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_RetServerTags);
 
 //PawnState事件触发时机
 UENUM(BlueprintType)

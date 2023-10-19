@@ -10,7 +10,7 @@
 #include "GameFramework/ExCharacterMovementComponent.h"
 #include "ExGameplayLibrary.h"
 #include "EngineUtils.h"
-#include "EnumHelperLibrary.h"
+#include "FunctionLibraries/EnumHelperLibrary.h"
 
 void UExCheatManagerExtension::LogAndCopyToClipboard(const FString Value)
 {

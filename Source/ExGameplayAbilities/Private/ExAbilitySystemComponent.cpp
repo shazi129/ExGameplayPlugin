@@ -812,6 +812,7 @@ void UExAbilitySystemComponent::CreateDefaultAttributes()
 			//触发一遍
 			float BaseValue = GetAttributeData(DelegateInfoItem.Key).GetBaseValue();
 			FOnAttributeChangeData ChangeData;
+			ChangeData.Attribute = DelegateInfoItem.Key;
 			ChangeData.NewValue = BaseValue;
 			ChangeData.OldValue = BaseValue;
 			OnAttributeChanged(ChangeData);

@@ -4,12 +4,12 @@
 #include "UIPopLayout.h"
 #include "UIPanel.generated.h"
 
-//½»»¥ÐÐÎªÀàÐÍ
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½
 UENUM(BlueprintType)
 enum EUIPaneCacheType
 {
-	E_NO_CACHE = 0				   UMETA(DisplayName = "No Cache"),  //Ã»ÓÐ»º´æ
-	E_FOREVER_CACHE               UMETA(DisplayName = "Forever"), //ÓÀ¾Ã»º´æ
+	E_NO_CACHE = 0				   UMETA(DisplayName = "No Cache"),  //Ã»ï¿½Ð»ï¿½ï¿½ï¿½
+	E_FOREVER_CACHE               UMETA(DisplayName = "Forever"), //ï¿½ï¿½ï¿½Ã»ï¿½ï¿½ï¿½
 };
 
 UCLASS(BlueprintType)
@@ -34,7 +34,7 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 		FName PanelName;
 
-	//ÉÏÒ»´ÎÕ¹Ê¾µÄPanelÃû
+	//ï¿½ï¿½Ò»ï¿½ï¿½Õ¹Ê¾ï¿½ï¿½Panelï¿½ï¿½
 	UPROPERTY(BlueprintReadOnly)
 		FName PreviousPanelName;
 

@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "PawnStateTypes.h"
-#include "InstancedStruct.h"
+#include "MessageCenter/RPCFunctionProvider.h"
 #include "PawnStateComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPawnStateDelegate, const FPawnStateInstance&, PawnStateInstance);
@@ -18,7 +18,7 @@ public:
 };
 
 UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent))
-class PAWNSTATE_API UPawnStateComponent : public UActorComponent
+class PAWNSTATE_API UPawnStateComponent : public UActorComponent, public IRPCFunctionProvider
 {
 	GENERATED_BODY()
 
@@ -106,9 +106,12 @@ private:
 
 /////////////////////////////Cheat相关///////////////////
 public:
-	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable)
-	void SendMsgToServer(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody);
+	virtual void SendMsgToServer(const FGameplayMessage& Message) override;
+	virtual void SendMsgToClient(const FGameplayMessage& Message) override;
 
-	UFUNCTION(Reliable, Client, WithValidation, BlueprintCallable)
-	void SendMsgToClient(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody);
+	UFUNCTION(Reliable, Server, BlueprintCallable)
+	void Server_SendMessage(const FGameplayMessage& Message);
+
+	UFUNCTION(Reliable, Client, BlueprintCallable)
+	void Client_SendMessage(const FGameplayMessage& Message);
 };

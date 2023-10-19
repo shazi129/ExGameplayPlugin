@@ -10,7 +10,7 @@ UPawnStateSubsystem* UPawnStateSubsystem::GetSubsystem(const UObject* WorldConte
 	GET_GAMEINSTANCE_SUBSYSTEM(LogPawnState, UPawnStateSubsystem, WorldContextObject)
 }
 
-const UPawnStateAsset* UPawnStateSubsystem::GetPawnStateAsset(const FGameplayTag& StateTag)
+UPawnStateAsset* UPawnStateSubsystem::GetPawnStateAsset(const FGameplayTag& StateTag)
 {
 	if (GlobalPawnStateConfig.Contains(StateTag))
 	{
@@ -125,6 +125,8 @@ void UPawnStateSubsystem::LoadPawnStateAssets(TSoftObjectPtr<UPawnStateSet> Pawn
 
 bool UPawnStateSubsystem::LoadPawnStateAsset(UPawnStateAsset* Asset)
 {
+	if (!Asset) return false;
+
 	if (GlobalPawnStateConfig.Contains(Asset->StateTag))
 	{
 		UPawnStateAsset* DuplicateAsset = GlobalPawnStateConfig[Asset->StateTag];
@@ -215,47 +217,17 @@ void UPawnStateSubsystem::OnCheatCreate(UCheatManager* CheatManager)
 {
 	if (CheatManager)
 	{
-		CheatManager->AddCheatManagerExtension(NewObject<UPawnStateCheatExtension>(CheatManager, UPawnStateCheatExtension::StaticClass()));
+		UPawnStateCheatExtension* CheatObject = NewObject<UPawnStateCheatExtension>(CheatManager, UPawnStateCheatExtension::StaticClass());
+		CheatManager->AddCheatManagerExtension(CheatObject);
 	}
 }
 
 
-void UPawnStateSubsystem::HandleServerMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
+void UPawnStateSubsystem::HandleServerMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, FInstancedStruct& MsgBody)
 {
-	FInstancedStruct ResponseBody;
-	ResponseBody.InitializeAs<FRPCParamater>();
-	FRPCParamater& Paramater = ResponseBody.GetMutable<FRPCParamater>();
-
-	if (MsgTag == TAG_GetServerStates)
-	{
-		Paramater.ErrMsg = UPawnStateCheatExtension::GetPawnStateDebugString(Component);
-	}
-	else if (MsgTag == TAG_GetServerTags)
-	{
-		Paramater.ErrMsg = UPawnStateCheatExtension::GetASCTagsDebugString(Component->GetOwner());
-	}
-	else
-	{
-		Paramater.ErrMsg = FString::Printf(TEXT("Invalid Msg Tag:%s"), *MsgTag.ToString());
-	}
-
-	if (Component)
-	{
-		Component->SendMsgToClient(MsgTag, ResponseBody);
-	}
 }
 
-void UPawnStateSubsystem::HandleClientMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
+void UPawnStateSubsystem::HandleClientMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, FInstancedStruct& MsgBody)
 {
-	if (MsgBody.GetScriptStruct() == FRPCParamater::StaticStruct())
-	{
-		const FRPCParamater& Paramater = MsgBody.GetMutable<FRPCParamater>();
-		LOG_AND_COPY(LogTemp, Log, Paramater.ErrMsg);
-	}
-	else
-	{
-		FString Error = FString::Printf(TEXT("Unrecongnize Msg Tag: %s"), *MsgTag.ToString());
-		LOG_AND_COPY(LogTemp, Log, Error);
-	}
 }
 

@@ -1,9 +1,9 @@
 #include "PawnStateComponent.h"
-#include "PawnStateSettingSubsystem.h"
 #include "ExGameplayLibrary.h"
 #include "PawnStateModule.h"
 #include "PawnStateSubsystem.h"
 #include "Net/UnrealNetwork.h"
+#include "MessageCenter/MessageCenterSubsystem.h"
 
 std::atomic<int32> UPawnStateComponent::InstanceIDGenerator = 0;
 
@@ -28,6 +28,8 @@ void UPawnStateComponent::BeginPlay()
 			break;
 		}
 	}
+
+	UMessageCenterSubsystem::GetSubsystem(this)->RegisterRPCFunctionProvider(this);
 }
 
 void UPawnStateComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -36,6 +38,8 @@ void UPawnStateComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	PawnStateEnterEvent.Empty();
 	PawnStateLeaveEvent.Empty();
+
+	UMessageCenterSubsystem::GetSubsystem(this)->UnregisterRPCFunctionProvider(this);
 }
 
 void UPawnStateComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -243,7 +247,7 @@ bool UPawnStateComponent::InternalLeavePawnState(int InstanceID, UObject* Instig
 void UPawnStateComponent::HandleStateEvent(EPawnStateEventTriggerType TriggerType, const FPawnStateInstance& Instance)
 {
 	//相关事件，只针对定义了PawnState的tag
-	const UPawnStateAsset* PawnStateAsset = UPawnStateSubsystem::GetSubsystem(this)->GetPawnStateAsset(Instance.PawnStateTag);
+	UPawnStateAsset* PawnStateAsset = UPawnStateSubsystem::GetSubsystem(this)->GetPawnStateAsset(Instance.PawnStateTag);
 	if (!PawnStateAsset)
 	{
 		return;
@@ -320,25 +324,24 @@ FPawnStateInstance* UPawnStateComponent::FindPawnStateInstance(const FGameplayTa
 	return nullptr;
 }
 
-bool UPawnStateComponent::SendMsgToServer_Validate(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
+void UPawnStateComponent::SendMsgToServer(const FGameplayMessage& Message)
 {
-	return true;
+	Server_SendMessage(Message);
 }
 
-void UPawnStateComponent::SendMsgToServer_Implementation(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
+void UPawnStateComponent::SendMsgToClient(const FGameplayMessage& Message) 
 {
-	UPawnStateSubsystem* PawnStateSystem = UPawnStateSubsystem::GetSubsystem(this);
-	PawnStateSystem->HandleServerMsg(this, MsgTag, MsgBody);
+	Client_SendMessage(Message);
 }
 
-bool UPawnStateComponent::SendMsgToClient_Validate(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
+
+void UPawnStateComponent::Server_SendMessage_Implementation(const FGameplayMessage& Message)
 {
-	return true;
+	UMessageCenterSubsystem::GetSubsystem(this)->OnMessageReceived(Message);
 }
 
-void UPawnStateComponent::SendMsgToClient_Implementation(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
+void UPawnStateComponent::Client_SendMessage_Implementation(const FGameplayMessage& Message)
 {
-	UPawnStateSubsystem* PawnStateSystem = UPawnStateSubsystem::GetSubsystem(this);
-	PawnStateSystem->HandleClientMsg(this, MsgTag, MsgBody);
+	UMessageCenterSubsystem::GetSubsystem(this)->OnMessageReceived(Message);
 }
 

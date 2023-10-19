@@ -2,7 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagsManager.h"
-#include "GameplayUtilsTypes.h"
+#include "GameplayTypes.h"
 #include "GameplayUtilsLibrary.generated.h"
 
 UCLASS()

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameplayUtilsTypes.generated.h"
+#include "GameplayTags.h"
+#include "InstancedStruct.h"
+#include "GameplayTypes.generated.h"
 
 //在某个端执行行为
 UENUM(BlueprintType)
@@ -45,3 +47,26 @@ struct GAMEPLAYUTILS_API FFilterActorCondition
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FStringParamDelegate, const FString&, StringParam);
+
+//通用消息体
+USTRUCT(BlueprintType)
+struct GAMEPLAYUTILS_API FGameplayMessage
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+		FGameplayTag MsgTag;
+
+	UPROPERTY(BlueprintReadWrite)
+		FInstancedStruct MsgBody;
+
+	FGameplayMessage() {}
+	FGameplayMessage(const FGameplayTag& InMsgTag)
+		: MsgTag(InMsgTag)
+	{
+	}
+
+	FString ToString() const;
+};
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FGameplayMessageReceivedDelegate, const FGameplayMessage&, Message);
