@@ -17,21 +17,40 @@ void UMessageCenterSubsystem::Deinitialize()
 	Super::Deinitialize();
 }
 
-
-void UMessageCenterSubsystem::SendMsgToServer(const FGameplayMessage& Message)
+void UMessageCenterSubsystem::SendMessage(const FGameplayMessage& Message, EMessageDirection Direction)
 {
-	if (RPCFunctionProvider != nullptr)
+	if (!Message.MsgTag.IsValid())
 	{
-		RPCFunctionProvider->SendMsgToServer(Message);
+		GAMEPLAYUTILS_LOG(Error, TEXT("%s error, Invalid Message Tag"), *FString(__FUNCTION__));
+		return;
+	}
+
+	if (Direction == EMessageDirection::E_None)
+	{
+		auto DelegateInfoPtr = OnMessageReceivedDelegateMap.Find(Message.MsgTag);
+		if (DelegateInfoPtr)
+		{
+			DelegateInfoPtr->Delegate.Broadcast(Message);
+		}
+	}
+	else if (RPCFunctionProvider != nullptr)
+	{
+		if (Direction == EMessageDirection::E_ToClient)
+		{
+			RPCFunctionProvider->SendMsgToClient(Message);
+		}
+		else if (Direction == EMessageDirection::E_ToServer)
+		{
+			RPCFunctionProvider->SendMsgToServer(Message);
+		}
 	}
 }
 
-void UMessageCenterSubsystem::SendMsgToClient(const FGameplayMessage& Message)
+void UMessageCenterSubsystem::SendBooleanMessage(const FGameplayTag& MsgTag, bool Value, UObject* SourceObject, EMessageDirection Direction)
 {
-	if (RPCFunctionProvider != nullptr)
-	{
-		RPCFunctionProvider->SendMsgToClient(Message);
-	}
+	FGameplayMessage Message(MsgTag, SourceObject);
+	FBooleanMessagBody BooleanMessageBody(Value);
+	SendMessage(Message, Direction);
 }
 
 void UMessageCenterSubsystem::RegisterRPCFunctionProvider(TScriptInterface<IRPCFunctionProvider> Provider)
@@ -51,19 +70,4 @@ FMessageReceivedDelegateInfo& UMessageCenterSubsystem::GetMessageReceivedDelegat
 {
 	return OnMessageReceivedDelegateMap.FindOrAdd(MsgTag);
 }
-
-void UMessageCenterSubsystem::OnMessageReceived(const FGameplayMessage& Message)
-{
-	if (!Message.MsgTag.IsValid())
-	{
-		return;
-	}
-
-	auto DelegateInfoPtr = OnMessageReceivedDelegateMap.Find(Message.MsgTag);
-	if (DelegateInfoPtr)
-	{
-		DelegateInfoPtr->Delegate.Broadcast(Message);
-	}
-}
-
 

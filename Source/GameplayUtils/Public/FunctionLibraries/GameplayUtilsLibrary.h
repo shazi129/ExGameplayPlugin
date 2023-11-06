@@ -17,6 +17,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "GameplayUtils")
 		static void FilterActors(const TArray<AActor*>& Actors, const FFilterActorCondition FilterCondition, TArray<AActor*>& OutActors);
 
-	UFUNCTION(BlueprintCallable, Category = "GameplayUtils")
+	UFUNCTION(BlueprintPure, Category = "GameplayUtils", meta = (DefaultToSelf = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
 		static bool CheckExecNetMode(const UObject* WorldContextObject, EExecNetMode ExecNetMode);
+
+	UFUNCTION(BlueprintPure, Category = "GameplayUtils", meta = (DefaultToSelf = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
+		static bool IsLocalControled(AActor* Actor);
+
+	UFUNCTION(BlueprintPure, Category = "GameplayUtils")
+		static UObject* GetDefaultObject(UClass* ObjectClass);
+
+	UFUNCTION(BlueprintPure, Category = "GameplayUtils")
+		static APawn* GetPawnByPlayerState(APlayerState* PlayerState);
 };

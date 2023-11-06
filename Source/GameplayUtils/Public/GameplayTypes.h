@@ -1,8 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameplayTags.h"
-#include "InstancedStruct.h"
 #include "GameplayTypes.generated.h"
 
 //在某个端执行行为
@@ -10,10 +8,16 @@ UENUM(BlueprintType)
 enum class EExecNetMode : uint8
 {
 	//在客户端触发, 包括Client， ListenServer, Standalone
-	E_Client		UMETA(DisplayName = "Client"),
+	E_Client			UMETA(DisplayName = "Client"),
 
 	//在服务端触发， 包括DedicatedServer， ListenServer, Standalone
-	E_Server		UMETA(DisplayName = "Server"),
+	E_Server			UMETA(DisplayName = "Server"),
+
+	//严格意义上的客户端，只有Client
+	E_ExactClient		UMETA(DisplayName = "Exact Client"),
+
+	//严格意义上的服务端，只有DedicatedServer， ListenServer
+	E_ExactServer		UMETA(DisplayName = "Exact Server"),
 
 	//不限制
 	E_Aways				UMETA(DisplayName = "Aways"),
@@ -47,26 +51,3 @@ struct GAMEPLAYUTILS_API FFilterActorCondition
 };
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FStringParamDelegate, const FString&, StringParam);
-
-//通用消息体
-USTRUCT(BlueprintType)
-struct GAMEPLAYUTILS_API FGameplayMessage
-{
-	GENERATED_BODY()
-
-	UPROPERTY(BlueprintReadWrite)
-		FGameplayTag MsgTag;
-
-	UPROPERTY(BlueprintReadWrite)
-		FInstancedStruct MsgBody;
-
-	FGameplayMessage() {}
-	FGameplayMessage(const FGameplayTag& InMsgTag)
-		: MsgTag(InMsgTag)
-	{
-	}
-
-	FString ToString() const;
-};
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FGameplayMessageReceivedDelegate, const FGameplayMessage&, Message);

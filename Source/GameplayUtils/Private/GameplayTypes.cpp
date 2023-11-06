@@ -62,5 +62,5 @@ bool FFilterActorCondition::FilterIgnoreActors(AActor* Actor) const
 
 FString FGameplayMessage::ToString() const
 {
-	return FString::Printf(TEXT("Tag:%s, BodyType:%s"), *MsgTag.ToString(), *GetNameSafe(MsgBody.GetScriptStruct()));
+	return FString::Printf(TEXT("Source:%s, Tag:%s, BodyType:%s"), *GetNameSafe(SourceObject), *MsgTag.ToString(), *GetNameSafe(MsgBody.GetScriptStruct()));
 }
