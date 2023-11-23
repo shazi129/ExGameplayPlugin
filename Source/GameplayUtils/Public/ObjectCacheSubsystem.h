@@ -39,7 +39,6 @@
  */
 
 #include "CoreMinimal.h"
-#include "Macros/SubsystemMacros.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "ObjectCacheSubsystem.generated.h"
 
@@ -47,58 +46,68 @@ USTRUCT(BlueprintType)
 struct GAMEPLAYUTILS_API FClassObjectCachePool
 {
 	friend class UObjectCacheSubsystem;
-
 	GENERATED_BODY()
 
-public:
-	struct FCacheObjectItem
+	FClassObjectCachePool() 
 	{
-		UPROPERTY(transient)
-			TSoftObjectPtr<UObject> Object;
-
-		int Status;
-
-		void Reset();
-
-		bool IsValid();
-	};
-
-public:
-	FClassObjectCachePool() {};
+		Reference = 0;
+	}
 	virtual ~FClassObjectCachePool() {};
-
-	UWorld* GetWorld() { return ContextWorld; }
-	UClass* GetClass() { return ObjectClass; }
-
-	void SetContextWorld(UWorld* InContextWorld) { ContextWorld = InContextWorld; }
-	void SetObjectClass(UClass* InObjectClass) { ObjectClass = InObjectClass; }
-	void SetDesigneSize(int Size) { DesignSize = Size; }
-
+	
+protected:
+	//创建和销毁对象池
 	virtual void InitializePool();
-	virtual void DeinitializePool() {};
+	virtual void DeinitializePool();
 
+	//创建或销毁对象的逻辑
 	virtual UObject* CreateObject() { return nullptr; }
+	virtual void DestroyObject(UObject* Object){}
 
+	//从对象池中拿或者放
 	virtual UObject* Retain();
-
 	virtual bool Release(UObject* Item);
 
+	//各事件的回调
 	virtual void OnObjectCreate(UObject* Item) {}
 	virtual void OnObjectDestroy(UObject* Item) {}
 	virtual void OnObjectRetain(UObject* Item) {}
 	virtual void OnObjectRelease(UObject* Item) {}
 
-protected:
+private:
+	void SetCacheInfo(UObject* InSourceObject, UClass* InObjectClass)
+	{
+		SourceObject = InSourceObject;
+		ContextWorld = InSourceObject ? InSourceObject->GetWorld() : nullptr;
+		ObjectClass = InObjectClass;
+	}
+
+public:
 	//类型
+	UPROPERTY(EditAnywhere)
 	UClass* ObjectClass;
 
-	//所有Object都是基于
+	//初始大小
+	UPROPERTY(EditAnywhere)
+	int InitSize;
+
+protected:
+	//这个缓冲池由谁创建
+	TWeakObjectPtr<UObject> SourceObject;
+
+	//所有Object都是基于一个World
 	UWorld* ContextWorld;
 
+	//缓存的数据
+	struct FCacheObjectItem
+	{
+		TWeakObjectPtr<UObject> Object;
+		int Status; //0:没在用，1:正在使用
+		void Reset();
+	};
 	TArray<FCacheObjectItem> CacheObjects;
-	int DesignSize;
 
-	int ReferenceCount = 0;
+	//引用计数
+	int Reference = 0;
 };
 
 USTRUCT(BlueprintType)
@@ -107,8 +116,8 @@ struct GAMEPLAYUTILS_API FActorCachePool : public FClassObjectCachePool
 	GENERATED_BODY()
 public:
 	FActorCachePool() {};
-	virtual void DeinitializePool() override;
-	virtual UObject* CreateObject();
+	virtual UObject* CreateObject() override;
+	virtual void DestroyObject(UObject* Object) override;
 };
 
 UCLASS(BlueprintType)
@@ -117,23 +126,24 @@ class GAMEPLAYUTILS_API UObjectCacheSubsystem : public UGameInstanceSubsystem
 	GENERATED_BODY()
 
 public:
-	DECLARE_GET_GAMEINSTANCE_SUBSYSTEM(UObjectCacheSubsystem, LogTemp)
+	UFUNCTION(BlueprintCallable, BlueprintPure, meta = (WorldContext = "WorldContextObject", UnsafeDuringActorConstruction = "true"))
+	static UObjectCacheSubsystem* Get(const UObject* WorldContextObject);
 
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize();
 	void OnWorldTearingDown(UWorld* World);
 
 	UFUNCTION(BlueprintCallable)
-		bool CreateObjectPool(UScriptStruct* InScriptStruct, UClass* ObjectClass, UWorld* ContextWorld, int DesignSize);
+		bool CreateObjectPool(const UScriptStruct* InScriptStruct, UClass* InObjectClass, UObject* SourceObject=nullptr, int InitSize=0);
 
 	UFUNCTION(BlueprintCallable)
-		bool DestroyObjectPool(UClass* Class, bool OnlyClearItems = true);
+		bool DestroyObjectPool(const UClass* InObjectClass, UObject* SourceObject=nullptr);
 
 	UFUNCTION(BlueprintCallable)
-		UObject* RetainObject(const UClass* ObjectClass);
+		UObject* RetainObject(const UClass* ObjectClass, UObject* SourceObject = nullptr);
 
 	UFUNCTION(BlueprintCallable)
-		bool ReleaseObject(UObject* Object, const UClass* Class=nullptr);
+		bool ReleaseObject(UObject* Object, UObject* SourceObject = nullptr, const UClass* ObjectClass=nullptr);
 
 private:
 	FDelegateHandle WorldBeginTearDownHandler;

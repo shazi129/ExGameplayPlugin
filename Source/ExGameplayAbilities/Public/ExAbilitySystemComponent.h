@@ -6,11 +6,12 @@
 #include "Delegates/DelegateCombinations.h"
 #include "GameFramework/Actor.h"
 #include "ExGameplayAbility.h"
-#include "ExAttributeSet.h"
+#include "Attribute/ExAttributeSet.h"
 #include "ExAbilityProvider.h"
-#include "ExAttributeTypes.h"
+#include "Attribute/ExAttributeTypes.h"
 #include "ExAbilitySystemComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FAbilityCooldownDelegate, const UClass*, AbilityClass, float, Cooldown);
 
 //Category索引
 USTRUCT()
@@ -75,14 +76,15 @@ public:
 	UFUNCTION(BlueprintCallable, Client, Reliable)
 		void ClientStopMontage();
 
-	virtual bool CanActivateAbility(TSubclassOf<UGameplayAbility> AbilityClass);
+	UFUNCTION(BlueprintCallable)
+		virtual bool CanActivateAbility(TSubclassOf<UGameplayAbility> AbilityClass);
 
 	UFUNCTION(BlueprintCallable, Category = ExAbility)
 		bool HasGameplayTag(FGameplayTag TagToCheck) const;
 	
 protected:
-	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category="Abilites")
-		TArray<FExAbilityCase> DefaultAbilities;
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, Category = "Abilities", meta = (TitleProperty = "AbilityClass"))
+		TSoftObjectPtr<UExAbilityCaseSetAsset> DefaultAbilitySet;
 
 private:
 	
@@ -117,6 +119,17 @@ private:
 
 private:
 	TArray<FCollectedAbilityInfo> CollectedAbilityInfoList;
+#pragma endregion
+
+#pragma region ////////////////////////////
+	UFUNCTION(BlueprintCallable, Server, reliable, Category = ExAbility)
+	void ServerActivateAbilityByClass(TSubclassOf<UGameplayAbility> AbilityClass);
+
+	UFUNCTION(BlueprintCallable, Category = ExAbility)
+	void CancelAbilityByClass(TSubclassOf<UGameplayAbility> AbilityClass);
+
+	UFUNCTION(BlueprintCallable, Server, reliable, Category = ExAbility)
+	void ServerCancelAbilityByClass(TSubclassOf<UGameplayAbility> AbilityClass);
 #pragma endregion
 
 #pragma region ////////////////////////////技能分类相关
@@ -176,7 +189,7 @@ public:
 	void ServerSetAttributeValue(FGameplayAttribute Attribute, float Value);
 
 	UFUNCTION(BlueprintCallable)
-	void ApplyModifyToAttribute(const FGameplayAttribute& Attribute, TEnumAsByte<EGameplayModOp::Type> ModifierOp, float ModifierMagnitude);
+	void ApplyModifyToAttribute(FGameplayAttribute Attribute, TEnumAsByte<EGameplayModOp::Type> ModifierOp, float ModifierMagnitude);
 
 	UFUNCTION(BlueprintCallable, Server, reliable, WithValidation, Category = ExAbility)
 	void ServerApplyModifyToAttribute(const FGameplayAttribute& Attribute, EGameplayModOp::Type ModifierOp, float ModifierMagnitude);
@@ -214,8 +227,10 @@ protected:
 
 #pragma region //////////////////////////////// Effect 相关
 
-protected:
+public:
+	virtual FActiveGameplayEffectHandle ApplyGameplayEffectSpecToSelf(const FGameplayEffectSpec& GameplayEffect, FPredictionKey PredictionKey = FPredictionKey()) override;
 
+protected:
 	UFUNCTION()
 	virtual void OnGameplayEffectAdded(UAbilitySystemComponent* Owner, const FGameplayEffectSpec& Spec, FActiveGameplayEffectHandle Handle);
 
@@ -261,13 +276,30 @@ public:
 	void SetCurrentApplyCostAbility(const UExGameplayAbility* Ability);
 protected:
 	TObjectPtr<const UExGameplayAbility> CurrentApplyCostAbility;
-#pragma endregion
-
 
 public:
 	UFUNCTION()
-	void OnAbilityStateLeave(const FPawnStateInstance& PawnStateInstance);
-
+	void OnPawnStateEvent(EPawnStateEventType EventType, const FPawnStateInstance& Instance);
 private:
 	TArray<FGameplayTag> AbilityStateLeaveTags;
+
+#pragma endregion
+
+public:
+	UFUNCTION(BlueprintCallable)
+	void ApplyAbilityCooldown(TSubclassOf<UGameplayAbility> AbilityClass, float Seconds);
+
+	UFUNCTION(BlueprintCallable)
+	double GetAbilityCooldown(TSubclassOf<UGameplayAbility> AbilityClass);
+
+	UFUNCTION(BlueprintCallable)
+	void ClearAbilityCooldown();
+
+public:
+	UPROPERTY(BlueprintAssignable)
+	FAbilityCooldownDelegate AbilityCooldownDelegate;
+
+private:
+	TMap<TSubclassOf<UGameplayAbility>, double> AbilityCooldownEndMap;
+	TMap<TSubclassOf<UGameplayAbility>, double> AbilityDurationEndMap;
 };

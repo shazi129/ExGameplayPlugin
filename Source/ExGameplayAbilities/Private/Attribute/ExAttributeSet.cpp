@@ -1,5 +1,6 @@
-#include "ExAttributeSet.h"
+#include "Attribute/ExAttributeSet.h"
 #include "GameplayEffectExtension.h"
+#include "Net/UnrealNetwork.h"
 
 UExBaseAttributeSet::UExBaseAttributeSet()
 {

@@ -83,3 +83,23 @@ FActiveGameplayEffectHandle UExGameplayAbilityLibrary::ApplyGameplayEffectToSelf
 	UAbilitySystemBlueprintLibrary::AssignSetByCallerMagnitude(Spec, FName(TEXT("Weight")), InWeight);
 	return Target->ApplyGameplayEffectSpecToSelf(*Spec.Data.Get());
 }
+
+
+FActiveGameplayEffectHandle UExGameplayAbilityLibrary::ApplyGameplayEffectClass(UAbilitySystemComponent* ASC, TSubclassOf<UGameplayEffect> EffectClass)
+{
+	if (!ASC || EffectClass == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("%s error, invalid parameter, ASC:%s, EffectClass:%s"), *FString(__FUNCTION__), *GetNameSafe(ASC), *GetNameSafe(EffectClass));
+		return FActiveGameplayEffectHandle();
+	}
+
+	FGameplayEffectSpecHandle SpecHandle = ASC->MakeOutgoingSpec(EffectClass, 1, ASC->MakeEffectContext());
+	if (SpecHandle.IsValid())
+	{
+		return ASC->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+	}
+	else
+	{
+		return FActiveGameplayEffectHandle();
+	}
+}

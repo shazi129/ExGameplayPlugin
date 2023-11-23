@@ -34,4 +34,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	static FActiveGameplayEffectHandle ApplyGameplayEffectToSelfAndSetSourceObject(UAbilitySystemComponent* Target, TSubclassOf<UGameplayEffect> GameplayEffectClass, float Level, FGameplayEffectContextHandle EffectContext,
 	                                                                               AActor* Attacker, float InAttackCoefficient, float InHitCoefficient, float InRelativeVelocity, float InWeight);
+
+	UFUNCTION(BlueprintCallable)
+	static FActiveGameplayEffectHandle ApplyGameplayEffectClass(UAbilitySystemComponent* ASC, TSubclassOf<UGameplayEffect> EffectClass);
 };

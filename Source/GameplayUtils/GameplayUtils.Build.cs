@@ -33,7 +33,9 @@ public class GameplayUtils : ModuleRules
                 "HTTP",
                 "Projects",
                 "StructUtils",
-                "MassEntity",
+                "MassEntity", 
+                "GameplayAbilities",
+                "DeveloperSettings",
 				// ... add other public dependencies that you statically link with here ...
 			}
             );
@@ -45,7 +47,7 @@ public class GameplayUtils : ModuleRules
                 "CoreUObject",
                 "Engine",
                 "Slate",
-                "SlateCore",
+                "SlateCore"
 				// ... add private dependencies that you statically link with here ...	
 			}
             );

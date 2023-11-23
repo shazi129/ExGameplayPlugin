@@ -45,7 +45,7 @@ UUserWidgetExtension* UExUserWidgetExtension::GetUserWidgetExtensionByName(UUser
 	TArray<UUserWidgetExtension*> Extensions = UserWidget->GetExtensions(UUserWidgetExtension::StaticClass());
 	for (UUserWidgetExtension* Extension : Extensions)
 	{
-		if (Extension != nullptr && Extension->GetFName() == ExtensionName)
+		if (Extension != nullptr && ExtensionName.IsEqual(Extension->GetFName(), ENameCase::IgnoreCase, false))
 		{
 			return Extension;
 		}

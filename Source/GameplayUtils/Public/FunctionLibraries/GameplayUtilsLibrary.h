@@ -28,4 +28,13 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "GameplayUtils")
 		static APawn* GetPawnByPlayerState(APlayerState* PlayerState);
+
+	UFUNCTION(BlueprintPure, Category = "GameplayUtils")
+		static APlayerState* GetPlayerStateByActor(AActor* Actor);
+
+	UFUNCTION(BlueprintPure, Category = "GameplayUtils")
+		static UActorComponent* GetComponentByTag(AActor* Actor, const FName& Tag);
+
+	UFUNCTION(BlueprintPure, Category = "GameplayUtils")
+		static FString GetNameSafe(const UObject* Object);
 };

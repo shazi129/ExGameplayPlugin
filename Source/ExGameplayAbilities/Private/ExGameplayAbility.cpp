@@ -4,6 +4,7 @@
 #include "PawnStateComponent.h"
 #include "ExAbilitySystemComponent.h"
 #include "PawnStateLibrary.h"
+#include "ExGameplayAbilityLibrary.h"
 
 FExAbilityCase::FExAbilityCase(TSubclassOf<UGameplayAbility> InAbilityClass)
 {
@@ -47,6 +48,28 @@ void UExGameplayAbility::ApplyCost(const FGameplayAbilitySpecHandle Handle, cons
 	}
 }
 
+bool UExGameplayAbility::CheckCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, OUT FGameplayTagContainer* OptionalRelevantTags) const
+{
+	if (ActorInfo)
+	{
+		UExAbilitySystemComponent* ASC = Cast<UExAbilitySystemComponent>(ActorInfo->AbilitySystemComponent);
+		if (ASC != nullptr && ASC->GetAbilityCooldown(GetClass()) > 0.0f)
+		{
+			return false;
+		}
+	}
+	return Super::CheckCooldown(Handle, ActorInfo, OptionalRelevantTags);
+}
+
+void UExGameplayAbility::ApplyCooldown(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo) const
+{
+	if (bApplyCooldownInEnd && !bInEndAbility)
+	{
+		return;
+	}
+	Super::ApplyCooldown(Handle, ActorInfo, ActivationInfo);
+}
+
 bool UExGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayTagContainer* SourceTags, const FGameplayTagContainer* TargetTags, OUT FGameplayTagContainer* OptionalRelevantTags) const
 {
 	do
@@ -69,14 +92,17 @@ bool UExGameplayAbility::CanActivateAbility(const FGameplayAbilitySpecHandle Han
 			break;
 		}
 
-		//如果配置了PawnState
-		if (PawnStateSubsystem->LoadPawnStateAsset(AbilityStateAsset))
+		//检查pawnstate是否合法
+		for (UPawnStateAsset* PawnStateAsset : AbilityStateAssets)
 		{
-			FString  ErrorMsg;
-			if (!PawnStateComponent->CanEnterPawnState(AbilityStateAsset->StateTag, ErrorMsg))
+			if (PawnStateSubsystem->LoadPawnStateAsset(PawnStateAsset))
 			{
-				EXABILITY_LOG(Log, TEXT("%s check %s failed: %s"), *FString(__FUNCTION__), *GetNameSafe(this), *ErrorMsg);
-				return false;
+				FString  ErrorMsg;
+				if (!PawnStateComponent->CanEnterPawnState(PawnStateAsset->StateTag, ErrorMsg))
+				{
+					EXABILITY_LOG(Log, TEXT("%s check %s failed: %s"), *FString(__FUNCTION__), *GetNameSafe(this), *ErrorMsg);
+					return false;
+				}
 			}
 		}
 
@@ -108,37 +134,61 @@ bool UExGameplayAbility::CommitAbility(const FGameplayAbilitySpecHandle Handle, 
 		return true;
 	}
 
+	ClearPawnState();
+
 	//进入PawnState
-	if (AbilityStateAsset && AbilityStateAsset->StateTag.IsValid())
+	UPawnStateComponent* PawnStateComponent = UPawnStateLibrary::GetPawnStateComponent(ActorInfo->AvatarActor.Get());
+	if (PawnStateComponent)
 	{
-		UPawnStateComponent* PawnStateComponent = Cast<UPawnStateComponent>(ActorInfo->AvatarActor->GetComponentByClass(UPawnStateComponent::StaticClass()));
-		if (PawnStateComponent)
+		for (UPawnStateAsset* PawnStateAsset : AbilityStateAssets)
 		{
-			//进入PawnState
-			PawnStateID = PawnStateComponent->InternalEnterPawnState(AbilityStateAsset->StateTag, this, nullptr);
+			if (PawnStateAsset && PawnStateAsset->StateTag.IsValid())
+			{
+				//进入PawnState
+				int PawnStateId = PawnStateComponent->InternalEnterPawnState(PawnStateAsset->StateTag, this, nullptr);
+				if (PawnStateId > 0)
+				{
+					PawnStateIdList.Add(PawnStateId);
+				}
+			}
 		}
 	}
 	return true;
 }
 
+void UExGameplayAbility::ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData)
+{
+	bInActivateAbility = true;
+	Super::ActivateAbility(Handle, ActorInfo, ActivationInfo, TriggerEventData);
+}
+
 void UExGameplayAbility::EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled)
 {
-	if (PawnStateID > 0)
+	bInEndAbility = true;
+
+	UPawnStateComponent* PawnStateComponent = UPawnStateLibrary::GetPawnStateComponent(ActorInfo->AvatarActor.Get());
+	if (PawnStateComponent)
 	{
-		UPawnStateComponent* PawnStateComponent = Cast<UPawnStateComponent>(ActorInfo->AvatarActor->GetComponentByClass(UPawnStateComponent::StaticClass()));
-		if (PawnStateComponent)
+		for (int PawnStateId : PawnStateIdList)
 		{
-			PawnStateComponent->LeavePawnState(PawnStateID, nullptr);
+			PawnStateComponent->LeavePawnState(PawnStateId, nullptr);
 		}
 		ClearPawnState();
 	}
 
+	if (bApplyCooldownInEnd)
+	{
+		ApplyCooldown(Handle, ActorInfo, ActivationInfo);
+	}
+	
 	Super::EndAbility(Handle, ActorInfo, ActivationInfo, bReplicateEndAbility, bWasCancelled);
+
+	bInEndAbility = false;
 }
 
 void UExGameplayAbility::ClearPawnState()
 {
-	PawnStateID = 0;
+	PawnStateIdList.Reset(AbilityStateAssets.Num());
 }
 
 

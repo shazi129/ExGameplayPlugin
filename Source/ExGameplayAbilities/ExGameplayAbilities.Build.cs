@@ -34,9 +34,11 @@ public class ExGameplayAbilities : ModuleRules
 				"ExGameplayLibrary",
 				"DeveloperSettings",
 				"EnhancedInput",
+				
 				"ExInputSystem",
 				"StructUtils",
-				"PawnState"
+				"PawnState",
+				"GameplayUtils"
 			}
 			);
 			
@@ -49,6 +51,7 @@ public class ExGameplayAbilities : ModuleRules
 				"Slate",
 				"SlateCore",
 				// ... add private dependencies that you statically link with here ...	
+				"ModularGameplay",
 			}
 			);
 		

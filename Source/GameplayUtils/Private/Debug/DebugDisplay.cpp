@@ -1,4 +1,4 @@
-#include "DebugDisplay.h"
+#include "Debug/DebugDisplay.h"
 #include "Engine/Canvas.h"
 
 

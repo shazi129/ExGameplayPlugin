@@ -158,3 +158,30 @@ APawn* UGameplayUtilsLibrary::GetPawnByPlayerState(APlayerState* PlayerState)
 	return nullptr;
 }
 
+APlayerState* UGameplayUtilsLibrary::GetPlayerStateByActor(AActor* Actor)
+{
+	if (APawn* Pawn = Cast<APawn>(Actor))
+	{
+		return Pawn->GetPlayerState();
+	}
+	return nullptr;
+}
+
+UActorComponent* UGameplayUtilsLibrary::GetComponentByTag(AActor* Actor, const FName& Tag)
+{
+	if (Actor)
+	{
+		TArray<UActorComponent*> Components = Actor->GetComponentsByTag(UActorComponent::StaticClass(), Tag);
+		if (Components.Num() > 0)
+		{
+			return Components[0];
+		}
+	}
+	return nullptr;
+}
+
+FString UGameplayUtilsLibrary::GetNameSafe(const UObject* Object)
+{
+	return ::GetNameSafe(Object);
+}
+
