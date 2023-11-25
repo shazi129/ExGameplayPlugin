@@ -130,6 +130,12 @@ private:
 
 	UFUNCTION(BlueprintCallable, Server, reliable, Category = ExAbility)
 	void ServerCancelAbilityByClass(TSubclassOf<UGameplayAbility> AbilityClass);
+
+	UFUNCTION(BlueprintCallable, Category = ExAbility)
+	void ActivateAbilityByTag(FGameplayTag AbilityTag);
+
+	UFUNCTION(BlueprintCallable, Server, reliable, Category = ExAbility)
+	void ServerActivateAbilityByTag(FGameplayTag AbilityTag);
 #pragma endregion
 
 #pragma region ////////////////////////////技能分类相关

@@ -151,9 +151,19 @@ bool UExAbilitySystemComponent::CanActivateAbility(TSubclassOf<UGameplayAbility>
 {
 	//
 	FGameplayAbilitySpec* Spec = FindAbilitySpecFromClass(AbilityClass);
-	if (!Spec)
+	if (!Spec || Spec->Ability)
 	{
 		return false;
+	}
+
+	UGameplayAbility* InstancedAbility = Spec->GetPrimaryInstance();
+	UGameplayAbility* Ability = Spec->Ability;
+	if (Ability->GetInstancingPolicy() == EGameplayAbilityInstancingPolicy::InstancedPerActor)
+	{
+		if (Spec->IsActive())// && !(Ability->GetRetriggerInstancedAbility() && InstancedAbility))
+		{
+			return false;
+		}
 	}
 
 	if (GetAbilityCooldown(AbilityClass) > 0.0f)
@@ -423,6 +433,25 @@ void UExAbilitySystemComponent::CancelAbilityByClass(TSubclassOf<UGameplayAbilit
 void UExAbilitySystemComponent::ServerCancelAbilityByClass_Implementation(TSubclassOf<UGameplayAbility> AbilityClass)
 {
 	CancelAbilityByClass(AbilityClass);
+}
+
+void UExAbilitySystemComponent::ActivateAbilityByTag(FGameplayTag AbilityTag)
+{
+	for (const FGameplayAbilitySpec& Spec : ActivatableAbilities.Items)
+	{
+		if (Spec.Ability->AbilityTags.HasTagExact(AbilityTag))
+		{
+			if (CanActivateAbility(Spec.Ability.GetClass()))
+			{
+				TryActivateAbility(Spec.Handle, true);
+			}
+		}
+	}
+}
+
+void UExAbilitySystemComponent::ServerActivateAbilityByTag_Implementation(FGameplayTag AbilityTag)
+{
+	ActivateAbilityByTag(AbilityTag);
 }
 
 /////////////////////////////// 技能分类相关

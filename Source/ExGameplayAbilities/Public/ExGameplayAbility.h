@@ -118,6 +118,10 @@ public:
 
 	virtual void ActivateAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, const FGameplayEventData* TriggerEventData) override;
 	virtual void EndAbility(const FGameplayAbilitySpecHandle Handle, const FGameplayAbilityActorInfo* ActorInfo, const FGameplayAbilityActivationInfo ActivationInfo, bool bReplicateEndAbility, bool bWasCancelled) override;
+
+
+	bool GetRetriggerInstancedAbility(){return bRetriggerInstancedAbility;}
+
 public:
 	//使用自定义的逻辑进行CheckCost
 	UPROPERTY(EditAnywhere, Category = "Costs|Advanced", meta=(EditCondition="CostGameplayEffectClass != nullptr"))
