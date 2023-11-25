@@ -5,17 +5,6 @@
 #include "AbilitySystemComponent.h"
 #include "ExMacros.h"
 #include "PawnStateSubsystem.h"
-#include "MessageCenter/MessageCenterSubsystem.h"
-
-UPawnStateCheatExtension::UPawnStateCheatExtension()
-{
-	UMessageCenterSubsystem* MessageCenterSubsystem = UMessageCenterSubsystem::GetSubsystem(this);
-	if (MessageCenterSubsystem != nullptr)
-	{
-		auto& DelegateInfo = MessageCenterSubsystem->GetMessageReceivedDelegateInfo(TAG_GetServerStates);
-		DelegateInfo.Delegate.AddDynamic(this, &UPawnStateCheatExtension::OnMessageReceived);
-	}
-}
 
 void UPawnStateCheatExtension::PawnState(const FString& Param)
 {
@@ -136,26 +125,26 @@ void UPawnStateCheatExtension::ShowConfig()
 
 void UPawnStateCheatExtension::ShowPawnStateServer()
 {
-	UMessageCenterSubsystem* MessageCenterSubsystem = UMessageCenterSubsystem::GetSubsystem(this);
-	FGameplayMessage Message(TAG_GetServerStates);
-	MessageCenterSubsystem->SendMsgToServer(Message);
+	UPawnStateComponent* PawnStateComponent = UPawnStateLibrary::GetLocalPawnStateComponent(this);
+	if (PawnStateComponent)
+	{
+		FInstancedStruct MsgBody;
+		MsgBody.InitializeAs<FRPCParamater>();
+		FRPCParamater& Paramater = MsgBody.GetMutable<FRPCParamater>();
+		Paramater.ErrCode = 9527;
+		PawnStateComponent->SendMsgToServer(TAG_GetServerStates, MsgBody);
+	}
 }
 
 void UPawnStateCheatExtension::ShowASCTagsServer()
 {
-	UMessageCenterSubsystem* MessageCenterSubsystem = UMessageCenterSubsystem::GetSubsystem(this);
-	FGameplayMessage Message(TAG_GetServerTags);
-	MessageCenterSubsystem->SendMsgToServer(Message);
-}
-
-void UPawnStateCheatExtension::OnMessageReceived(const FGameplayMessage& Message)
-{
-	if (Message.MsgTag == TAG_GetServerStates)
+	UPawnStateComponent* PawnStateComponent = UPawnStateLibrary::GetLocalPawnStateComponent(this);
+	if (PawnStateComponent)
 	{
-
-	}
-	else if (Message.MsgTag == TAG_GetServerStates)
-	{
-
+		FInstancedStruct MsgBody;
+		MsgBody.InitializeAs<FRPCParamater>();
+		FRPCParamater& Paramater = MsgBody.GetMutable<FRPCParamater>();
+		Paramater.ErrCode = 9528;
+		PawnStateComponent->SendMsgToServer(TAG_GetServerTags, MsgBody);
 	}
 }

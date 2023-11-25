@@ -10,9 +10,6 @@ class PAWNSTATE_API UPawnStateCheatExtension : public UCheatManagerExtension
 	GENERATED_BODY()
 
 public:
-
-	UPawnStateCheatExtension();
-
 	UFUNCTION(Exec)
 	void PawnState(const FString& Param);
 
@@ -27,11 +24,4 @@ private:
 
 	void ShowPawnStateServer();
 	void ShowASCTagsServer();
-
-	UFUNCTION()
-	void OnMessageReceived(const FGameplayMessage& Message);
-
-private:
-	bool bRegisterGetServerState;
-	bool bRegisterGetServerTag;
 };

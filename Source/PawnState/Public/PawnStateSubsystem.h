@@ -4,7 +4,11 @@
 #include "PawnStateSettings.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "PawnStateComponent.h"
+#include "NativeGameplayTags.h"
 #include "PawnStateSubsystem.generated.h"
+
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_GetServerStates);
+UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_GetServerTags);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FNotifyMsgDelegate, const FGameplayTag&, MsgTag, const FInstancedStruct&, MsgBody);
 
@@ -19,7 +23,7 @@ public:
 
 	static UPawnStateSubsystem* GetSubsystem(const UObject* WorldContextObject);
 
-	UPawnStateAsset* GetPawnStateAsset(const FGameplayTag& StateTag);
+	const UPawnStateAsset* GetPawnStateAsset(const FGameplayTag& StateTag);
 
 	/**
 	 * @brief 判断能否进入一个State
@@ -58,11 +62,11 @@ private:
 public:
 	void OnCheatCreate(UCheatManager* CheatManager);
 
-	void HandleServerMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, FInstancedStruct& MsgBody);
-	void HandleClientMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, FInstancedStruct& MsgBody);
+	void HandleServerMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody);
+	void HandleClientMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody);
 
 private:
 	FDelegateHandle CheatCreateHandle;
-	//TSoftObjectPtr<UPawnStateCheatExtension> CheatObject;
+
 #pragma endregion
 };

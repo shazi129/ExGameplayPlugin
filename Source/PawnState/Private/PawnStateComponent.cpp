@@ -1,9 +1,13 @@
 #include "PawnStateComponent.h"
+#include "PawnStateSettingSubsystem.h"
 #include "ExGameplayLibrary.h"
 #include "PawnStateModule.h"
 #include "PawnStateSubsystem.h"
 #include "Net/UnrealNetwork.h"
-#include "MessageCenter/MessageCenterSubsystem.h"
+#include "DisplayDebugHelpers.h"
+#include "GameFramework/HUD.h"
+#include "PawnStateLibrary.h"
+#include "Engine/Canvas.h"
 
 std::atomic<int32> UPawnStateComponent::InstanceIDGenerator = 0;
 
@@ -28,8 +32,6 @@ void UPawnStateComponent::BeginPlay()
 			break;
 		}
 	}
-
-	UMessageCenterSubsystem::GetSubsystem(this)->RegisterRPCFunctionProvider(this);
 }
 
 void UPawnStateComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -38,14 +40,25 @@ void UPawnStateComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	PawnStateEnterEvent.Empty();
 	PawnStateLeaveEvent.Empty();
-
-	UMessageCenterSubsystem::GetSubsystem(this)->UnregisterRPCFunctionProvider(this);
 }
 
 void UPawnStateComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME_CONDITION(UPawnStateComponent, CurrentPawnStateTags, COND_SimulatedOnly)
+	DOREPLIFETIME_CONDITION(UPawnStateComponent, ReplicatePawnStateTags, COND_None)
+}
+
+void UPawnStateComponent::OnShowDebugInfo(AHUD* HUD, UCanvas* Canvas, const FDebugDisplayInfo& DisplayInfo, float& YL, float& YPos)
+{
+	if (DisplayInfo.IsDisplayOn(TEXT("PawnState")))
+	{
+		UPawnStateComponent* PawnStateComponent = UPawnStateLibrary::GetPawnStateComponent(HUD->GetCurrentDebugTargetActor());
+		if (PawnStateComponent)
+		{
+			PawnStateComponent->CollectDebugContent();
+			PawnStateComponent->DebugDisplayProxy.DisplayDebug(HUD, Canvas, DisplayInfo, YL, YPos);
+		}
+	}
 }
 
 FString UPawnStateComponent::ToString()
@@ -62,7 +75,73 @@ bool UPawnStateComponent::CanEnterPawnState(const FGameplayTag& NewPawnStateTag,
 	}
 
 	UPawnStateSubsystem* PawnSateSubsystem = UPawnStateSubsystem::GetSubsystem(this);
-	return PawnSateSubsystem->CanEnterPawnState(NewPawnStateTag, CurrentPawnStateTags, ErrMsg);
+	if (PawnSateSubsystem)
+	{
+		FGameplayTagContainer PawnStateTags(CurrentPawnStateTags);
+		PawnStateTags.AppendTags(ReplicatePawnStateTags);
+		return PawnSateSubsystem->CanEnterPawnState(NewPawnStateTag, PawnStateTags, ErrMsg);
+	}
+
+	return false;
+}
+
+bool UPawnStateComponent::CanEnterPawnStates(const FGameplayTagContainer& PawnStates, FString& ErrMsg)
+{
+	for (const FGameplayTag& Tag : PawnStates)
+	{
+		if (!CanEnterPawnState(Tag, ErrMsg))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+void UPawnStateComponent::OnRep_PawnStateTags(const FGameplayTagContainer& OldValue)
+{
+	//只在模拟端处理State事件
+	ENetRole LocalRole = GetOwner()->GetLocalRole();
+	if (LocalRole == ENetRole::ROLE_SimulatedProxy)
+	{
+		FPawnStateInstance Instance;
+
+		//找出被删的
+		for (const FGameplayTag& OldTag : OldValue)
+		{
+			if (!OldTag.MatchesAnyExact(ReplicatePawnStateTags))
+			{
+				Instance.PawnStateTag = OldTag;
+				HandleStateEvent(EPawnStateEventType::E_Leave, Instance);
+			}
+		}
+
+		//找出新增的
+		for (const FGameplayTag& NewTag : ReplicatePawnStateTags)
+		{
+			if (!NewTag.MatchesAnyExact(OldValue))
+			{
+				Instance.PawnStateTag = NewTag;
+				HandleStateEvent(EPawnStateEventType::E_Enter, Instance);
+			}
+		}
+	}
+}
+
+void UPawnStateComponent::CollectDebugContent()
+{
+	DebugDisplayProxy.ClearContent();
+	DebugDisplayProxy.AddDebugLine(TEXT("PawnState Info"), FColor::Red, GEngine->GetMediumFont());
+
+	DebugDisplayProxy.AddDebugLine(FString::Printf(TEXT("===Local State Num:%d"), PawnStateInstances.Num()), FColor::Green, GEngine->GetMediumFont());
+	for (const auto& Instance : PawnStateInstances)
+	{
+		DebugDisplayProxy.AddDebugLine(Instance.ToString(), FColor::Yellow);
+	}
+	DebugDisplayProxy.AddDebugLine(FString::Printf(TEXT("===Server State Num:%d"), ReplicatePawnStateTags.Num()), FColor::Green, GEngine->GetMediumFont());
+	for (const auto& Tag : ReplicatePawnStateTags)
+	{
+		DebugDisplayProxy.AddDebugLine(Tag.ToString(), FColor::Yellow);
+	}
 }
 
 void UPawnStateComponent::RebuildCurrentTag()
@@ -72,23 +151,32 @@ void UPawnStateComponent::RebuildCurrentTag()
 	{
 		CurrentPawnStateTags.AddTag(Instance.PawnStateTag);
 	}
+
+	//如果是主控端，准备复制
+	ENetRole LocalRole = GetOwner()->GetLocalRole();
+	if (LocalRole == ENetRole::ROLE_Authority)
+	{
+		ReplicatePawnStateTags.Reset();
+		ReplicatePawnStateTags.AppendTags(CurrentPawnStateTags);
+	}
 }
 
 int UPawnStateComponent::InternalEnterPawnState(const FGameplayTag& NewPawnStateTag, UObject* SourceObject, UObject* Instigator)
 {
-	SourceObject = SourceObject != nullptr ? SourceObject : this;
-
-	//如果已经存在，只需要增加基数
-	FPawnStateInstance* SameInstance = FindPawnStateInstance(NewPawnStateTag, SourceObject, Instigator);
-	if (SameInstance)
+	//只在主控端和服务端运行
+	ENetRole Role = GetOwner()->GetLocalRole();
+	if (Role != ENetRole::ROLE_Authority && Role != ENetRole::ROLE_AutonomousProxy)
 	{
-		SameInstance->IDList.Add(++InstanceIDGenerator);
-		PAWNSTATE_LOG(Log, TEXT("%s: %s, Role:%d"), *FString(__FUNCTION__), *SameInstance->ToString(), GetOwner()->GetLocalRole());
-
-		return InstanceIDGenerator;
+		PAWNSTATE_LOG(Log, TEXT("%s should execute in Authority or AutonomousProxy"), *FString(__FUNCTION__));
+		return -1;
 	}
 
 	UPawnStateSubsystem* PawnStateSubsystem = UPawnStateSubsystem::GetSubsystem(this);
+	if (!PawnStateSubsystem)
+	{
+		PAWNSTATE_LOG(Error, TEXT("%s: cannot get pawnstate subsystem"), *FString(__FUNCTION__));
+		return -1;
+	}
 
 	//使互斥的PawnState退出
 	TArray<FGameplayTag> RemovedStates;
@@ -100,12 +188,23 @@ int UPawnStateComponent::InternalEnterPawnState(const FGameplayTag& NewPawnState
 			RemovedStates.Add(Instance.PawnStateTag);
 		}
 	}
-
 	//互斥的发起者
 	UObject* MutexInstigator = Instigator ? Instigator : SourceObject;
 	for (const FGameplayTag& State : RemovedStates)
 	{
 		LeaveAllPawnStateTag(State, MutexInstigator);
+	}
+
+	SourceObject = SourceObject != nullptr ? SourceObject : this;
+
+	//如果已经存在，只需要增加基数
+	FPawnStateInstance* SameInstance = FindPawnStateInstance(NewPawnStateTag, SourceObject, Instigator);
+	if (SameInstance)
+	{
+		SameInstance->IDList.Add(++InstanceIDGenerator);
+		PAWNSTATE_LOG(Log, TEXT("%s: %s, Role:%d"), *FString(__FUNCTION__), *SameInstance->ToString(), GetOwner()->GetLocalRole());
+
+		return InstanceIDGenerator;
 	}
 
 	//加入新的PawnState
@@ -119,13 +218,7 @@ int UPawnStateComponent::InternalEnterPawnState(const FGameplayTag& NewPawnState
 
 	RebuildCurrentTag();
 
-	UPawnStateEvent* Event = GetEnterEventByTag(NewPawnStateTag);
-	if (Event && Event->Delegate.IsBound())
-	{
-		Event->Delegate.Broadcast(NewInstance);
-	}
-
-	HandleStateEvent(EPawnStateEventTriggerType::E_Enter, NewInstance);
+	HandleStateEvent(EPawnStateEventType::E_Enter, NewInstance);
 
 	return InstanceIDGenerator;
 }
@@ -206,6 +299,14 @@ bool UPawnStateComponent::LeaveAllPawnStateTag(FGameplayTag PawnStateTag, UObjec
 
 bool UPawnStateComponent::InternalLeavePawnState(int InstanceID, UObject* Instigator)
 {
+	//只在主控端和服务端运行
+	ENetRole Role = GetOwner()->GetLocalRole();
+	if (Role != ENetRole::ROLE_Authority && Role != ENetRole::ROLE_AutonomousProxy)
+	{
+		PAWNSTATE_LOG(Log, TEXT("%s: enter cannot run on %d"), *FString(__FUNCTION__), Role);
+		return false;
+	}
+
 	//先移除再回调，防止回调中还有移除操作
 	FPawnStateInstance InstancdRemove;
 
@@ -232,40 +333,73 @@ bool UPawnStateComponent::InternalLeavePawnState(int InstanceID, UObject* Instig
 	{
 		InstancdRemove.Instigator =  Instigator;
 		PAWNSTATE_LOG(Log, TEXT("%s: %s, Role:%d"), *FString(__FUNCTION__), *InstancdRemove.ToString(), GetOwner()->GetLocalRole());
-
-		UPawnStateEvent* Event = GetLeaveEventByTag(InstancdRemove.PawnStateTag);
-		if (Event && Event->Delegate.IsBound())
-		{
-			Event->Delegate.Broadcast(InstancdRemove);
-		}
-		HandleStateEvent(EPawnStateEventTriggerType::E_Leave, InstancdRemove);
+		HandleStateEvent(EPawnStateEventType::E_Leave, InstancdRemove);
 		RebuildCurrentTag();
 	}
 	return true;
 }
 
-void UPawnStateComponent::HandleStateEvent(EPawnStateEventTriggerType TriggerType, const FPawnStateInstance& Instance)
+void UPawnStateComponent::HandleStateEvent(EPawnStateEventType TriggerType, const FPawnStateInstance& Instance)
 {
-	//相关事件，只针对定义了PawnState的tag
-	UPawnStateAsset* PawnStateAsset = UPawnStateSubsystem::GetSubsystem(this)->GetPawnStateAsset(Instance.PawnStateTag);
-	if (!PawnStateAsset)
+	UPawnStateSubsystem* PawnStateSubsystem = UPawnStateSubsystem::GetSubsystem(this);
+	if (!PawnStateSubsystem)
 	{
 		return;
 	}
 
-	for (auto& InstancedStruct : PawnStateAsset->EventList)
+	if (PawnStateEventDelegate.IsBound())
 	{
-		const UScriptStruct* StructType = InstancedStruct.GetScriptStruct();
-		if (StructType->IsChildOf(FPawnStateEventItem::StaticStruct()))
+		PawnStateEventDelegate.Broadcast(TriggerType, Instance);
+	}
+
+	//通知
+	UPawnStateEventWrapper* EventWrapper = GetEventByTag(Instance.PawnStateTag);
+	if (EventWrapper)
+	{
+		EventWrapper->Delegate.Broadcast(TriggerType, Instance);
+	}
+
+	UPawnStateEvent* Event = nullptr;
+	if (TriggerType == EPawnStateEventType::E_Enter)
+	{
+		Event = GetEnterEventByTag(Instance.PawnStateTag);
+	}
+	else if (TriggerType == EPawnStateEventType::E_Leave)
+	{
+		Event = GetLeaveEventByTag(Instance.PawnStateTag);
+	}
+	if (Event && Event->Delegate.IsBound())
+	{
+		Event->Delegate.Broadcast(Instance);
+	}
+
+	TArray<FInstancedStruct>* EventStructs = PawnStateInstancedEventMap.Find(Instance.PawnStateTag);
+	if (EventStructs == nullptr)
+	{
+		if (const UPawnStateAsset* PawnStateAsset = PawnStateSubsystem->GetPawnStateAsset(Instance.PawnStateTag))
 		{
-			FPawnStateEventItem& EventItem = InstancedStruct.GetMutable<FPawnStateEventItem>();
-			EventItem.Execute(TriggerType, Instance, this);
+			EventStructs = &PawnStateInstancedEventMap.Add(Instance.PawnStateTag, PawnStateAsset->EventList);
 		}
 	}
+
+	if (EventStructs != nullptr)
+	{
+		for (auto& InstancedStruct : *EventStructs)
+		{
+			const UScriptStruct* StructType = InstancedStruct.GetScriptStruct();
+			if (StructType->IsChildOf(FPawnStateEventItem::StaticStruct()))
+			{
+				FPawnStateEventItem& EventItem = InstancedStruct.GetMutable<FPawnStateEventItem>();
+				EventItem.Execute(TriggerType, Instance, this);
+			}
+		}
+	}
+	
 }
 
-bool UPawnStateComponent::HasPawnStateTag(FGameplayTag PawnStateTag)
+bool UPawnStateComponent::HasPawnStateTag(FGameplayTag PawnStateTag, bool OnlyLocal)
 {
+	//考虑本地的
 	for (const FPawnStateInstance& Instance : PawnStateInstances)
 	{
 		if (Instance.PawnStateTag == PawnStateTag)
@@ -273,6 +407,38 @@ bool UPawnStateComponent::HasPawnStateTag(FGameplayTag PawnStateTag)
 			return true;
 		}
 	}
+
+	//考虑复制过来的
+	if (!OnlyLocal)
+	{
+		ENetRole LocalRole = GetOwner()->GetLocalRole();
+		if (LocalRole != ENetRole::ROLE_Authority)
+		{
+			return ReplicatePawnStateTags.HasTagExact(PawnStateTag);
+		}
+	}
+
+	return false;
+}
+
+bool UPawnStateComponent::HasPawnStateAsset(TSoftObjectPtr<UPawnStateAsset>& PawnState)
+{
+	if (PawnState.IsNull())
+	{
+		return false;
+	}
+	if (UPawnStateSubsystem* PawnStateSubsystem = UPawnStateSubsystem::GetSubsystem(this))
+	{
+		UPawnStateAsset* PawnStateAsset = PawnState.LoadSynchronous();
+		if (PawnStateSubsystem->LoadPawnStateAsset(PawnStateAsset))
+		{
+			if (HasPawnStateTag(PawnStateAsset->StateTag))
+			{
+				return true;
+			}
+		}
+	}
+	
 	return false;
 }
 
@@ -307,6 +473,21 @@ UPawnStateEvent* UPawnStateComponent::GetLeaveEventByTag(FGameplayTag PawnStateT
 	return PawnStateLeaveEvent[PawnStateTag];
 }
 
+UPawnStateEventWrapper* UPawnStateComponent::GetEventByTag(FGameplayTag PawnStateTag)
+{
+	if (!PawnStateTag.IsValid())
+	{
+		PAWNSTATE_LOG(Error, TEXT("%s Error: Invalid PawnStateTag[%s]"), *FString(__FUNCTION__), *PawnStateTag.ToString());
+		return nullptr;
+	}
+	if (!PawnStateEventMap.Contains(PawnStateTag))
+	{
+		UPawnStateEventWrapper* EventWrappper = NewObject<UPawnStateEventWrapper>(this);
+		PawnStateEventMap.Add(PawnStateTag, EventWrappper);
+	}
+	return PawnStateEventMap[PawnStateTag];
+}
+
 const TArray<FPawnStateInstance>& UPawnStateComponent::GetPawnStateInstances()
 {
 	return PawnStateInstances;
@@ -324,24 +505,25 @@ FPawnStateInstance* UPawnStateComponent::FindPawnStateInstance(const FGameplayTa
 	return nullptr;
 }
 
-void UPawnStateComponent::SendMsgToServer(const FGameplayMessage& Message)
+bool UPawnStateComponent::SendMsgToServer_Validate(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
 {
-	Server_SendMessage(Message);
+	return true;
 }
 
-void UPawnStateComponent::SendMsgToClient(const FGameplayMessage& Message) 
+void UPawnStateComponent::SendMsgToServer_Implementation(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
 {
-	Client_SendMessage(Message);
+	UPawnStateSubsystem* PawnStateSystem = UPawnStateSubsystem::GetSubsystem(this);
+	PawnStateSystem->HandleServerMsg(this, MsgTag, MsgBody);
 }
 
-
-void UPawnStateComponent::Server_SendMessage_Implementation(const FGameplayMessage& Message)
+bool UPawnStateComponent::SendMsgToClient_Validate(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
 {
-	UMessageCenterSubsystem::GetSubsystem(this)->OnMessageReceived(Message);
+	return true;
 }
 
-void UPawnStateComponent::Client_SendMessage_Implementation(const FGameplayMessage& Message)
+void UPawnStateComponent::SendMsgToClient_Implementation(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
 {
-	UMessageCenterSubsystem::GetSubsystem(this)->OnMessageReceived(Message);
+	UPawnStateSubsystem* PawnStateSystem = UPawnStateSubsystem::GetSubsystem(this);
+	PawnStateSystem->HandleClientMsg(this, MsgTag, MsgBody);
 }
 

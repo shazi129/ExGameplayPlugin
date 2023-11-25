@@ -7,7 +7,6 @@
 #include "AttributeSet.h"
 #include "PawnStateTypes.h"
 #include "Attribute/AttributeEvent.h"
-#include "InstancedStructArray.h"
 #include "ExAttributeTypes.generated.h"
 
 ////////////////////////////////////////////////////Attribut变化的一些事件//////////////////

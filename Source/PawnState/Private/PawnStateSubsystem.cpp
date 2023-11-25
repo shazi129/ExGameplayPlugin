@@ -10,7 +10,7 @@ UPawnStateSubsystem* UPawnStateSubsystem::GetSubsystem(const UObject* WorldConte
 	GET_GAMEINSTANCE_SUBSYSTEM(LogPawnState, UPawnStateSubsystem, WorldContextObject)
 }
 
-UPawnStateAsset* UPawnStateSubsystem::GetPawnStateAsset(const FGameplayTag& StateTag)
+const UPawnStateAsset* UPawnStateSubsystem::GetPawnStateAsset(const FGameplayTag& StateTag)
 {
 	if (GlobalPawnStateConfig.Contains(StateTag))
 	{
@@ -62,7 +62,7 @@ bool UPawnStateSubsystem::CanEnterPawnState(const FGameplayTag& NewStateTag, con
 	//校验Require
 	for (auto& RelactionItem : *RelationConfig)
 	{
-		if (RelactionItem.Value == EPawnStateRelation::E_Require && RelactionItem.Key.MatchesAny(ExistStateTags))
+		if (RelactionItem.Value == EPawnStateRelation::E_Require && !RelactionItem.Key.MatchesAny(ExistStateTags))
 		{
 			ErrorMsg = FString::Printf(TEXT("%s miss require: %s"), *NewStateTag.ToString(), *RelactionItem.Key.ToString());
 			return false;
@@ -78,9 +78,19 @@ void UPawnStateSubsystem::CollectMutexState(const FGameplayTag& NewStateTag, con
 
 EPawnStateRelation UPawnStateSubsystem::GetRelation(const FGameplayTag& NewPawnStateTag, const FGameplayTag& ExistPawnStateTag)
 {
-	if (StateRelations.Contains(NewPawnStateTag) && StateRelations[NewPawnStateTag].Contains(ExistPawnStateTag))
+	for (FGameplayTag StateTag = NewPawnStateTag; StateTag.IsValid(); StateTag = StateTag.RequestDirectParent())
 	{
-		return StateRelations[NewPawnStateTag][ExistPawnStateTag];
+		TMap<FGameplayTag, EPawnStateRelation>* RelationSetPtr = StateRelations.Find(StateTag);
+		if (!RelationSetPtr)
+		{
+			continue;
+		}
+
+		EPawnStateRelation* RelationPtr = RelationSetPtr->Find(ExistPawnStateTag);
+		if (RelationPtr)
+		{
+			return *RelationPtr;
+		}
 	}
 	return EPawnStateRelation::E_Coexist;
 }
@@ -217,17 +227,47 @@ void UPawnStateSubsystem::OnCheatCreate(UCheatManager* CheatManager)
 {
 	if (CheatManager)
 	{
-		UPawnStateCheatExtension* CheatObject = NewObject<UPawnStateCheatExtension>(CheatManager, UPawnStateCheatExtension::StaticClass());
-		CheatManager->AddCheatManagerExtension(CheatObject);
+		CheatManager->AddCheatManagerExtension(NewObject<UPawnStateCheatExtension>(CheatManager, UPawnStateCheatExtension::StaticClass()));
 	}
 }
 
 
-void UPawnStateSubsystem::HandleServerMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, FInstancedStruct& MsgBody)
+void UPawnStateSubsystem::HandleServerMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
 {
+	FInstancedStruct ResponseBody;
+	ResponseBody.InitializeAs<FRPCParamater>();
+	FRPCParamater& Paramater = ResponseBody.GetMutable<FRPCParamater>();
+
+	if (MsgTag == TAG_GetServerStates)
+	{
+		Paramater.ErrMsg = UPawnStateCheatExtension::GetPawnStateDebugString(Component);
+	}
+	else if (MsgTag == TAG_GetServerTags)
+	{
+		Paramater.ErrMsg = UPawnStateCheatExtension::GetASCTagsDebugString(Component->GetOwner());
+	}
+	else
+	{
+		Paramater.ErrMsg = FString::Printf(TEXT("Invalid Msg Tag:%s"), *MsgTag.ToString());
+	}
+
+	if (Component)
+	{
+		Component->SendMsgToClient(MsgTag, ResponseBody);
+	}
 }
 
-void UPawnStateSubsystem::HandleClientMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, FInstancedStruct& MsgBody)
+void UPawnStateSubsystem::HandleClientMsg(UPawnStateComponent* Component, const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody)
 {
+	if (MsgBody.GetScriptStruct() == FRPCParamater::StaticStruct())
+	{
+		//const FRPCParamater& Paramater = MsgBody.GetMutable<FRPCParamater>();
+		//LOG_AND_COPY(LogTemp, Log, Paramater.ErrMsg);
+	}
+	else
+	{
+		FString Error = FString::Printf(TEXT("Unrecongnize Msg Tag: %s"), *MsgTag.ToString());
+		LOG_AND_COPY(LogTemp, Log, Error);
+	}
 }
 

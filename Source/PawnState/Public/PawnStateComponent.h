@@ -2,10 +2,13 @@
 
 #include "CoreMinimal.h"
 #include "PawnStateTypes.h"
-#include "MessageCenter/RPCFunctionProvider.h"
+#include "InstancedStruct.h"
+#include "Debug/DebugDisplay.h"
 #include "PawnStateComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPawnStateDelegate, const FPawnStateInstance&, PawnStateInstance);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FPawnStateEventDelegate, EPawnStateEventType, EventType, const FPawnStateInstance&, Instance);
 
 UCLASS(BlueprintType)
 class PAWNSTATE_API UPawnStateEvent : public UObject
@@ -17,8 +20,18 @@ public:
 	FPawnStateDelegate Delegate;
 };
 
+UCLASS(BlueprintType)
+class PAWNSTATE_API UPawnStateEventWrapper : public UObject
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintAssignable)
+	FPawnStateEventDelegate Delegate;
+};
+
 UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent))
-class PAWNSTATE_API UPawnStateComponent : public UActorComponent, public IRPCFunctionProvider
+class PAWNSTATE_API UPawnStateComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
@@ -26,6 +39,8 @@ public:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	static void OnShowDebugInfo(AHUD* HUD, UCanvas* Canvas, const FDebugDisplayInfo& DisplayInfo, float& YL, float& YPos);
 
 public:
 	UFUNCTION(BlueprintPure)
@@ -38,6 +53,7 @@ public:
 	 * @return 是否成功
 	*/
 	virtual bool CanEnterPawnState(const FGameplayTag& PawnState, FString& ErrMsg);
+	virtual bool CanEnterPawnStates(const FGameplayTagContainer& PawnStates, FString& ErrMsg);
 
 	/**
 	 * @brief 尝试进入某个State， 使用场景：A扔了个炸弹，导致B进入掉血状态
@@ -68,23 +84,42 @@ public:
 		bool LeaveAllPawnStateTag(FGameplayTag PawnState, UObject* Instigator = nullptr);
 
 	UFUNCTION(BlueprintCallable)
-		bool HasPawnStateTag(FGameplayTag PawnStateTag);
+		bool HasPawnStateTag(FGameplayTag PawnStateTag, bool OnlyLocal=false);
 
-	UFUNCTION(BlueprintCallable)
+	bool HasPawnStateAsset(TSoftObjectPtr<UPawnStateAsset>& PawnState);
+
+	UFUNCTION(BlueprintCallable, meta = (DeprecatedFunction, DeprecationMessage = "Please use GetEventByTag"))
 		UPawnStateEvent* GetEnterEventByTag(FGameplayTag PawnStateTag);
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, meta=(DeprecatedFunction, DeprecationMessage="Please use GetEventByTag"))
 		UPawnStateEvent* GetLeaveEventByTag(FGameplayTag PawnStateTag);
+
+	UFUNCTION(BlueprintCallable)
+		UPawnStateEventWrapper* GetEventByTag(FGameplayTag PawnStateTag);
 
 	const TArray<FPawnStateInstance>& GetPawnStateInstances();
 
 	FPawnStateInstance* FindPawnStateInstance(const FGameplayTag& NewPawnStateTag, UObject* SourceObject, UObject* Instigator);
 
+	FPawnStateEventDelegate& OnPawnStateEventDelegate()
+	{
+		return PawnStateEventDelegate;
+	}
+
 public:
-	void RebuildCurrentTag();
 	virtual int InternalEnterPawnState(const FGameplayTag& NewPawnStateTag, UObject* SourceObject = nullptr, UObject* Instigator = nullptr);
 	virtual bool InternalLeavePawnState(int InstanceID, UObject* Instigator=nullptr);
-	void HandleStateEvent(EPawnStateEventTriggerType TriggerType, const FPawnStateInstance& Instance);
+	
+private:
+	void RebuildCurrentTag();
+	void HandleStateEvent(EPawnStateEventType TriggerType, const FPawnStateInstance& Instance);
+
+	UFUNCTION()
+	virtual void OnRep_PawnStateTags(const FGameplayTagContainer& OldValue);
+
+public:
+	UPROPERTY(BlueprintAssignable)
+	FPawnStateEventDelegate PawnStateEventDelegate;
 
 private:
 	UPROPERTY(Transient)
@@ -93,25 +128,32 @@ private:
 	UPROPERTY(Transient)
 	TMap<FGameplayTag, UPawnStateEvent*> PawnStateLeaveEvent;
 
+	//动态设置的Event
+	UPROPERTY(Transient)
+	TMap<FGameplayTag, UPawnStateEventWrapper*> PawnStateEventMap;
+
+	//Asset中配置的Event， 这里复制一遍，防止操作到公用资源
+	TMap<FGameplayTag, TArray<FInstancedStruct>> PawnStateInstancedEventMap;
+
 	//本地记录的PawnState信息
 	TArray<FPawnStateInstance> PawnStateInstances;
+	FGameplayTagContainer CurrentPawnStateTags;
 
 	//用于复制到模拟端的结构
-	UPROPERTY(Replicated)
-	FGameplayTagContainer CurrentPawnStateTags;
+	UPROPERTY(Replicated, ReplicatedUsing=OnRep_PawnStateTags)
+	FGameplayTagContainer ReplicatePawnStateTags;
 
 	//StateID 生成器
 	static std::atomic<int32> InstanceIDGenerator;
 
+	FDebugDisplayProxy DebugDisplayProxy;
+	void CollectDebugContent();
 
 /////////////////////////////Cheat相关///////////////////
 public:
-	virtual void SendMsgToServer(const FGameplayMessage& Message) override;
-	virtual void SendMsgToClient(const FGameplayMessage& Message) override;
+	UFUNCTION(Reliable, Server, WithValidation, BlueprintCallable)
+	void SendMsgToServer(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody);
 
-	UFUNCTION(Reliable, Server, BlueprintCallable)
-	void Server_SendMessage(const FGameplayMessage& Message);
-
-	UFUNCTION(Reliable, Client, BlueprintCallable)
-	void Client_SendMessage(const FGameplayMessage& Message);
+	UFUNCTION(Reliable, Client, WithValidation, BlueprintCallable)
+	void SendMsgToClient(const FGameplayTag& MsgTag, const FInstancedStruct& MsgBody);
 };

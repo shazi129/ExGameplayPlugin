@@ -3,7 +3,12 @@
 #include "AbilitySystemGlobals.h"
 #include "GameplayCueSet.h"
 #include "GameplayTagsManager.h"
+
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION < 3
 #include "AssetRegistryModule.h"
+#else
+#include "AssetRegistry/AssetRegistryModule.h"
+#endif
 
 UExGameplayCueManager::UExGameplayCueManager(class FObjectInitializer const& Initializer)
 	:Super(Initializer)

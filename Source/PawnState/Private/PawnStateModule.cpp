@@ -1,6 +1,8 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "PawnStateModule.h"
+#include "GameFramework/HUD.h"
+#include "PawnStateComponent.h"
 
 #define LOCTEXT_NAMESPACE "PawnStateModule"
 
@@ -9,7 +11,10 @@ DEFINE_LOG_CATEGORY(LogPawnState)
 void FPawnStateModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
-
+	if (!IsRunningDedicatedServer())
+	{
+		AHUD::OnShowDebugInfo.AddStatic(&UPawnStateComponent::OnShowDebugInfo);
+	}
 }
 
 void FPawnStateModule::ShutdownModule()

@@ -2,18 +2,23 @@
 #include "CoreMinimal.h"
 #include "GameplayTags.h"
 #include "InstancedStruct.h"
-#include "NativeGameplayTags.h"
 #include "PawnStateTypes.generated.h"
 
-UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_PawnState_Run);
-UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_GetServerStates);
-UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_RetServerStates);
-UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_GetServerTags);
-UE_DECLARE_GAMEPLAY_TAG_EXTERN(TAG_RetServerTags);
+USTRUCT(BlueprintType)
+struct PAWNSTATE_API FRPCParamater
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	int ErrCode = 0;
+
+	UPROPERTY(BlueprintReadWrite)
+	FString ErrMsg;
+};
 
 //PawnState事件触发时机
 UENUM(BlueprintType)
-enum class EPawnStateEventTriggerType : uint8
+enum class EPawnStateEventType : uint8
 {
 	//在PawnState进入时触发
 	E_Enter		UMETA(DisplayName = "Enter"),
@@ -32,13 +37,13 @@ struct PAWNSTATE_API FPawnStateEventItem
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, meta = (EditCondition = "ShowBasicConfig", EditConditionHides))
-	EPawnStateEventTriggerType TriggerType = EPawnStateEventTriggerType::E_Enter;
+	EPawnStateEventType TriggerType = EPawnStateEventType::E_Enter;
 
 	UPROPERTY()
 	bool ShowBasicConfig = true;
 
 	virtual ~FPawnStateEventItem(){}
-	virtual void Execute(EPawnStateEventTriggerType InTriggerType, const FPawnStateInstance& PawnStateInstance, class UPawnStateComponent* PawnStateComponnt) {}
+	virtual void Execute(EPawnStateEventType InTriggerType, const FPawnStateInstance& PawnStateInstance, class UPawnStateComponent* PawnStateComponnt) {}
 };
 
 //PawnState间的关系
@@ -122,7 +127,7 @@ class PAWNSTATE_API UPawnStateSet : public UDataAsset
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, meta = (DisplayThumbnail = "false", TitleProperty = "{StateTag}:{Description} -> {StateAssetPtr}"))
+	UPROPERTY(EditAnywhere, meta = (DisplayThumbnail = "false", TitleProperty = "{Description}:{StateTag} -> {StateAssetPtr}"))
 	TArray<FPawnStateEntry> StateSet;
 };
 

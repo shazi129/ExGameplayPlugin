@@ -15,7 +15,7 @@ public:
 		static UPawnStateComponent* GetLocalPawnStateComponent(const UObject* WorldContextObject);
 
 	UFUNCTION(BlueprintPure)
-		static class UPawnStateComponent* GetPawnStateComponent(AActor* Actor);
+		static UPawnStateComponent* GetPawnStateComponent(AActor* Actor);
 
 	UFUNCTION(BlueprintPure)
 		static bool HasPawnStateTag(AActor* Actor, FGameplayTag PawnStateTag);
