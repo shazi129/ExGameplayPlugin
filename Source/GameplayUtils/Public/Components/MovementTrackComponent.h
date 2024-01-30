@@ -28,24 +28,6 @@ struct FMomentTrackSegment
 	int64 ExpireTime = 0; //轨迹消失时间
 };
 
-USTRUCT()
-struct FSplineMeshOverlapInfo
-{
-	GENERATED_BODY();
-
-	UPrimitiveComponent* OverlappedComp;
-	AActor* OtherActor;
-	UPrimitiveComponent* OtherComp;
-	int32 OtherBodyIndex;
-	bool bFromSweep;
-	FHitResult SweepResult;
-
-	FSplineMeshOverlapInfo(){};
-	FSplineMeshOverlapInfo(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	int bDuringEnd = false;
-	int EndNotifyDelay = 1;
-};
 
 UCLASS(Blueprintable, meta = (BlueprintSpawnableComponent))
 class GAMEPLAYUTILS_API UMovementTrackComponent : public UMeshSplineComponent
@@ -62,8 +44,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StartTrack(AActor* InTrackOwner);
 
+	UFUNCTION(BlueprintImplementableEvent)
+	void ReceiveStartTrack(AActor* InTrackOwner);
+
 	UFUNCTION(BlueprintCallable)
 	void StopTrack();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ReceiveStopTrack();
 
 	UFUNCTION(BlueprintCallable)
 	AActor* GetTrackOwner();
@@ -108,5 +96,4 @@ protected:
 
 	//Owner
 	TWeakObjectPtr<AActor> TrackOwner;
-	TArray<FSplineMeshOverlapInfo> OverlapRecordList;
 };

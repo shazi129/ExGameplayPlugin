@@ -36,5 +36,12 @@ public:
 		static UActorComponent* GetComponentByTag(AActor* Actor, const FName& Tag);
 
 	UFUNCTION(BlueprintPure, Category = "GameplayUtils")
+		static UActorComponent* GetComponentByClass(AActor* Actor, TSubclassOf<UActorComponent> ComponentClass);
+
+	UFUNCTION(BlueprintPure, Category = "GameplayUtils")
 		static FString GetNameSafe(const UObject* Object);
+
+	UFUNCTION(BlueprintCallable, Category = "GameplayUtils")
+		static UObject* CopyObject(UObject* TemplateObject, UObject* Outer, FName Name = NAME_None);
+
 };

@@ -2,10 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
-#include "GameplayUtilSettingSubsystem.generated.h"
+#include "GameplayCheatSubsystem.generated.h"
 
 UCLASS(BlueprintType)
-class GAMEPLAYUTILS_API UGameplayUtilSettingSubsystem : public UGameInstanceSubsystem
+class GAMEPLAYUTILS_API UGameplayCheatSubsystem : public UGameInstanceSubsystem
 {
 	GENERATED_BODY()
 public:
@@ -13,8 +13,9 @@ public:
 	virtual void Deinitialize() override;
 
 private:
-	void InitGlobalVariables();
+	void OnCheatManagerCreate(UCheatManager* CheatManager);
 
-	UPROPERTY(Transient)
-	TArray<TSoftObjectPtr<UObject>> PermanentObjects;
+private:
+	
+	FDelegateHandle CheatCreateHandle;
 };

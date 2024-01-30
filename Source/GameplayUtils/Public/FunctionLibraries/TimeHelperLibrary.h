@@ -39,4 +39,7 @@ public:
 	*/
 	UFUNCTION(BlueprintPure, Category = "Time Helper")
 	static double GetCurrentFrameTime();
+
+	UFUNCTION(BlueprintPure, Category = "Time Helper")
+	static FString FormatNowString(const FString& Format);
 };

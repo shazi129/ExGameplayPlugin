@@ -23,6 +23,16 @@ enum class EExecNetMode : uint8
 	E_Aways				UMETA(DisplayName = "Aways"),
 };
 
+UCLASS(BlueprintType)
+class GAMEPLAYUTILS_API USoftObjectSetAsset : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere)
+	TSet<TSoftObjectPtr<UObject>> ObjectSet;
+};
+
 USTRUCT(BlueprintType)
 struct GAMEPLAYUTILS_API FFilterActorCondition
 {

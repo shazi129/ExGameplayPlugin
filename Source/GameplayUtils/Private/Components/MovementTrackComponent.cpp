@@ -21,35 +21,21 @@ void UMovementTrackComponent::TickComponent(float DeltaTime, ELevelTick TickType
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	UpdateTrack();
-
-	for (int i = OverlapRecordList.Num() - 1; i >= 0; i--)
-	{
-		FSplineMeshOverlapInfo& OverlapInfo = OverlapRecordList[i];
-		if (OverlapInfo.bDuringEnd == false)
-		{
-			continue;
-		}
-		OverlapInfo.EndNotifyDelay--;
-		if (OverlapInfo.EndNotifyDelay <= 0)
-		{
-			if (OverlapRecordList.Num() == 1)
-			{
-				OnSplineMeshEndOverlap(OverlapInfo.OverlappedComp, OverlapInfo.OtherActor, OverlapInfo.OtherComp, OverlapInfo.OtherBodyIndex);
-			}
-			OverlapRecordList.RemoveAt(i);
-		}
-	}
 }
 
 void UMovementTrackComponent::StartTrack(AActor* InTrackOwner)
 {
+	GAMEPLAYUTILS_LOG(Log, TEXT("%s"), *FString(__FUNCTION__));
 	bStartTrack = true;
 	TrackOwner = InTrackOwner;
+	ReceiveStartTrack(InTrackOwner);
 }
 
 void UMovementTrackComponent::StopTrack()
 {
+	GAMEPLAYUTILS_LOG(Log, TEXT("%s"), *FString(__FUNCTION__));
 	bStartTrack = false;
+	ReceiveStopTrack();
 }
 
 AActor* UMovementTrackComponent::GetTrackOwner()
@@ -69,13 +55,8 @@ void UMovementTrackComponent::NativeOnSplineMeshBeginOverlap(UPrimitiveComponent
 	{
 		return;
 	}
-	FSplineMeshOverlapInfo* NewOverlapInfo = new(OverlapRecordList) FSplineMeshOverlapInfo(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-	NewOverlapInfo->EndNotifyDelay = OverlapDelay;
-	NewOverlapInfo->bDuringEnd = false;
-	if (OverlapRecordList.Num() == 1)
-	{
-		OnSplineMeshBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
-	}
+	//UE_LOG(LogTemp, Log, TEXT("UMovementTrackComponent::NativeOnSplineMeshBeginOverlap, %s --> %s %s"), *GetNameSafe(OverlappedComponent), *GetNameSafe(OtherComp), *GetNameSafe(OtherActor));
+	OnSplineMeshBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 }
 
 void UMovementTrackComponent::NativeOnSplineMeshEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
@@ -83,16 +64,11 @@ void UMovementTrackComponent::NativeOnSplineMeshEndOverlap(UPrimitiveComponent* 
 	//overlap对本家不生效
 	if (OtherActor == TrackOwner)
 	{
-		return;
+		return; 
 	}
 
-	for (FSplineMeshOverlapInfo& OverlapInfo : OverlapRecordList)
-	{
-		if (OverlapInfo.OverlappedComp == OverlappedComponent && OverlapInfo.OtherActor == OtherActor && OverlapInfo.OtherComp == OtherComp)
-		{
-			OverlapInfo.bDuringEnd = true;
-		}
-	}
+	//UE_LOG(LogTemp, Log, TEXT("UMovementTrackComponent::NativeOnSplineMeshEndOverlap, %s --> %s %s"), *GetNameSafe(OverlappedComponent), *GetNameSafe(OtherComp), *GetNameSafe(OtherActor));
+	OnSplineMeshEndOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex);
 }
 
 FMomentTrackSegment& UMovementTrackComponent::AddSegment(const FVector& InStartLocation, const int64& AddTimestamp)
@@ -180,12 +156,3 @@ void UMovementTrackComponent::UpdateTrack()
 	RebuildSpline(TrackPoints);
 }
 
-FSplineMeshOverlapInfo::FSplineMeshOverlapInfo(UPrimitiveComponent* InOverlappedComp, AActor* InOtherActor, UPrimitiveComponent* InOtherComp, int32 InOtherBodyIndex, bool bInFromSweep, const FHitResult& InSweepResult)
-	: OverlappedComp(InOverlappedComp)
-	, OtherActor(InOtherActor)
-	, OtherComp(InOtherComp)
-	, OtherBodyIndex(InOtherBodyIndex)
-	, bFromSweep(bInFromSweep)
-	, SweepResult(InSweepResult)
-{
-}

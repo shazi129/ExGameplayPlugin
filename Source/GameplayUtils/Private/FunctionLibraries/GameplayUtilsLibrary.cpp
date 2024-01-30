@@ -2,6 +2,7 @@
 #include "GameplayUtilsModule.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "GameFramework/PlayerState.h"
+#include "FunctionLibraries/PathHelperLibrary.h"
 
 bool UGameplayUtilsLibrary::ExecCommand(const FString& Command)
 {
@@ -180,8 +181,31 @@ UActorComponent* UGameplayUtilsLibrary::GetComponentByTag(AActor* Actor, const F
 	return nullptr;
 }
 
+UActorComponent* UGameplayUtilsLibrary::GetComponentByClass(AActor* Actor, TSubclassOf<UActorComponent> ComponentClass)
+{
+	if (Actor && ComponentClass)
+	{
+		return Actor->GetComponentByClass(ComponentClass);
+	}
+	return nullptr;
+}
+
 FString UGameplayUtilsLibrary::GetNameSafe(const UObject* Object)
 {
 	return ::GetNameSafe(Object);
+}
+
+UObject* UGameplayUtilsLibrary::CopyObject(UObject* TemplateObject, UObject* Outer, FName Name)
+{
+	if (TemplateObject)
+	{
+		FStaticConstructObjectParameters Params(TemplateObject->GetClass());
+		Params.Outer = Outer;
+		Params.Name = Name;
+		Params.Template = TemplateObject;
+		Params.bCopyTransientsFromClassDefaults = true;
+		return StaticConstructObject_Internal(Params);
+	}
+	return nullptr;
 }
 

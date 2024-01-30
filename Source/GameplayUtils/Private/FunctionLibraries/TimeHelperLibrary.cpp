@@ -21,3 +21,8 @@ double UTimeHelperLibrary::GetCurrentFrameTime()
 {
 	return FApp::GetCurrentTime();
 }
+
+FString UTimeHelperLibrary::FormatNowString(const FString& Format)
+{
+	return FDateTime::Now().ToString(*Format);
+}
