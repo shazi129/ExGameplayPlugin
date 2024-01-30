@@ -3,7 +3,7 @@
 #include "ExPlayerController.generated.h"
 
 UCLASS()
-class AExPlayerController : public APlayerController
+class GAMEPLAYUTILS_API AExPlayerController : public APlayerController
 {
 	GENERATED_BODY()
 

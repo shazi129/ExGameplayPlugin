@@ -1,5 +1,4 @@
 #include "GameFramework/ExPlayerController.h"
-#include "Settings/ExGameplaySettings.h"
 
 void AExPlayerController::PostInitializeComponents()
 {

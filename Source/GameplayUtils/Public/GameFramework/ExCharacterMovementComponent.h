@@ -3,7 +3,7 @@
 #include "ExCharacterMovementComponent.generated.h"
 
 UCLASS()
-class EXGAMEPLAYPLUGIN_API UExCharacterMovementComponent : public UCharacterMovementComponent
+class GAMEPLAYUTILS_API UExCharacterMovementComponent : public UCharacterMovementComponent
 {
 	GENERATED_BODY()
 
