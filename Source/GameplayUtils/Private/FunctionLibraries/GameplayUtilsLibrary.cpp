@@ -195,6 +195,28 @@ FString UGameplayUtilsLibrary::GetNameSafe(const UObject* Object)
 	return ::GetNameSafe(Object);
 }
 
+FString UGameplayUtilsLibrary::GetContextWorldName(const UObject* Object)
+{
+	if (!Object)
+	{
+		return "None";
+	}
+
+	UWorld* ContextWorld = Object->GetWorld();
+	if (!ContextWorld)
+	{
+		return "None";
+	}
+
+	if (UPackage* Package = ContextWorld->GetPackage())
+	{
+		FString PackageShortName = FPackageName::GetShortName(Package->GetName());
+		PackageShortName.RemoveFromStart(ContextWorld->StreamingLevelsPrefix);
+		return PackageShortName;
+	}
+	return "None";
+}
+
 UObject* UGameplayUtilsLibrary::CopyObject(UObject* TemplateObject, UObject* Outer, FName Name)
 {
 	if (TemplateObject)
@@ -207,5 +229,74 @@ UObject* UGameplayUtilsLibrary::CopyObject(UObject* TemplateObject, UObject* Out
 		return StaticConstructObject_Internal(Params);
 	}
 	return nullptr;
+}
+
+TArray<UActorComponent*> UGameplayUtilsLibrary::GetComponentsByTickEnable(AActor* Actor, bool Enabled)
+{
+	TArray<UActorComponent*> Components;
+	if (!Actor)
+	{
+		return MoveTemp(Components);
+	}
+
+	const TSet<UActorComponent*>&  ActorComponents = Actor->GetComponents();
+	for (UActorComponent* ActorComponent : ActorComponents)
+	{
+		if (ActorComponent->IsComponentTickEnabled() == Enabled)
+		{
+			Components.Add(ActorComponent);
+		}
+	}
+
+	return MoveTemp(Components);
+}
+
+void UGameplayUtilsLibrary::SetComponentsTickEnable(TArray<UActorComponent*>& Components, bool Enable)
+{
+	for (UActorComponent* Component : Components)
+	{
+		if (Component)
+		{
+			Component->SetComponentTickEnabled(Enable);
+		}
+	}
+}
+
+bool UGameplayUtilsLibrary::IsCurrentWorld(const UObject* WorldContextObject, const TSoftObjectPtr<UWorld>& TargetWorld)
+{
+	if (!WorldContextObject || TargetWorld.IsNull())
+	{
+		return false;
+	}
+
+	if (UWorld* World = WorldContextObject->GetWorld())
+	{
+		FString TargetWorldPath = TargetWorld.GetLongPackageName();
+		FString CurrentWorldPath = UPathHelperLibrary::GetPackageFullName(World);
+		return TargetWorldPath == CurrentWorldPath;
+	}
+
+	return false;
+}
+
+bool UGameplayUtilsLibrary::IsGameWorld(const UObject* WorldContextObject)
+{
+	if (!WorldContextObject)
+	{
+		return false;
+	}
+
+	UWorld* World = WorldContextObject->GetWorld();
+	if (!World || !World->IsGameWorld())
+	{
+		return false;
+	}
+
+	if (World->GetName().Equals(FString("Untitled")))
+	{
+		return false;
+	}
+
+	return true;
 }
 
