@@ -54,10 +54,68 @@ struct GAMEPLAYUTILS_API FFilterActorCondition
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<AActor*> IgnoreActors;
 
-	bool FilterActorClasses(AActor* Actor) const;
 	bool FilterExcludeComponentClasses(AActor* Actor) const;
 	bool FilterRequireComponentClasses(AActor* Actor) const;
 	bool FilterIgnoreActors(AActor* Actor) const;
 };
 
+struct GAMEPLAYUTILS_API FPriorityData
+{
+	int32 Priority = 0;
+	void* Owner = nullptr;
+};
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FStringParamDelegate, const FString&, StringParam);
+
+/**
+ * @brief 物品权重抽象
+*/
+USTRUCT(BlueprintType)
+struct GAMEPLAYUTILS_API FItemWeight
+{
+	GENERATED_BODY()
+
+	//物品ID
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 ItemID = 0;
+
+	//物品权重
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 Weight = 0;
+};
+
+/**
+ * @brief 某个世界内道具权重配置
+*/
+USTRUCT(BlueprintType)
+struct GAMEPLAYUTILS_API FItemWeightsEntry
+{
+	GENERATED_BODY()
+
+	//物品ID
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UWorld> TargetWorld;
+
+	//物品权重
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<FItemWeight> ItemWeightList;
+};
+
+UCLASS(BlueprintType)
+class GAMEPLAYUTILS_API UItemWeightConfigAsset : public UDataAsset
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TArray<FItemWeightsEntry> ItemWeightsEntryList;
+};
+
+USTRUCT(BlueprintType)
+struct GAMEPLAYUTILS_API FObjectListData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintType)
+	TArray<TObjectPtr<UObject>> Data;
+};

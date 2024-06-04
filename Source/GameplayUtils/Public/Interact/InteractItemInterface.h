@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Interact/InteractTypes.h"
+#include "Interact/Handlers/InteractItemHandler.h"
 #include "InteractItemInterface.generated.h"
 
 UINTERFACE(BlueprintType)
@@ -45,4 +46,10 @@ public:
 	//某个配置上有几个角色在交互
 	UFUNCTION(BlueprintNativeEvent)
 	void RemoveInteractingPawn(const FName& ConfigName, APawn* Pawn);
+
+	UFUNCTION(BlueprintNativeEvent)
+	UInteractItemHandler* GetStateChangeHandler(const FName& ConfigName);
+
+	UFUNCTION(BlueprintNativeEvent)
+	UInteractItemHandler* GetInteractHandler(const FName& ConfigName);
 }; 

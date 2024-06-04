@@ -214,7 +214,14 @@ AActor* UObjectCacheSubsystem::RetainActor(UClass* ObjectClass, const FTransform
 		AActor* Actor = World->SpawnActorDeferred<AActor>(ObjectClass, SpawnTransform);
 		if (Actor)
 		{
-			return UGameplayStatics::FinishSpawningActor(Actor, SpawnTransform);
+			UGameplayStatics::FinishSpawningActor(Actor, SpawnTransform);
+
+			if (Actor->GetClass()->ImplementsInterface(UObjectPoolInterface::StaticClass()))
+			{
+				IObjectPoolInterface::Execute_OnPoolObjectCreate(Actor);
+				IObjectPoolInterface::Execute_OnObjectRetainFromPool(Actor);
+			}
+			return Actor;
 		}
 	}
 	
@@ -283,6 +290,11 @@ bool UObjectCacheSubsystem::ReleaseObject(UObject* Object, const UClass* ObjectC
 
 	if (AActor* Actor = Cast<AActor>(Object))
 	{
+		if (!Actor->IsPendingKillPending() && Actor->GetClass()->ImplementsInterface(UObjectPoolInterface::StaticClass()))
+		{
+			IObjectPoolInterface::Execute_OnPoolObjectRelease(Actor);
+			IObjectPoolInterface::Execute_OnPoolObjectDestroy(Actor);
+		}
 		Actor->Destroy();
 	}
 	return false;

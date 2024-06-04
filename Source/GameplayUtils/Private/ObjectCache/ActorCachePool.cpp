@@ -59,7 +59,12 @@ UObject* UActorCachePool::Retain()
 bool UActorCachePool::Release(UObject* Item)
 {
 	AActor* PoolActor = Cast<AActor>(Item);
-	if (PoolActor && ReleseDeferred(Item))
+	if (!PoolActor || PoolActor->IsPendingKillPending())
+	{
+		return false;
+	}
+
+	if (ReleseDeferred(Item))
 	{
 		UE_LOG(LogTemp, Log, TEXT("%s, %s"), *FString(__FUNCTION__), *GetNameSafe(Item));
 		

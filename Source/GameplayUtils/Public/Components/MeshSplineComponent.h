@@ -15,6 +15,7 @@ class GAMEPLAYUTILS_API UMeshSplineComponent : public USplineComponent
 	GENERATED_BODY()
 
 public:
+	UMeshSplineComponent();
 	virtual void BeginPlay();
 	virtual void EndPlay(EEndPlayReason::Type Reason);
 
@@ -22,8 +23,16 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void RebuildSpline(const TArray<FVector>& Points);
 
+	UFUNCTION(BlueprintCallable)
+	void RebuildLine(const FVector& StartPoint, const FVector& EndPoint);
+
 	//spline上到location最近的一个点到location的向量
+	UFUNCTION(BlueprintCallable)
 	FVector GetVectorToLocation(FVector Location);
+
+	//重置当前的mesh
+	UFUNCTION(BlueprintCallable)
+	void ResetSplineMeshes();
 
 public:
 	//mesh类型
@@ -38,15 +47,24 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cached Mesh")
 	FVector ResetLocation;
 
+	//Spline的碰撞配置
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cached Mesh")
+	TEnumAsByte<ECollisionEnabled::Type> CollisionType;
+
+	//Spline的起始缩放
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cached Mesh")
+	FVector2D StartScale;
+
+	//Spline的末端缩放
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cached Mesh")
+	FVector2D EndScale;
+
 protected:
 
 	virtual void InitResetData();
 
 	//获取spline mesh
 	virtual void GetSplineMeshes(int Num, TArray<USplineMeshComponent*>& OutSplineMeshes);
-
-	//重置当前的mesh
-	virtual void ResetSplineMeshes();
 
 	UFUNCTION()
 	virtual void NativeOnSplineMeshBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);

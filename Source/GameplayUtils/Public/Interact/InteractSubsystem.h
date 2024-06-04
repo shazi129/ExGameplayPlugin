@@ -65,6 +65,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetItemEnableByInterface(TScriptInterface<IInteractItemInterface> ItemInterface, bool Enable);
 
+	//某个配置的所有响应项是否可用
+	UFUNCTION(BlueprintCallable)
+	void SetItemEnableByName(FName ConfigName, bool Enable);
+
 	UFUNCTION(BlueprintCallable)
 	void ReceiveInput(const FGameplayTag& InputTag);
 
@@ -82,8 +86,12 @@ private:
 
 	virtual void RebuildInteractData();
 
+	//开始交互
 	void StartInteractItem(FInteractInstanceData* InstanceData);
+	//结束交互
 	void StopInteractItem(FInteractInstanceData* InstanceData);
+
+	void NotifyStatChange(UObject* Object, const FInteractInstanceData& InstanceData);
 
 private:
 	

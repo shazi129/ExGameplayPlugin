@@ -16,4 +16,24 @@ public:
 	*/
 	UFUNCTION(BlueprintPure)
 	static FVector2D RandPointInCircle(FVector2D CircleCenter, float CircleRadius);
+
+	/**
+	 * @brief 将一个线段分成N份
+	 * @param StartPoint 线段起始点
+	 * @param EndPoint  线段结束点
+	 * @param Num 
+	 * @return 
+	*/
+	UFUNCTION(BlueprintPure)
+	static TArray<FVector> SplitLineByLength(const FVector& StartPoint, const FVector& EndPoint, float UnitLength);
+
+	/**
+	 * @brief 将一个Rotator再旋转从StartVector到EdnVector的角度
+	 * @param Rotator 
+	 * @param StartVector 
+	 * @param EndVector 
+	 * @return 
+	*/
+	UFUNCTION(BlueprintPure)
+	static FRotator MakeRotBetweenVectors(const FRotator& Rotator, const FVector& StartVector, const FVector& EndVector);
 };

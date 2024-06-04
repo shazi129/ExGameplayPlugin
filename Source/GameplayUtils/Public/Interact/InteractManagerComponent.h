@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Actors/AbilityActor.h"
 #include "Interact/InteractItemComponent.h"
 #include "InteractManagerComponent.generated.h"
 

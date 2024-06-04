@@ -3,6 +3,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "GameFramework/PlayerState.h"
 #include "FunctionLibraries/PathHelperLibrary.h"
+#include "GameplayUtilsModule.h"
 
 bool UGameplayUtilsLibrary::ExecCommand(const FString& Command)
 {
@@ -41,6 +42,23 @@ bool UGameplayUtilsLibrary::ExecCommand(const FString& Command)
 	return GEngine->Exec(World, *Command);
 }
 
+bool UGameplayUtilsLibrary::FilterActorClasses(AActor* Actor, const TArray<TSubclassOf<AActor>>& ActorClasses)
+{
+	if (!Actor) return false;
+	if (ActorClasses.IsEmpty())
+	{
+		return true;
+	}
+	for (auto& ActorClass : ActorClasses)
+	{
+		if (Actor->IsA(ActorClass))
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void UGameplayUtilsLibrary::FilterActors(const TArray<AActor*>& Actors, const FFilterActorCondition FilterCondition, TArray<AActor*>& OutActors)
 {
 	check(&Actors != &OutActors)
@@ -68,7 +86,7 @@ void UGameplayUtilsLibrary::FilterActors(const TArray<AActor*>& Actors, const FF
 			continue;
 		}
 
-		if (!FilterCondition.FilterActorClasses(Actor))
+		if (!UGameplayUtilsLibrary::FilterActorClasses(Actor, FilterCondition.ActorClasses))
 		{
 			continue;
 		}
@@ -262,6 +280,17 @@ void UGameplayUtilsLibrary::SetComponentsTickEnable(TArray<UActorComponent*>& Co
 	}
 }
 
+bool UGameplayUtilsLibrary::IsSameWorld(const UWorld* World, const TSoftObjectPtr<UWorld>& TargetWorld)
+{
+	if (World && !TargetWorld.IsNull())
+	{
+		FString TargetWorldPath = TargetWorld.GetLongPackageName();
+		FString CurrentWorldPath = UPathHelperLibrary::GetPackageFullName(World);
+		return TargetWorldPath == CurrentWorldPath;
+	}
+	return false;
+}
+
 bool UGameplayUtilsLibrary::IsCurrentWorld(const UObject* WorldContextObject, const TSoftObjectPtr<UWorld>& TargetWorld)
 {
 	if (!WorldContextObject || TargetWorld.IsNull())
@@ -271,9 +300,7 @@ bool UGameplayUtilsLibrary::IsCurrentWorld(const UObject* WorldContextObject, co
 
 	if (UWorld* World = WorldContextObject->GetWorld())
 	{
-		FString TargetWorldPath = TargetWorld.GetLongPackageName();
-		FString CurrentWorldPath = UPathHelperLibrary::GetPackageFullName(World);
-		return TargetWorldPath == CurrentWorldPath;
+		return UGameplayUtilsLibrary::IsSameWorld(World, TargetWorld);
 	}
 
 	return false;
@@ -297,6 +324,171 @@ bool UGameplayUtilsLibrary::IsGameWorld(const UObject* WorldContextObject)
 		return false;
 	}
 
+	return true;
+}
+
+FTransform UGameplayUtilsLibrary::GetBoneTransform(USkinnedMeshComponent* SkinnedMeshComponent, int32 BoneIndex)
+{
+	if (SkinnedMeshComponent)
+	{
+		return SkinnedMeshComponent->GetBoneTransform(BoneIndex);
+	}
+	return FTransform::Identity;
+}
+
+TMap<FName, FTransform> UGameplayUtilsLibrary::GetBonesTransform(USkeletalMeshComponent* SkeletalMeshComponent, const TArray<FName>& BoneNames)
+{
+	TMap<FName, FTransform> Result;
+
+	if (!SkeletalMeshComponent || BoneNames.IsEmpty())
+	{
+		return MoveTemp(Result);
+	}
+	
+	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(SkeletalMeshComponent->GetSkinnedAsset());
+	if (!SkeletalMesh)
+	{
+		return MoveTemp(Result);
+	}
+
+	for (auto& BoneName : BoneNames)
+	{
+		if (!Result.Contains(BoneName))
+		{
+			int32 BoneIndex = SkeletalMeshComponent->GetBoneIndex(BoneName);
+
+			FTransform Transform = SkeletalMeshComponent->GetBoneTransform(BoneIndex, SkeletalMeshComponent->GetComponentTransform());
+			Result.Add(BoneName, Transform);
+		}
+	}
+
+	return MoveTemp(Result);
+}
+
+UActorComponent* UGameplayUtilsLibrary::GetComponentByName(AActor* Actor, const FString& ComponentName, UClass* CompClass)
+{
+	if (!Actor || ComponentName.IsEmpty())
+	{
+		return nullptr;
+	}
+
+	if (CompClass == nullptr)
+	{
+		CompClass = UActorComponent::StaticClass();
+	}
+
+	TArray<UActorComponent*> Components;
+	Actor->GetComponents(CompClass, Components);
+	if (Components.Num() == 0)
+	{
+		return nullptr;
+	}
+
+	for (auto Component : Components)
+	{
+		if (Component->GetName().Equals(ComponentName))
+		{
+			return Component;
+		}
+	}
+	return nullptr;
+}
+
+TArray<int32> UGameplayUtilsLibrary::RandomItemsByWeight(const UObject* WorldContextObject, const TArray<FItemWeightsEntry>& ItemWeightsEntryList, int32 ItemCount)
+{
+	TArray<int32> Result;
+
+	do 
+	{
+		if (!WorldContextObject || ItemCount <= 0 || ItemWeightsEntryList.Num() == 0)
+		{
+			break;
+		}
+
+		UWorld* World = WorldContextObject->GetWorld();
+		if (!World)
+		{
+			break;
+		}
+
+		//找到对应的World，先找TargetWorld匹配的，找不到用TargetWorld为null的
+		const FItemWeightsEntry* ItemWeightsEntryPtr = nullptr;
+
+		for (auto& WeightsEntry : ItemWeightsEntryList)
+		{
+			if (UGameplayUtilsLibrary::IsSameWorld(World, WeightsEntry.TargetWorld))
+			{
+				ItemWeightsEntryPtr = &WeightsEntry;
+				break;
+			}
+			else if (WeightsEntry.TargetWorld.IsNull())
+			{
+				ItemWeightsEntryPtr = &WeightsEntry;
+			}
+		}
+
+		if (!ItemWeightsEntryPtr)
+		{
+			break;
+		}
+
+		int32 TotalWeight = 0;
+		for (auto& ItemWeight : ItemWeightsEntryPtr->ItemWeightList)
+		{
+			TotalWeight += ItemWeight.Weight;
+		}
+
+		for (int ItemIndex = 0; ItemIndex < ItemCount; ItemIndex++)
+		{
+			int32 RandomWeight = FMath::RandRange(0, TotalWeight - 1);
+
+			// 根据随机数选择一个数字
+			for (auto& ItemWeight : ItemWeightsEntryPtr->ItemWeightList)
+			{
+				if (RandomWeight < ItemWeight.Weight)
+				{
+					Result.Add(ItemWeight.ItemID);
+					break;
+				}
+				RandomWeight -= ItemWeight.Weight;
+			}
+		}
+	}
+	while(false);
+
+	return MoveTemp(Result);
+}
+
+void UGameplayUtilsLibrary::SetInstanceNotifyRBCollision(UPrimitiveComponent* Component, bool bNewNotifyCollision)
+{
+	if (Component)
+	{
+		Component->BodyInstance.SetInstanceNotifyRBCollision(bNewNotifyCollision);
+	}
+}
+
+bool UGameplayUtilsLibrary::IsValid(UObject* Object)
+{
+	if (!Object || !IsValidChecked(Object))
+	{
+		return false;
+	}
+
+	if (AActor* Actor = Cast<AActor>(Object))
+	{
+		if (Actor->IsActorBeingDestroyed())
+		{
+			return false;
+		}
+	}
+	else if (UActorComponent* Component = Cast<UActorComponent>(Object))
+	{
+		AActor* Owner = Component->GetOwner();
+		if (!Owner || Owner->IsActorBeingDestroyed())
+		{
+			return false;
+		}
+	}
 	return true;
 }
 

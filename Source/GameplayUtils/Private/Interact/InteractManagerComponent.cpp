@@ -1,6 +1,7 @@
 ﻿#include "Interact/InteractManagerComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Interact/InteractSubsystem.h"
+#include "Actors/AbilityActor.h"
 
 void UInteractManagerComponent::BeginPlay()
 {

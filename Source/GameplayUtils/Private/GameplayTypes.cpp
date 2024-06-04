@@ -1,22 +1,5 @@
 #include "GameplayTypes.h"
 
-bool FFilterActorCondition::FilterActorClasses(AActor* Actor) const
-{
-	if (!Actor) return false;
-	if (ActorClasses.IsEmpty())
-	{
-		return true;
-	}
-	for (auto& ActorClass : ActorClasses)
-	{
-		if (Actor->IsA(ActorClass))
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
 bool FFilterActorCondition::FilterExcludeComponentClasses(AActor* Actor) const
 {
 	if (!Actor) return false;
@@ -58,9 +41,4 @@ bool FFilterActorCondition::FilterIgnoreActors(AActor* Actor) const
 		return true;
 	}
 	return false;
-}
-
-FString FGameplayMessage::ToString() const
-{
-	return FString::Printf(TEXT("Source:%s, Tag:%s, BodyType:%s"), *GetNameSafe(SourceObject), *MsgTag.ToString(), *GetNameSafe(MsgBody.GetScriptStruct()));
 }

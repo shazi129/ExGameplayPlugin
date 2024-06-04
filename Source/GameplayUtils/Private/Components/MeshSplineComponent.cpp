@@ -1,6 +1,13 @@
 #include "Components/MeshSplineComponent.h"
 #include "GameplayUtilsModule.h"
 
+UMeshSplineComponent::UMeshSplineComponent()
+{
+	CollisionType = ECollisionEnabled::Type::NoCollision;
+	StartScale.Set(1.0f, 1.0f);
+	EndScale.Set(1.0f, 1.0f);
+}
+
 void UMeshSplineComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -44,9 +51,19 @@ void UMeshSplineComponent::RebuildSpline(const TArray<FVector>& Points)
 			GetLocationAndTangentAtSplinePoint(i, StartLocation, StartTangent, ESplineCoordinateSpace::Local);
 			GetLocationAndTangentAtSplinePoint(i + 1, EndLocation, EndTangent, ESplineCoordinateSpace::Local);
 			MeshesInDisplay[i]->SetStartAndEnd(StartLocation, StartTangent, EndLocation, EndTangent, true);
+			MeshesInDisplay[i]->SetStartScale(StartScale);
+			MeshesInDisplay[i]->SetEndScale(EndScale);
 			MeshesInDisplay[i]->SetVisibility(ShowMesh);
 		}
 	}
+}
+
+void UMeshSplineComponent::RebuildLine(const FVector& StartPoint, const FVector& EndPoint)
+{
+	TArray<FVector> Points;
+	Points.Add(StartPoint);
+	Points.Add(EndPoint);
+	RebuildSpline(Points);
 }
 
 FVector UMeshSplineComponent::GetVectorToLocation(FVector Location)
@@ -95,7 +112,7 @@ void UMeshSplineComponent::GetSplineMeshes(int Num, TArray<USplineMeshComponent*
 	for (int i = 0; i < Num; i++)
 	{
 		SplineMeshes[i]->SetVisibility(ShowMesh);
-		SplineMeshes[i]->SetCollisionEnabled(ECollisionEnabled::Type::QueryOnly);
+		SplineMeshes[i]->SetCollisionEnabled(CollisionType);
 		OutSplineMeshes.Add(SplineMeshes[i]);
 	}
 	for (int i = Num; i < SplineMeshes.Num(); i++)

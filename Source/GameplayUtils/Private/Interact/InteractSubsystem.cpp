@@ -450,9 +450,10 @@ void UInteractSubsystem::RebuildInteractData()
 	//通知
 	for (auto& InstanceData : NotifyInstanceList)
 	{
-		if (InstanceData)
+		UObject* ItemObject = InstanceData->ItemInterface.GetObject();
+		if (InstanceData && ItemObject)
 		{
-			IInteractItemInterface::Execute_OnInteractStateChange(InstanceData->ItemInterface.GetObject(), *InstanceData);
+			NotifyStatChange(ItemObject, *InstanceData);
 			InstanceData->NeedNofity = false;
 		}
 	}
@@ -510,6 +511,11 @@ bool UInteractSubsystem::GetItemEnable(TScriptInterface<IInteractItemInterface> 
 
 void UInteractSubsystem::SetItemEnableByInterface(TScriptInterface<IInteractItemInterface> ItemInterface, bool Enable)
 {
+	if (InteractInstanceMap.Num() == 0)
+	{
+		return;
+	}
+
 	FObjectInstanceDataInfo* ObjectInstanceDataInfoPtr = InteractInstanceMap.Find(ItemInterface.GetObject());
 	if (ObjectInstanceDataInfoPtr)
 	{
@@ -525,6 +531,20 @@ void UInteractSubsystem::SetItemEnableByInterface(TScriptInterface<IInteractItem
 	
 }
 
+
+void UInteractSubsystem::SetItemEnableByName(FName ConfigName, bool Enable)
+{
+	for (auto& InstanceItem : InteractInstanceMap)
+	{
+		for (auto& Instance : InstanceItem.Value.InstanceDataList)
+		{
+			if (Instance.ConfigData.ConfigName == ConfigName)
+			{
+				Instance.Enable = Enable;
+			}
+		}
+	}
+}
 
 void UInteractSubsystem::ReceiveInput(const FGameplayTag& InputTag)
 {
@@ -568,6 +588,10 @@ void UInteractSubsystem::InternalStartInteractItem(TScriptInterface<IInteractIte
 	FInteractInstanceData* InstanceData = FindInstance(ItemObject, ConfigName);
 	if (InstanceData)
 	{
+		if (UInteractItemHandler* Handler = IInteractItemInterface::Execute_GetInteractHandler(ItemObject, InstanceData->ConfigData.ConfigName))
+		{
+			Handler->NativeExecute(*InstanceData);
+		}
 		IInteractItemInterface::Execute_StartInteract(ItemObject, *InstanceData);
 	}
 
@@ -577,7 +601,7 @@ void UInteractSubsystem::InternalStartInteractItem(TScriptInterface<IInteractIte
 		SetInteracting(InstanceData);
 		
 		//通知
-		IInteractItemInterface::Execute_OnInteractStateChange(ItemObject, *InstanceData);
+		NotifyStatChange(ItemObject, *InstanceData);
 	}
 }
 
@@ -596,6 +620,19 @@ void UInteractSubsystem::StopInteractItem(FInteractInstanceData* InstanceData)
 			ManagerComponent = Cast<UInteractManagerComponent>(InteractPawn->GetComponentByClass(UInteractManagerComponent::StaticClass()));
 		}
 		ManagerComponent->ServerRequestStopInteract(InstanceData->ItemInterface, InteractPawn.Get(), InstanceData->ConfigData.ConfigName);
+	}
+}
+
+void UInteractSubsystem::NotifyStatChange(UObject* Object, const FInteractInstanceData& InstanceData)
+{
+	if (Object)
+	{
+		UInteractItemHandler* Handler = IInteractItemInterface::Execute_GetStateChangeHandler(Object, InstanceData.ConfigData.ConfigName);
+		if (Handler)
+		{
+			Handler->NativeExecute(InstanceData);
+		}
+		IInteractItemInterface::Execute_OnInteractStateChange(Object, InstanceData);
 	}
 }
 

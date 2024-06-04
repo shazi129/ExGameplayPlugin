@@ -26,8 +26,11 @@ bool UExUserWidgetExtension::RequiresTick() const
 
 void UExUserWidgetExtension::Tick(const FGeometry& MyGeometry, float InDeltaTime)
 {
-	Super::Tick(MyGeometry, InDeltaTime);
-	ReceiveTick(MyGeometry, InDeltaTime);
+	if (bTickable)
+	{
+		Super::Tick(MyGeometry, InDeltaTime);
+		ReceiveTick(MyGeometry, InDeltaTime);
+	}
 }
 
 UUserWidget* UExUserWidgetExtension::GetOuterUserWidget()
@@ -55,7 +58,7 @@ UUserWidgetExtension* UExUserWidgetExtension::GetUserWidgetExtensionByName(UUser
 
 bool UExUserWidgetExtension::IsTickable_Implementation() const
 {
-	return false;
+	return bTickable;
 }
 
 

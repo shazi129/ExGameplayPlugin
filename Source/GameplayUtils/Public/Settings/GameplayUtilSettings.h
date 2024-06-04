@@ -16,21 +16,21 @@ public:
 	}
 
 	UPROPERTY(config, EditAnywhere, Category = "Basic")
-		bool EnableCheat = false;
+	bool EnableCheat = false;
 
 	UPROPERTY(config, EditAnywhere, Category = "Basic", meta = (DisplayName = "Cheat Manager Extension", ConfigRestartRequired = true))
-		TArray<TSoftClassPtr<UCheatManagerExtension>> CheatExtensionClasses;
+	TArray<TSoftClassPtr<UCheatManagerExtension>> CheatExtensionClasses;
 
 	UPROPERTY(config, EditAnywhere, Category = "Global Variables")
-		TMap<FName, bool> BoolVariables;
+	TMap<FName, bool> BoolVariables;
 
 	UPROPERTY(config, EditAnywhere, Category = "Global Variables")
-		TMap<FName, bool> IntVariables;
+	TMap<FName, bool> IntVariables;
 
 	UPROPERTY(config, EditAnywhere, Category = "Package")
-		TArray<TSoftObjectPtr<UObject>> PermanentObjects;
+	TArray<TSoftObjectPtr<UObject>> PermanentObjects;
 
 	//可用于业务自定义缓存池复制逻辑
 	UPROPERTY(config, EditAnywhere, Category = "ObjectCache")
-		TSoftClassPtr<class AObjectCacheReplicateActor> ObjectCacheReplicateActorClass;
+	TSoftClassPtr<class AObjectCacheReplicateActor> ObjectCacheReplicateActorClass;
 };

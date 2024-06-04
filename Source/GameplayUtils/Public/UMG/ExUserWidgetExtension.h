@@ -41,4 +41,8 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintCosmetic)
 	UUserWidget* GetOuterUserWidget();
+
+protected:
+	UPROPERTY(BlueprintReadWrite)
+	bool bTickable = true;
 };

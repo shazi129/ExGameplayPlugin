@@ -16,6 +16,22 @@ void UInteractItemComponent::BeginPlay()
 	{
 		Subsystem->RegisterInteractItem(this, GetOwner());
 	}
+
+	for (auto& HandlerItem : StateChangeHandlerMap)
+	{
+		if (HandlerItem.Value)
+		{
+			HandlerItem.Value->SetSourceObject(this);
+		}
+	}
+
+	for (auto& HandlerItem : InteractHandlerMap)
+	{
+		if (HandlerItem.Value)
+		{
+			HandlerItem.Value->SetSourceObject(this);
+		}
+	}
 }
 
 void UInteractItemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -108,6 +124,17 @@ void UInteractItemComponent::RemoveInteractingPawn_Implementation(const FName& C
 		}
 	}
 }
+
+UInteractItemHandler* UInteractItemComponent::GetStateChangeHandler_Implementation(const FName& ConfigName)
+{
+	return *StateChangeHandlerMap.Find(ConfigName.ToString());
+}
+
+UInteractItemHandler* UInteractItemComponent::GetInteractHandler_Implementation(const FName& ConfigName)
+{
+	return *InteractHandlerMap.Find(ConfigName.ToString());
+}
+
 
 
 

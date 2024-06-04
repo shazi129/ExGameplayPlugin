@@ -21,7 +21,7 @@ public:
 		* @return 完整包名
 	*/
 	UFUNCTION(BlueprintPure, Category = "Path Helper")
-	static FString GetPackageFullName(UObject* Object);
+	static FString GetPackageFullName(const UObject* Object);
 
 	/**
 	 * @brief 获取系统绝对路径，例如：../../Saved/Log -> C:/ProjectPath/Saved/Log

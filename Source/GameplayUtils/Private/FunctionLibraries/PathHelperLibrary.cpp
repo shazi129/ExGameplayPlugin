@@ -1,6 +1,6 @@
 #include "FunctionLibraries/PathHelperLibrary.h"
 
-FString UPathHelperLibrary::GetPackageFullName(UObject* Object)
+FString UPathHelperLibrary::GetPackageFullName(const UObject* Object)
 {
 	if (Object == nullptr)
 	{

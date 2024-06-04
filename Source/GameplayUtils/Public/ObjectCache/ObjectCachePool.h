@@ -14,20 +14,20 @@ class GAMEPLAYUTILS_API IObjectPoolInterface
 	GENERATED_BODY()
 
 public:
-	UFUNCTION(BlueprintNativeEvent, Category = "Object Cache Pool")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Object Cache Pool")
 	void OnObjectRetainFromPool();
 
-	UFUNCTION(BlueprintNativeEvent, Category = "Object Cache Pool")
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Object Cache Pool")
 	void OnObjectRetainFromPoolWithTransform(const FTransform& Transform);
 
 
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void OnPoolObjectCreate();
 
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void OnPoolObjectDestroy();
 
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void OnPoolObjectRelease();
 };
 

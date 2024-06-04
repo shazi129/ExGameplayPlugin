@@ -21,6 +21,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interact Config", meta = (DisplayThumbnail = "false"))
 	TArray<UInteractConfigAsset*> InteractConfigAssets;
 
+	UPROPERTY(EditAnywhere, Instanced, Category = "Interact Config")
+	TMap<FString, UInteractItemHandler*> StateChangeHandlerMap;
+
+	UPROPERTY(EditAnywhere, Instanced, Category = "Interact Config")
+	TMap<FString, UInteractItemHandler*> InteractHandlerMap;
+
 	UPROPERTY(BlueprintAssignable)
 	FOnInteractStateChange InteractStateChangeDelegate;
 
@@ -45,7 +51,11 @@ public:
 
 	virtual TArray<UInteractConfigAsset*> GetConfigAssets_Implementation() override {return InteractConfigAssets;}
 
+	virtual UInteractItemHandler* GetStateChangeHandler_Implementation(const FName& ConfigName);
+	virtual UInteractItemHandler* GetInteractHandler_Implementation(const FName& ConfigName);
+
 public:
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	TArray<FInteractReplicateData> InteractingInfoList;
+
 };

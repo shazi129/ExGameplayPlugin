@@ -36,7 +36,7 @@ public class GameplayUtils : ModuleRules
                 "MassEntity", 
                 "GameplayAbilities",
                 "DeveloperSettings",
-                "ModularGameplay",
+                "Niagara",
 				// ... add other public dependencies that you statically link with here ...
 			}
             );

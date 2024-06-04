@@ -10,6 +10,7 @@ UMovementTrackComponent::UMovementTrackComponent()
 void UMovementTrackComponent::BeginPlay()
 {
 	Super::BeginPlay();
+	SetComponentTickEnabled(false);
 }
 
 void UMovementTrackComponent::EndPlay(EEndPlayReason::Type Reason)
@@ -27,6 +28,8 @@ void UMovementTrackComponent::StartTrack(AActor* InTrackOwner)
 {
 	GAMEPLAYUTILS_LOG(Log, TEXT("%s"), *FString(__FUNCTION__));
 	bStartTrack = true;
+	SetComponentTickEnabled(true);
+
 	TrackOwner = InTrackOwner;
 	ReceiveStartTrack(InTrackOwner);
 }
@@ -143,6 +146,11 @@ void UMovementTrackComponent::UpdateTrack()
 	{
 		ResetSplineMeshes();
 		TrackSegments.Reset();
+
+		if (!bStartTrack)
+		{
+			SetComponentTickEnabled(false);
+		}
 		return;
 	}
 
