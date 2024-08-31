@@ -91,21 +91,18 @@ bool UInteractSubsystem::AddInteracts(TScriptInterface<IInteractItemInterface> I
 	FObjectInstanceDataInfo& InstanceDataInfo = InteractInstanceMap.Add(ItemObject);
 
 	//获取配置
-	TArray<UInteractConfigAsset*> ConfigAssets = IInteractItemInterface::Execute_GetConfigAssets(ItemObject);
-	for (auto ConfigAsset : ConfigAssets)
+	TArray<FInteractConfigData> ConfigDataList = IInteractItemInterface::Execute_GetInteractConfigs(ItemObject);
+	for (auto ConfigData : ConfigDataList)
 	{
-		if (ConfigAsset != nullptr)
-		{
-			//添加Instance数据
-			FInteractInstanceData * InstanceData = new(InstanceDataInfo.InstanceDataList) FInteractInstanceData(InteractItem, ItemActor, ConfigAsset->ConfigData);
+		//添加Instance数据
+		FInteractInstanceData * InstanceData = new(InstanceDataInfo.InstanceDataList) FInteractInstanceData(InteractItem, ItemActor, ConfigData);
 
-			//修正数据
-			for (int i = InstanceData->ConfigData.Ranges.Num() - 1; i >= 0; i--)
+		//修正数据
+		for (int i = InstanceData->ConfigData.Ranges.Num() - 1; i >= 0; i--)
+		{
+			if (InstanceData->ConfigData.Ranges[i].Angle <= 0)
 			{
-				if (InstanceData->ConfigData.Ranges[i].Angle <= 0)
-				{
-					InstanceData->ConfigData.Ranges.RemoveAt(i);
-				}
+				InstanceData->ConfigData.Ranges.RemoveAt(i);
 			}
 		}
 	}
@@ -116,7 +113,13 @@ bool UInteractSubsystem::AddInteracts(TScriptInterface<IInteractItemInterface> I
 
 bool UInteractSubsystem::CanInteract(const TScriptInterface<IInteractItemInterface>& InteractItem, APawn* Instigator, const FName& ConfigName)
 {
-	auto InstanceData = FindInstance(InteractItem.GetObject(), ConfigName);
+	UObject* Object = InteractItem.GetObject();
+	if (!UGameplayUtilsLibrary::IsValid(Object))
+	{
+		return false;
+	}
+
+	auto InstanceData = FindInstance(Object, ConfigName);
 	if (!InstanceData)
 	{
 		return false;
@@ -128,7 +131,7 @@ bool UInteractSubsystem::CanInteract(const TScriptInterface<IInteractItemInterfa
 
 	}
 
-	return true;
+	return IInteractItemInterface::Execute_CanInteract(Object, *InstanceData);
 }
 
 void UInteractSubsystem::UnregisterInteractItem(TScriptInterface<IInteractItemInterface> InInteractItem)
@@ -137,6 +140,24 @@ void UInteractSubsystem::UnregisterInteractItem(TScriptInterface<IInteractItemIn
 	if (!ItemObject)
 	{
 		return;
+	}
+
+	//重置下状态，通知出去做收尾处理
+	if (!bInServer)
+	{
+		FObjectInstanceDataInfo* ObjectInstanceDataInfoPtr = InteractInstanceMap.Find(InInteractItem.GetObject());
+		if (ObjectInstanceDataInfoPtr)
+		{
+			for (int i = 0; i < ObjectInstanceDataInfoPtr->InstanceDataList.Num(); i++)
+			{
+				FInteractInstanceData& InstanceData = ObjectInstanceDataInfoPtr->InstanceDataList[i];
+				if (InstanceData.InteractState != EInteractState::E_None)
+				{
+					InstanceData.InteractState = EInteractState::E_None;
+					NotifyStatChange(ItemObject, InstanceData);
+				}
+			}
+		}
 	}
 
 	InvalidateObjects.Add(ItemObject);
@@ -185,6 +206,8 @@ FInteractInstanceData* UInteractSubsystem::FindInstance(UObject* ItemObject, con
 void UInteractSubsystem::SetEnable(bool Enable)
 {
 	bEnabled = Enable;
+	//强制更新一遍
+	RebuildInteractData(true);
 }
 
 bool UInteractSubsystem::GetEnable()
@@ -194,8 +217,17 @@ bool UInteractSubsystem::GetEnable()
 
 void UInteractSubsystem::UpdateItem(FInteractInstanceData& InteractInstanceData)
 {
-	if (!bEnabled || !InteractPawn.IsValid() || !InteractInstanceData.IsValid())
+	//异常情况不做处理
+	if (!InteractPawn.IsValid() || !InteractInstanceData.IsValid())
 	{
+		return;
+	}
+
+	//如果不可用，状态直接设为None
+	if (!bEnabled || !InteractInstanceData.Enable)
+	{
+		InteractInstanceData.NeedNofity = InteractInstanceData.InteractState != EInteractState::E_None;
+		InteractInstanceData.InteractState = EInteractState::E_None;
 		return;
 	}
 
@@ -209,19 +241,6 @@ void UInteractSubsystem::UpdateItem(FInteractInstanceData& InteractInstanceData)
 			InteractInstanceData.InteractState = EInteractState::E_None;
 			return;
 		}
-	}
-
-	bool InstanceEnable = InteractInstanceData.Enable;
-
-	//非Enable的不用算
-	if (!InstanceEnable)
-	{
-		if (InteractInstanceData.InteractState != EInteractState::E_None)
-		{
-			InteractInstanceData.InteractState = EInteractState::E_None;
-			InteractInstanceData.NeedNofity = true;
-		}
-		return;
 	}
 
 	InteractInstanceData.Instigator = InteractPawn.Get();
@@ -355,9 +374,15 @@ void UInteractSubsystem::UpdateItem(FInteractInstanceData& InteractInstanceData)
 	InteractInstanceData.SubPotentialIndex = SubPotentialIndex;
 }
 
-void UInteractSubsystem::RebuildInteractData()
+void UInteractSubsystem::RebuildInteractData(bool bForce)
 {
-	if (!bEnabled || InteractInstanceMap.Num() == 0)
+	//如果没有交互组件，肯定不需要更新的
+	if (InteractInstanceMap.Num() == 0)
+	{
+		return;
+	}
+
+	if (!bEnabled && !bForce)
 	{
 		return;
 	}
@@ -487,6 +512,14 @@ void UInteractSubsystem::SortItems()
 		});
 }
 
+void UInteractSubsystem::StopNowInteractingItem()
+{
+	if (FInteractInstanceData* InteractingData = GetInteractingInstance())
+	{
+		StopInteractItem(InteractingData); 
+	}
+}
+
 
 void UInteractSubsystem::SetItemEnable(TScriptInterface<IInteractItemInterface> ItemInterface, const FName& ConfigName, bool Enable)
 {
@@ -531,6 +564,26 @@ void UInteractSubsystem::SetItemEnableByInterface(TScriptInterface<IInteractItem
 	
 }
 
+void UInteractSubsystem::StopInteractByInterface(TScriptInterface<IInteractItemInterface> ItemInterface)
+{
+	if (InteractInstanceMap.Num() == 0)
+	{
+		return;
+	}
+
+	FObjectInstanceDataInfo* ObjectInstanceDataInfoPtr = InteractInstanceMap.Find(ItemInterface.GetObject());
+	if (ObjectInstanceDataInfoPtr)
+	{
+		for (int i = 0; i < ObjectInstanceDataInfoPtr->InstanceDataList.Num(); i++)
+		{
+			FInteractInstanceData& InstanceData = ObjectInstanceDataInfoPtr->InstanceDataList[i];
+			if (InstanceData.ItemInterface == ItemInterface && InstanceData.InteractState == EInteractState::E_Interacting)
+			{
+				StopInteractItem(&InstanceData);
+			}
+		}
+	}
+}
 
 void UInteractSubsystem::SetItemEnableByName(FName ConfigName, bool Enable)
 {
@@ -548,19 +601,37 @@ void UInteractSubsystem::SetItemEnableByName(FName ConfigName, bool Enable)
 
 void UInteractSubsystem::ReceiveInput(const FGameplayTag& InputTag)
 {
+	if (!InputTag.IsValid())
+	{
+		UE_LOG(LogTemp, Error, TEXT("UInteractSubsystem::ReceiveInput error, Invalid Input Tag"));
+		return;
+	}
+
 	UE_LOG(LogTemp, Log, TEXT("UInteractSubsystem::ReceiveInput %s"), *InputTag.ToString());
 
+
+	int InteractIndex = 0;
 	for (int i = 0; i < InteractiveInstanceList.Num(); i++)
 	{
 		FInteractInstanceData* InstanceData = InteractiveInstanceList[i];
 		if (InstanceData && InstanceData->ConfigData.InputTag == InputTag && InstanceData->Enable)
 		{
-			if (i != 0 && InstanceData->ConfigData.OnlyInHighest)
+			if (InteractIndex != 0 && InstanceData->ConfigData.OnlyInHighest)
 			{
 				continue;
 			}
 
-			StartInteractItem(InstanceData);
+			UObject* Object = InstanceData->ItemInterface.GetObject();
+			if (UGameplayUtilsLibrary::IsValid(Object))
+			{
+				if (!IInteractItemInterface::Execute_CanInteract(Object, *InstanceData))
+				{
+					continue;
+				}
+
+				StartInteractItem(InstanceData);
+				InteractIndex++;
+			}
 		}
 	}
 }
@@ -578,7 +649,14 @@ void UInteractSubsystem::StartInteractItem(FInteractInstanceData* InstanceData)
 		{
 			ManagerComponent = Cast<UInteractManagerComponent>(InteractPawn->GetComponentByClass(UInteractManagerComponent::StaticClass()));
 		}
-		ManagerComponent->ServerRequestStartInteract(InstanceData->ItemInterface, InteractPawn.Get(), InstanceData->ConfigData.ConfigName);
+		if (ManagerComponent)
+		{
+			ManagerComponent->ServerRequestStartInteract(InstanceData->ItemInterface, InteractPawn.Get(), InstanceData->ConfigData.ConfigName);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("UInteractSubsystem::StartInteractItem error, Cannot find Manager Component"));
+		}
 	}
 }
 
@@ -588,10 +666,6 @@ void UInteractSubsystem::InternalStartInteractItem(TScriptInterface<IInteractIte
 	FInteractInstanceData* InstanceData = FindInstance(ItemObject, ConfigName);
 	if (InstanceData)
 	{
-		if (UInteractItemHandler* Handler = IInteractItemInterface::Execute_GetInteractHandler(ItemObject, InstanceData->ConfigData.ConfigName))
-		{
-			Handler->NativeExecute(*InstanceData);
-		}
 		IInteractItemInterface::Execute_StartInteract(ItemObject, *InstanceData);
 	}
 
@@ -627,11 +701,6 @@ void UInteractSubsystem::NotifyStatChange(UObject* Object, const FInteractInstan
 {
 	if (Object)
 	{
-		UInteractItemHandler* Handler = IInteractItemInterface::Execute_GetStateChangeHandler(Object, InstanceData.ConfigData.ConfigName);
-		if (Handler)
-		{
-			Handler->NativeExecute(InstanceData);
-		}
 		IInteractItemInterface::Execute_OnInteractStateChange(Object, InstanceData);
 	}
 }
@@ -639,6 +708,8 @@ void UInteractSubsystem::NotifyStatChange(UObject* Object, const FInteractInstan
 void UInteractSubsystem::InternalStopInteractItem(TScriptInterface<IInteractItemInterface> InteractItem, APawn* Instigator, const FName& ConfigName)
 {
 	UObject* ItemObject = InteractItem.GetObject();
+
+
 	FInteractInstanceData* InstanceData = FindInstance(ItemObject, ConfigName);
 	if (InstanceData)
 	{

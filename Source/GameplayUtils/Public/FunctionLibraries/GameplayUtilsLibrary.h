@@ -3,7 +3,54 @@
 #include "CoreMinimal.h"
 #include "GameplayTagsManager.h"
 #include "GameplayTypes.h"
+#include "AssetRegistry/ARFilter.h"
 #include "GameplayUtilsLibrary.generated.h"
+
+/**
+ * @brief 对FARFilter的蓝图导出
+*/
+USTRUCT(BlueprintType)
+struct GAMEPLAYUTILS_API FGameplayARFilter
+{
+	GENERATED_BODY()
+
+	//要过滤的Class
+	UPROPERTY(BlueprintReadWrite)
+	TArray<UClass*> Classes;
+
+	UPROPERTY(BlueprintReadWrite)
+	TArray<FName> PackagePaths;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bRecursivePaths = false;
+
+	UPROPERTY(BlueprintReadWrite)
+	bool bIncludeOnlyOnDiskAssets = false;
+
+	FARFilter MakeARFilter()  const;
+};
+
+/**
+ * @brief 对FAssetData的蓝图导出
+*/
+USTRUCT(BlueprintType)
+struct GAMEPLAYUTILS_API FGameplayAssetData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	FName PackageName;
+
+	UPROPERTY(BlueprintReadWrite)
+	FName PackagePath;
+
+	UPROPERTY(BlueprintReadWrite)
+	FName AssetName;
+
+	FGameplayAssetData(const FAssetData& AssetData);
+	FGameplayAssetData(){};
+};
+
 
 UCLASS()
 class GAMEPLAYUTILS_API UGameplayUtilsLibrary : public UBlueprintFunctionLibrary
@@ -18,9 +65,6 @@ public:
 	*/
 	UFUNCTION(BlueprintCallable, Category = "GameplayUtils")
 		static bool ExecCommand(const FString& Command);
-
-	UFUNCTION(BlueprintCallable, Category = "GameplayUtils")
-		static bool FilterActorClasses(AActor* Actor, const TArray<TSubclassOf<AActor>>& ActorClasses);
 
 	UFUNCTION(BlueprintCallable, Category = "GameplayUtils")
 		static void FilterActors(const TArray<AActor*>& Actors, const FFilterActorCondition FilterCondition, TArray<AActor*>& OutActors);
@@ -110,6 +154,15 @@ public:
 	static UActorComponent* GetComponentByName(AActor* Actor, const FString& ComponentName, UClass* CompClass=nullptr);
 
 	/**
+	 * @brief 获取Actor所有组件
+	 * @param Actor 
+	 * @param CompClass 
+	 * @return 
+	*/
+	UFUNCTION(BlueprintPure, Category = "GameplayUtils")
+	static TArray<UActorComponent*> GetComponentsByClass(AActor* Actor, UClass* CompClass=nullptr);
+
+	/**
 	 * @brief 根据权重配置随机获取道具
 	 * @param WorldContextObject 
 	 * @param ItemWeightsEntryList 权重配置
@@ -134,4 +187,38 @@ public:
 	*/
 	UFUNCTION(BlueprintPure, Category = "GameplayUtils")
 	static bool IsValid(UObject* Object);
+
+	UFUNCTION(BlueprintCallable, Category = "GameplayUtils")
+	static bool TickMoveTo(float DeltaTime, USceneComponent* TargetComp, const FVector& TargetLocation, float Speed);
+
+	/**
+	 * @brief 获取一个物体的Bounds
+	*/
+	UFUNCTION(BlueprintCallable, Category = "GameplayUtils")
+	static FBoxSphereBounds GetLocalBounds(USceneComponent* SceneComponent);
+
+	/**
+	 * @brief 将一个TagContainer中的Tag提取出来
+	 */
+	UFUNCTION(BlueprintPure, Category = "GameplayUtils")
+	static TArray<FGameplayTag> MakeTagArrayWithContainer(const FGameplayTagContainer& Container);
+
+
+	UFUNCTION(BlueprintCallable, Category="GameplayUtils")
+	static TArray<FGameplayAssetData> GetAssets(const FGameplayARFilter& GameplayARFilter);
+
+	UFUNCTION(BlueprintCallable)
+	static void SetConnectionTimeout(UObject* ContextObject, float Seconds);
+
+	UFUNCTION(BlueprintPure)
+	static bool CompareDigits(float A, float B, EDataCompareMode CompareMode);
+
+	UFUNCTION(BlueprintCallable)
+	static void ShutdownWorldNetDriver(UWorld* World);
+
+	UFUNCTION(BlueprintCallable)
+	static void CleanUpNetConnection(APlayerController* PlayerController);
+
+	UFUNCTION(BlueprintCallable)
+	static UObject* TryLoadSoftObjectPath(const FSoftObjectPath& SoftObjectPath, UClass* ObjectClass = nullptr);
 };

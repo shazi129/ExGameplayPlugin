@@ -1,7 +1,14 @@
-#pragma once
+﻿#pragma once
 
 #include "Extensions/UserWidgetExtension.h"
 #include "ExUserWidgetExtension.generated.h"
+
+/**
+ * @brief 
+ * 注意：由于在UserWidget中，创建Extension的方式：
+ * UUserWidgetExtension* Extension = NewObject<UUserWidgetExtension>(this, InExtensionType);
+ * 没有指定name为None， 可能导致Extension对象复用，所以最好在Dstruct中清除运行时数据
+*/
 
 UCLASS(BlueprintType)
 class GAMEPLAYUTILS_API UExUserWidgetExtension : public UUserWidgetExtension
@@ -12,7 +19,12 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintCosmetic)
 	static UUserWidgetExtension* GetUserWidgetExtensionByName(UUserWidget* UserWidget, FName ExtensionName);
 
+	UFUNCTION(BlueprintCallable, BlueprintCosmetic)
+	static UUserWidgetExtension* GetWidgetComponentExtensionByClass(class UWidgetComponent* Widget, TSubclassOf<UUserWidgetExtension> Class);
+
 public:
+	UExUserWidgetExtension();
+
 	virtual void Initialize();
 
 	virtual void Construct();
@@ -41,6 +53,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintCosmetic)
 	UUserWidget* GetOuterUserWidget();
+
+	UFUNCTION(BlueprintCallable, BlueprintCosmetic)
+	void SetVisibility(ESlateVisibility InVisibility);
 
 protected:
 	UPROPERTY(BlueprintReadWrite)

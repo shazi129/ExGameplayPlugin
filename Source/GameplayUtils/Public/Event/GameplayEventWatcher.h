@@ -2,6 +2,7 @@
 
 #include "GameplayObject.h"
 #include "InstancedStruct.h"
+#include "GameplayTags.h"
 #include "GameplayEventWatcher.generated.h"
 
 class UGameplayEventWatcher;

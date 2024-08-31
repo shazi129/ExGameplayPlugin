@@ -1,6 +1,10 @@
 ﻿#include "Interact/InteractItemComponent.h"
 #include "Interact/InteractSubsystem.h"
 #include "Net/UnrealNetwork.h"
+#include "GameplayUtilsModule.h"
+#include "FunctionLibraries/GameplayUtilsLibrary.h"
+
+//PRAGMA_DISABLE_OPTIMIZATION
 
 UInteractItemComponent::UInteractItemComponent()
 {
@@ -12,25 +16,89 @@ void UInteractItemComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	InteractAssetMap.Empty();
+	StateChangeHandlerMap.Empty();
+	InteractHandlerMap.Empty();
+
+	//优先从本身的配置中加载
+	for (auto& StateHandlerItem : StateChangeHandlerConfig)
+	{
+		auto HandlerClass = StateHandlerItem.Value.LoadSynchronous();
+		if (HandlerClass)
+		{
+			auto StateHandler = NewObject<UInteractItemHandler>(this, HandlerClass);
+			if (StateHandler)
+			{
+				StateHandler->SetSourceObject(this);
+				StateChangeHandlerMap.FindOrAdd(StateHandlerItem.Key) = StateHandler;
+			}
+		}
+	}
+
+	for (auto& HandlerConfigItem : InteractHandlerConfig)
+	{
+		auto HandlerClass = HandlerConfigItem.Value.LoadSynchronous();
+		if (HandlerClass)
+		{
+			auto InteractHandler = NewObject<UInteractItemHandler>(this, HandlerClass);
+			if (InteractHandler)
+			{
+				InteractHandler->SetSourceObject(this);
+				InteractHandlerMap.FindOrAdd(HandlerConfigItem.Key) = InteractHandler;
+			}
+		}
+	}
+
+	//再从配置文件中加载
+	for (auto& ConfigAssetPtr : InteractConfigAssets)
+	{
+		auto ConfigAsset = ConfigAssetPtr.LoadSynchronous();
+		if (!ConfigAsset || ConfigAsset->ConfigData.ConfigName.IsNone())
+		{
+			continue;
+		}
+
+		//忽略重复配置
+		FString ConfigName = ConfigAsset->ConfigData.ConfigName.ToString();
+		if (InteractAssetMap.Find(ConfigName))
+		{
+			GAMEPLAYUTILS_LOG(Error, TEXT("%s, duplicate interact asset in %s: %s"), *FString(__FUNCTION__), *GetNameSafe(GetOwner()), *ConfigName);
+			continue;
+		}
+		InteractAssetMap.Add(ConfigName, ConfigAsset);
+
+		//加载配置中的Handler
+		if (ConfigAsset->StateChangeHandler)
+		{
+			auto& HandlerPtr = StateChangeHandlerMap.FindOrAdd(ConfigName);
+			if (!HandlerPtr)
+			{
+				HandlerPtr = Cast<UInteractItemHandler>(UGameplayUtilsLibrary::CopyObject(ConfigAsset->StateChangeHandler, this));
+				if (HandlerPtr)
+				{
+					HandlerPtr->SetSourceObject(this);
+				}
+			}
+		}
+
+		if (ConfigAsset->InteractHandler)
+		{
+			auto& HandlerPtr = InteractHandlerMap.FindOrAdd(ConfigName);
+			if (!HandlerPtr)
+			{
+				HandlerPtr = Cast<UInteractItemHandler>(UGameplayUtilsLibrary::CopyObject(ConfigAsset->InteractHandler, this));
+				if (HandlerPtr)
+				{
+					HandlerPtr->SetSourceObject(this);
+				}
+			}
+		}
+	}
+
+
 	if (UInteractSubsystem* Subsystem = UInteractSubsystem::Get(this))
 	{
 		Subsystem->RegisterInteractItem(this, GetOwner());
-	}
-
-	for (auto& HandlerItem : StateChangeHandlerMap)
-	{
-		if (HandlerItem.Value)
-		{
-			HandlerItem.Value->SetSourceObject(this);
-		}
-	}
-
-	for (auto& HandlerItem : InteractHandlerMap)
-	{
-		if (HandlerItem.Value)
-		{
-			HandlerItem.Value->SetSourceObject(this);
-		}
 	}
 }
 
@@ -63,6 +131,12 @@ void UInteractItemComponent::OnInteractStateChange_Implementation(const FInterac
 	{
 		InteractStateChangeDelegate.Broadcast(InteractData);
 	}
+
+	UInteractItemHandler* Handler = GetStateChangeHandler(InteractData.ConfigData.ConfigName);
+	if (Handler)
+	{
+		Handler->NativeExecute(InteractData);
+	}
 }
 
 bool UInteractItemComponent::CanInteract_Implementation(const FInteractInstanceData& InteractData)
@@ -80,6 +154,24 @@ void UInteractItemComponent::StartInteract_Implementation(const FInteractInstanc
 	if (StartInteractDelegate.IsBound())
 	{
 		StartInteractDelegate.Broadcast(InteractData);
+	}
+
+	if (UInteractItemHandler* Handler = GetInteractHandler(InteractData.ConfigData.ConfigName))
+	{
+		Handler->NativeExecute(InteractData);
+	}
+}
+
+void UInteractItemComponent::EndInteract_Implementation(const FInteractInstanceData& InteractData)
+{
+	if (EndInteractDelegate.IsBound())
+	{
+		StartInteractDelegate.Broadcast(InteractData);
+	}
+
+	if (UInteractItemHandler* Handler = GetInteractHandler(InteractData.ConfigData.ConfigName))
+	{
+		Handler->NativeExecute(InteractData);
 	}
 }
 
@@ -125,16 +217,35 @@ void UInteractItemComponent::RemoveInteractingPawn_Implementation(const FName& C
 	}
 }
 
-UInteractItemHandler* UInteractItemComponent::GetStateChangeHandler_Implementation(const FName& ConfigName)
+TArray<FInteractConfigData> UInteractItemComponent::GetInteractConfigs_Implementation()
 {
-	return *StateChangeHandlerMap.Find(ConfigName.ToString());
+	TArray<FInteractConfigData> Result;
+	for (auto& ConfigItem : InteractAssetMap)
+	{
+		if (ConfigItem.Value)
+		{
+			Result.Add(ConfigItem.Value->ConfigData);
+		}
+	}
+	return MoveTemp(Result);
 }
 
-UInteractItemHandler* UInteractItemComponent::GetInteractHandler_Implementation(const FName& ConfigName)
+UInteractItemHandler* UInteractItemComponent::GetStateChangeHandler(const FName& ConfigName)
 {
-	return *InteractHandlerMap.Find(ConfigName.ToString());
+	if (auto HandlerPtr = StateChangeHandlerMap.Find(ConfigName.ToString()))
+	{
+		return *HandlerPtr;
+	}
+	return nullptr;
 }
 
+UInteractItemHandler* UInteractItemComponent::GetInteractHandler(const FName& ConfigName)
+{
+	if (auto HandlerPtr = InteractHandlerMap.Find(ConfigName.ToString()))
+	{
+		return *HandlerPtr;
+	}
+	return nullptr;
+}
 
-
-
+//PRAGMA_ENABLE_OPTIMIZATION

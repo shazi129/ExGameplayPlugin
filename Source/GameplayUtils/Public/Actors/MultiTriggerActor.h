@@ -1,16 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/ActorTriggerComponent.h"
 #include "MultiTriggerActor.generated.h"
 
-USTRUCT()
-struct GAMEPLAYUTILS_API FActorOverlapInfo
-{
-	GENERATED_BODY()
-
-	TWeakObjectPtr<AActor> Actor;
-	TArray<TWeakObjectPtr<UPrimitiveComponent>> Components;
-};
 
 UCLASS(BlueprintType)
 class GAMEPLAYUTILS_API AMultiTriggerActor : public AActor
@@ -33,5 +26,5 @@ protected:
 	void OnTriggerEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 private:
-	TArray<FActorOverlapInfo> OverlappingInfoList;
+	TArray<FTriggeredActorInfo> OverlappingInfoList;
 };

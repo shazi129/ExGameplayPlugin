@@ -26,3 +26,9 @@ FString UTimeHelperLibrary::FormatNowString(const FString& Format)
 {
 	return FDateTime::Now().ToString(*Format);
 }
+
+FString UTimeHelperLibrary::FormatTimestampString(int64 TimestampSec, const FString& Format)
+{
+	FDateTime DateTime = FDateTime::FromUnixTimestamp(TimestampSec);
+	return DateTime.ToString(*Format);
+}

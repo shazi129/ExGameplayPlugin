@@ -35,3 +35,24 @@ FString UPathHelperLibrary::GetExternalAbsolutePath(const FString& RelativePath)
 	IFileManager& FileManager = IFileManager::Get();
 	return FileManager.ConvertToAbsolutePathForExternalAppForWrite(*RelativePath);
 }
+
+FString UPathHelperLibrary::ConvertPackagePathToClassPath(const FString& PackageFullPath)
+{
+	FString PackageShortName = FPackageName::GetShortName(PackageFullPath);
+	FString ClassPath = FString::Printf(TEXT("%s.%s_C"), *PackageFullPath, *PackageShortName);
+	return MoveTemp(ClassPath);
+}
+
+FString UPathHelperLibrary::GetPathName(UObject* Object)
+{
+	if (Object)
+	{
+		return Object->GetPathName();
+	}
+	return FString();
+}
+
+FString UPathHelperLibrary::GetSoftPtrPathName(TSoftObjectPtr<UObject> ObjectPtr)
+{
+	return ObjectPtr.GetLongPackageName();
+}

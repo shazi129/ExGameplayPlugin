@@ -4,6 +4,28 @@
 #include "GameFramework/PlayerState.h"
 #include "FunctionLibraries/PathHelperLibrary.h"
 #include "GameplayUtilsModule.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+
+FARFilter FGameplayARFilter::MakeARFilter() const
+{
+	FARFilter ArFilter;
+
+	for (auto Class : Classes)
+	{
+		ArFilter.ClassPaths.Add(Class->GetClassPathName());
+	}
+	ArFilter.PackagePaths = PackagePaths;
+	ArFilter.bRecursivePaths = bRecursivePaths;
+	ArFilter.bIncludeOnlyOnDiskAssets = bIncludeOnlyOnDiskAssets;
+	return MoveTemp(ArFilter);
+}
+
+FGameplayAssetData::FGameplayAssetData(const FAssetData& AssetData)
+{
+	PackageName = AssetData.PackageName;
+	PackagePath = AssetData.PackagePath;
+	AssetName = AssetData.AssetName;
+}
 
 bool UGameplayUtilsLibrary::ExecCommand(const FString& Command)
 {
@@ -42,22 +64,6 @@ bool UGameplayUtilsLibrary::ExecCommand(const FString& Command)
 	return GEngine->Exec(World, *Command);
 }
 
-bool UGameplayUtilsLibrary::FilterActorClasses(AActor* Actor, const TArray<TSubclassOf<AActor>>& ActorClasses)
-{
-	if (!Actor) return false;
-	if (ActorClasses.IsEmpty())
-	{
-		return true;
-	}
-	for (auto& ActorClass : ActorClasses)
-	{
-		if (Actor->IsA(ActorClass))
-		{
-			return true;
-		}
-	}
-	return false;
-}
 
 void UGameplayUtilsLibrary::FilterActors(const TArray<AActor*>& Actors, const FFilterActorCondition FilterCondition, TArray<AActor*>& OutActors)
 {
@@ -65,62 +71,58 @@ void UGameplayUtilsLibrary::FilterActors(const TArray<AActor*>& Actors, const FF
 
 	for (auto& Actor : Actors)
 	{
-		if (!Actor)
+		if (FilterCondition.FilterActor(Actor))
 		{
-			continue;
+			OutActors.Add(Actor);
 		}
-
-		//检查是否ignore
-		if (!FilterCondition.FilterIgnoreActors(Actor))
-		{
-			continue;
-		}
-
-		if (!FilterCondition.FilterExcludeComponentClasses(Actor))
-		{
-			continue;
-		}
-
-		if (!FilterCondition.FilterRequireComponentClasses(Actor))
-		{
-			continue;
-		}
-
-		if (!UGameplayUtilsLibrary::FilterActorClasses(Actor, FilterCondition.ActorClasses))
-		{
-			continue;
-		}
-
-		OutActors.Add(Actor);
 	}
 }
 
 bool UGameplayUtilsLibrary::CheckExecNetMode(const UObject* WorldContextObject, EExecNetMode ExecNetMode)
 {
+	if (ExecNetMode == EExecNetMode::E_Aways)
+	{
+		return true;
+	}
+
 	if (!WorldContextObject)
 	{
 		return false;
 	}
+
 	if (const UWorld* World = WorldContextObject->GetWorld())
 	{
 		ENetMode NetMode = World->GetNetMode();
-		if (ExecNetMode == EExecNetMode::E_Server)
+
+		switch(ExecNetMode)
 		{
-			return NetMode == ENetMode::NM_DedicatedServer || NetMode == ENetMode::NM_ListenServer  || NetMode == ENetMode::NM_Standalone;
+			case EExecNetMode::E_Server:
+			{
+				return NetMode == ENetMode::NM_DedicatedServer || NetMode == ENetMode::NM_ListenServer  || NetMode == ENetMode::NM_Standalone;
+			}
+			case EExecNetMode::E_Client:
+			{
+				return NetMode == ENetMode::NM_Client || NetMode == ENetMode::NM_ListenServer || NetMode == ENetMode::NM_Standalone;
+			}
+			case EExecNetMode::E_ExactClient:
+			{
+				return NetMode == ENetMode::NM_Client;
+			}
+			case EExecNetMode::E_ExactServer:
+			{
+				return NetMode == ENetMode::NM_DedicatedServer || NetMode == ENetMode::NM_ListenServer;
+			}
+			case EExecNetMode::E_Client_Server:
+			{
+				return NetMode == ENetMode::NM_Standalone || NetMode == ENetMode::NM_ListenServer;
+			}
+			case EExecNetMode::E_Standalone:
+			{
+				return NetMode == ENetMode::NM_Standalone;
+			}
+			default:
+				return false;
 		}
-		else if (ExecNetMode == EExecNetMode::E_Client)
-		{
-			return NetMode == ENetMode::NM_Client || NetMode == ENetMode::NM_ListenServer || NetMode == ENetMode::NM_Standalone;
-		}
-		else if (ExecNetMode == EExecNetMode::E_ExactClient)
-		{
-			return NetMode == ENetMode::NM_Client;
-		}
-		else if (ExecNetMode == EExecNetMode::E_ExactServer)
-		{
-			return NetMode == ENetMode::NM_DedicatedServer || NetMode == ENetMode::NM_ListenServer;
-		}
-		return true;
 	}
 	return false;
 }
@@ -367,7 +369,7 @@ TMap<FName, FTransform> UGameplayUtilsLibrary::GetBonesTransform(USkeletalMeshCo
 
 UActorComponent* UGameplayUtilsLibrary::GetComponentByName(AActor* Actor, const FString& ComponentName, UClass* CompClass)
 {
-	if (!Actor || ComponentName.IsEmpty())
+	if (!Actor)
 	{
 		return nullptr;
 	}
@@ -386,12 +388,28 @@ UActorComponent* UGameplayUtilsLibrary::GetComponentByName(AActor* Actor, const 
 
 	for (auto Component : Components)
 	{
-		if (Component->GetName().Equals(ComponentName))
+		if (ComponentName.IsEmpty() || Component->GetName().Equals(ComponentName))
 		{
 			return Component;
 		}
 	}
 	return nullptr;
+}
+
+TArray<UActorComponent*> UGameplayUtilsLibrary::GetComponentsByClass(AActor* Actor, UClass* CompClass)
+{
+	TArray<UActorComponent*> Result;
+	if (!Actor)
+	{
+		return MoveTemp(Result);
+	}
+
+	if (CompClass == nullptr)
+	{
+		CompClass = UActorComponent::StaticClass();
+	}
+	Actor->GetComponents(CompClass, Result);
+	return MoveTemp(Result);
 }
 
 TArray<int32> UGameplayUtilsLibrary::RandomItemsByWeight(const UObject* WorldContextObject, const TArray<FItemWeightsEntry>& ItemWeightsEntryList, int32 ItemCount)
@@ -492,3 +510,166 @@ bool UGameplayUtilsLibrary::IsValid(UObject* Object)
 	return true;
 }
 
+bool UGameplayUtilsLibrary::TickMoveTo(float DeltaTime, USceneComponent* TargetComp, const FVector& TargetLocation, float Speed)
+{
+	if (!TargetComp)
+	{
+		GAMEPLAYUTILS_LOG(Error, TEXT("%s error, target component is null"), *FString(__FUNCTION__));
+		return false;
+	}
+
+	FVector CurrentLocation = TargetComp->GetComponentLocation();
+	FVector Direction = TargetLocation - CurrentLocation;
+	if (Direction.IsNearlyZero(0.01))
+	{
+		return true;
+	}
+
+	//如果下一帧会走过，直接设置到目标位置
+	if (Direction.Size() < Speed * DeltaTime)
+	{
+		TargetComp->SetWorldLocation(TargetLocation, false, nullptr, ETeleportType::None);
+		return true;
+	}
+
+	//根据速度算出移动距离
+	Direction.Normalize(0.01);
+	FVector NewLocation = CurrentLocation + Direction * Speed * DeltaTime;
+	TargetComp->SetWorldLocation(NewLocation, false, nullptr, ETeleportType::None);
+
+	return false;
+}
+
+FBoxSphereBounds UGameplayUtilsLibrary::GetLocalBounds(USceneComponent* SceneComponent)
+{
+	if (SceneComponent)
+	{
+		return SceneComponent->GetLocalBounds();
+	}
+
+	FBoxSphereBounds NewBounds;
+	NewBounds.Origin = FVector::ZeroVector;
+	NewBounds.BoxExtent = FVector::ZeroVector;
+	NewBounds.SphereRadius = 0.f;
+	return MoveTemp(NewBounds);
+}
+
+TArray<FGameplayTag> UGameplayUtilsLibrary::MakeTagArrayWithContainer(const FGameplayTagContainer& Container)
+{
+	TArray<FGameplayTag> Result;
+	for (const FGameplayTag& Tag : Container)
+	{
+		Result.Add(Tag);
+	}
+
+	return MoveTemp(Result);
+}
+
+TArray<FGameplayAssetData> UGameplayUtilsLibrary::GetAssets(const FGameplayARFilter& GameplayARFilter)
+{
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	TArray<FAssetData> AssetDataList;
+	AssetDataList.Empty();
+
+	FARFilter ARFilter = GameplayARFilter.MakeARFilter();
+	AssetRegistry.GetAssets(ARFilter, AssetDataList);
+
+	TArray<FGameplayAssetData> Result;
+	for (auto& AssetData : AssetDataList)
+	{
+		Result.Add(FGameplayAssetData(AssetData));
+	}
+	return MoveTemp(Result);
+}
+
+void UGameplayUtilsLibrary::SetConnectionTimeout(UObject* ContextObject, float Seconds)
+{
+	if (!ContextObject)
+	{
+		UE_LOG(LogTemp, Error, TEXT("UGameplayUtilsLibrary::SetConnectionTimeout error, context object is null"));
+		return;
+	}
+	UWorld* World = ContextObject->GetWorld();
+	if (!World)
+	{
+		UE_LOG(LogTemp, Error, TEXT("UGameplayUtilsLibrary::SetConnectionTimeout failed, cannot find world by %s"), *GetNameSafe(ContextObject));
+		return;
+	}
+
+	UNetDriver* NetDriver = World->GetNetDriver();
+	if (!NetDriver)
+	{
+		UE_LOG(LogTemp, Error, TEXT("UGameplayUtilsLibrary::SetConnectionTimeout failed, cannot find NetDriver by %s"), *GetNameSafe(World));
+		return;
+	}
+
+	NetDriver->bNoTimeouts = false;
+	NetDriver->ConnectionTimeout = Seconds;
+	NetDriver->TimeoutMultiplierForUnoptimizedBuilds = 1;
+}
+
+bool UGameplayUtilsLibrary::CompareDigits(float A, float B, EDataCompareMode CompareMode)
+{
+	switch (CompareMode)
+	{
+	case EDataCompareMode::SmallerThan:
+		return A < B;
+	case EDataCompareMode::BiggerThan:
+		return A > B;
+	case EDataCompareMode::Equal:
+		return A == B;
+	default:
+		break;
+	}
+	return false;
+}
+
+void UGameplayUtilsLibrary::ShutdownWorldNetDriver(UWorld* World)
+{
+	if (!World)
+	{
+		UE_LOG(LogTemp, Error, TEXT("UPartyGameBPLibrary::ShutdownWorldNetDriver failed, world is null"));
+	}
+
+	UNetDriver* NetDriver = World->GetNetDriver();
+	if (!NetDriver)
+	{
+		return;
+	}
+
+	//如果不在tick中，可以当帧关掉，否则等到下一帧
+	if (!NetDriver->IsInTick())
+	{
+		GEngine->ShutdownWorldNetDriver(World);
+		return;
+	}
+
+	World->GetTimerManager().SetTimerForNextTick([World]()
+	{
+		GEngine->ShutdownWorldNetDriver(World);
+	});
+}
+
+void UGameplayUtilsLibrary::CleanUpNetConnection(APlayerController* PlayerController)
+{
+	UE_LOG(LogTemp, Log, TEXT("UGameplayUtilsLibrary::CleanUpNetConnection %s"), *GetNameSafe(PlayerController));
+	if (!PlayerController || !PlayerController->NetConnection)
+	{
+		return;
+	}
+
+	PlayerController->NetConnection->Close();
+	//PlayerController->NetConnection->CleanUp();
+}
+
+UObject* UGameplayUtilsLibrary::TryLoadSoftObjectPath(const FSoftObjectPath& SoftObjectPath, UClass* ObjectClass)
+{
+	UObject* Object = SoftObjectPath.TryLoad();
+	if (Object && ObjectClass && Object->IsA(ObjectClass))
+	{
+		return Object;
+	}
+	return nullptr;
+}

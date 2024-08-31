@@ -37,6 +37,8 @@ public class GameplayUtils : ModuleRules
                 "GameplayAbilities",
                 "DeveloperSettings",
                 "Niagara",
+                "RenderCore",
+                "NetCore"
 				// ... add other public dependencies that you statically link with here ...
 			}
             );

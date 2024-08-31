@@ -1,7 +1,7 @@
-#include "Interact/Handlers/InteractItemHandler_ShowWidget.h"
+﻿#include "Interact/Handlers/InteractItemHandler_ShowWidgetComponent.h"
 #include "GameplayUtilsModule.h"
 
-void UInteractItemHandler_ShowWidget::NativeExecute(const FInteractInstanceData& InstanceData)
+void UInteractItemHandler_ShowWidgetComponent::NativeExecute(const FInteractInstanceData& InstanceData)
 {
 	bool Visible = false;
 	if (InstanceData.InteractState == EInteractState::E_Interactive || InstanceData.InteractState == EInteractState::E_Potential)
@@ -14,7 +14,7 @@ void UInteractItemHandler_ShowWidget::NativeExecute(const FInteractInstanceData&
 	}
 }
 
-void UInteractItemHandler_ShowWidget::NativeOnSourceObjectChange(UObject* OldSourceObject, UObject* NewSourceObject)
+void UInteractItemHandler_ShowWidgetComponent::NativeOnSourceObjectChange(UObject* OldSourceObject, UObject* NewSourceObject)
 {
 	AActor* WidgetOwner = GetSourceActor();
 	if (WidgetOwner == nullptr)

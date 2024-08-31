@@ -33,7 +33,7 @@ public:
 
 	//获取交互配置
 	UFUNCTION(BlueprintNativeEvent)
-	TArray<UInteractConfigAsset*> GetConfigAssets();
+	TArray<FInteractConfigData> GetInteractConfigs();
 
 	//某个配置上有几个角色在交互
 	UFUNCTION(BlueprintNativeEvent)
@@ -46,10 +46,4 @@ public:
 	//某个配置上有几个角色在交互
 	UFUNCTION(BlueprintNativeEvent)
 	void RemoveInteractingPawn(const FName& ConfigName, APawn* Pawn);
-
-	UFUNCTION(BlueprintNativeEvent)
-	UInteractItemHandler* GetStateChangeHandler(const FName& ConfigName);
-
-	UFUNCTION(BlueprintNativeEvent)
-	UInteractItemHandler* GetInteractHandler(const FName& ConfigName);
 }; 

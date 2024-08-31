@@ -65,6 +65,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetItemEnableByInterface(TScriptInterface<IInteractItemInterface> ItemInterface, bool Enable);
 
+	//停止某个响应
+	UFUNCTION(BlueprintCallable)
+	void StopInteractByInterface(TScriptInterface<IInteractItemInterface> ItemInterface);
+
 	//某个配置的所有响应项是否可用
 	UFUNCTION(BlueprintCallable)
 	void SetItemEnableByName(FName ConfigName, bool Enable);
@@ -77,6 +81,9 @@ public:
 	//对可响应的列表进行排序，选出最高优先级的物体
 	void SortItems();
 
+	//停止当前正在交互物体
+	UFUNCTION(BlueprintCallable)
+	void StopNowInteractingItem();
 private:
 	UFUNCTION()
 	void Tick(float Seconds);
@@ -84,7 +91,8 @@ private:
 	//根据Component和配置名找数据
 	FInteractInstanceData* FindInstance(UObject* ItemObject, const FName& ConfigName);
 
-	virtual void RebuildInteractData();
+	//重建交互信息，bForce：是否强制重建
+	virtual void RebuildInteractData(bool bForce = false);
 
 	//开始交互
 	void StartInteractItem(FInteractInstanceData* InstanceData);

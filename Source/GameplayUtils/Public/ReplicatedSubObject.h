@@ -38,9 +38,11 @@
  *			DOREPLIFETIME_CONDITION(AMyActor, SubObject, COND_None);
  *		}
  * }
+ * 
+ * 也可以直接使用ReplicatedSubObjectComponent.h
 */
 
-UCLASS()
+UCLASS(BlueprintType)
 class GAMEPLAYUTILS_API UReplicatedSubObject : public UObject
 {
 	GENERATED_BODY()
@@ -48,9 +50,38 @@ class GAMEPLAYUTILS_API UReplicatedSubObject : public UObject
 public:
 	UReplicatedSubObject();
 
+	virtual void Initialize();
+	virtual void Deinitialize();
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	virtual bool IsNameStableForNetworking() const override;
 	virtual bool IsSupportedForNetworking() const override;
 	virtual void PreNetReceive() override;
 	virtual void PostNetReceive() override;
 
+	virtual int32 GetFunctionCallspace(UFunction* Function, FFrame* Stack) override;
+	virtual bool CallRemoteFunction(UFunction* Function, void* Parameters, FOutParmRec* OutParms, FFrame* Stack);
+
+	virtual void PreDestroyFromReplication();
+
+public:
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ReceiveInitialize();
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void ReceiveDeInitialize();
+
+	UFUNCTION(BlueprintCallable)
+	bool HasTag(const FString& Tag);
+
+	UFUNCTION(BlueprintCallable)
+	void AddTag(const FString& Tag);
+
+	UFUNCTION(BlueprintCallable)
+	TArray<FString> GetTags();
+
+protected:
+	UPROPERTY(Replicated)
+	TArray<FString> ObjectTags;
 };

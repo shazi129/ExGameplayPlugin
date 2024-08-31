@@ -1,6 +1,7 @@
 ﻿#include "Event/Watchers/GameplayEventWatcher_WaitOwnerHit.h"
 #include "FunctionLibraries/GameplayUtilsLibrary.h"
 #include "GameplayUtilsModule.h"
+#include "GameplayUtils.h"
 
 FInstancedStruct FHitResultContext::MakeContext(UPrimitiveComponent* InHitComp, AActor* InOtherActor, UPrimitiveComponent* InOtherComp, FVector InNormalImpulse, const FHitResult& InHit)
 {
@@ -51,7 +52,7 @@ void UGameplayEventWatcher_WaitOwnerHit::Deactivate()
 
 void UGameplayEventWatcher_WaitOwnerHit::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-	if (!UGameplayUtilsLibrary::FilterActorClasses(OtherActor, ActorClasses))
+	if (!GameplayUtils::FilterActorClasses(OtherActor, ActorClasses))
 	{
 		return;
 	}

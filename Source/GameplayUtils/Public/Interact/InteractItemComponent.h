@@ -19,13 +19,15 @@ public:
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Interact Config", meta = (DisplayThumbnail = "false"))
-	TArray<UInteractConfigAsset*> InteractConfigAssets;
+	TArray<TSoftObjectPtr<UInteractConfigAsset>> InteractConfigAssets;
 
-	UPROPERTY(EditAnywhere, Instanced, Category = "Interact Config")
-	TMap<FString, UInteractItemHandler*> StateChangeHandlerMap;
+	//特殊的状态变化处理
+	UPROPERTY(EditAnywhere, Category = "Interact Config")
+	TMap<FString, TSoftClassPtr<UInteractItemHandler>> StateChangeHandlerConfig;
 
-	UPROPERTY(EditAnywhere, Instanced, Category = "Interact Config")
-	TMap<FString, UInteractItemHandler*> InteractHandlerMap;
+	//特殊的交互处理
+	UPROPERTY(EditAnywhere, Category = "Interact Config")
+	TMap<FString, TSoftClassPtr<UInteractItemHandler>> InteractHandlerConfig;
 
 	UPROPERTY(BlueprintAssignable)
 	FOnInteractStateChange InteractStateChangeDelegate;
@@ -42,6 +44,7 @@ public:
 	virtual void OnInteractStateChange_Implementation(const FInteractInstanceData& InteractData) override;
 	virtual bool CanInteract_Implementation(const FInteractInstanceData& InteractData) override;
 	virtual void StartInteract_Implementation(const FInteractInstanceData& InteractData) override;
+	virtual void EndInteract_Implementation(const FInteractInstanceData& InteractData) override;
 
 
 	virtual int32 GetInteractingNum_Implementation(FName const& ConfigName);
@@ -49,13 +52,21 @@ public:
 	virtual void RemoveInteractingPawn_Implementation(const FName& ConfigName, APawn* Pawn);
 
 
-	virtual TArray<UInteractConfigAsset*> GetConfigAssets_Implementation() override {return InteractConfigAssets;}
+	virtual TArray<FInteractConfigData> GetInteractConfigs_Implementation();
 
-	virtual UInteractItemHandler* GetStateChangeHandler_Implementation(const FName& ConfigName);
-	virtual UInteractItemHandler* GetInteractHandler_Implementation(const FName& ConfigName);
+	virtual UInteractItemHandler* GetStateChangeHandler(const FName& ConfigName);
+	virtual UInteractItemHandler* GetInteractHandler(const FName& ConfigName);
 
 public:
 	UPROPERTY(BlueprintReadWrite, Replicated)
 	TArray<FInteractReplicateData> InteractingInfoList;
 
+	UPROPERTY()
+	TMap<FString, UInteractItemHandler*> StateChangeHandlerMap;
+
+	UPROPERTY()
+	TMap<FString, UInteractItemHandler*> InteractHandlerMap;
+
+	UPROPERTY()
+	TMap<FString, UInteractConfigAsset*> InteractAssetMap;
 };

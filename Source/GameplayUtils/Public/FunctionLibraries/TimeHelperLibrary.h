@@ -42,4 +42,7 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Time Helper")
 	static FString FormatNowString(const FString& Format);
+
+	UFUNCTION(BlueprintPure, Category = "Time Helper")
+	static FString FormatTimestampString(int64 TimestampSec, const FString& Format);
 };

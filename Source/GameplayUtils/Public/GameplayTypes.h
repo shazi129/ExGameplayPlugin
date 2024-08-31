@@ -19,6 +19,12 @@ enum class EExecNetMode : uint8
 	//严格意义上的服务端，只有DedicatedServer， ListenServer
 	E_ExactServer		UMETA(DisplayName = "Exact Server"),
 
+	//客户端和Serrver一体的，Standalone和ListenServer
+	E_Client_Server	UMETA(DisplayName = "Client And Server"),
+
+	//Standalone
+	E_Standalone		UMETA(DisplayName = "Standalone"),
+
 	//不限制
 	E_Aways				UMETA(DisplayName = "Aways"),
 };
@@ -54,6 +60,7 @@ struct GAMEPLAYUTILS_API FFilterActorCondition
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	TArray<AActor*> IgnoreActors;
 
+	bool FilterActor(AActor* Actor) const;
 	bool FilterExcludeComponentClasses(AActor* Actor) const;
 	bool FilterRequireComponentClasses(AActor* Actor) const;
 	bool FilterIgnoreActors(AActor* Actor) const;
@@ -65,7 +72,11 @@ struct GAMEPLAYUTILS_API FPriorityData
 	void* Owner = nullptr;
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDynamicMulticastDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFloatDynamicMulticastDelegate, float, Value);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FStringParamDelegate, const FString&, StringParam);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FFloatChangeMulticastDelegate, float, OldValue, float, NewValue);
 
 /**
  * @brief 物品权重抽象
@@ -118,4 +129,13 @@ struct GAMEPLAYUTILS_API FObjectListData
 
 	UPROPERTY(BlueprintType)
 	TArray<TObjectPtr<UObject>> Data;
+};
+
+//数值比较的枚举定义
+UENUM(BlueprintType)
+enum class EDataCompareMode : uint8
+{
+	SmallerThan,
+	BiggerThan,
+	Equal,
 };

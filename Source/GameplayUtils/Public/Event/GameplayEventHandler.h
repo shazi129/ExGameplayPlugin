@@ -2,6 +2,7 @@
 
 #include "GameplayObject.h"
 #include "InstancedStruct.h"
+#include "GameplayTags.h"
 #include "GameplayEventHandler.generated.h"
 
 UCLASS(Abstract, Blueprintable, EditInlineNew)

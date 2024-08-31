@@ -15,6 +15,14 @@ public:
 		Execute(InstanceData);
 	}
 
+	virtual void NativeStopExecute(const FInteractInstanceData& InstanceData)
+	{
+		StopExecute(InstanceData);
+	}
+
 	UFUNCTION(BlueprintImplementableEvent)
 	void Execute(const FInteractInstanceData& InstanceData);
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void StopExecute(const FInteractInstanceData& InstanceData);
 };

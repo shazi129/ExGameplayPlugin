@@ -1,5 +1,10 @@
-#include "UMG/ExUserWidgetExtension.h"
+﻿#include "UMG/ExUserWidgetExtension.h"
 #include "Blueprint/UserWidget.h"
+#include "Components/WidgetComponent.h"
+
+UExUserWidgetExtension::UExUserWidgetExtension()
+{
+}
 
 void UExUserWidgetExtension::Initialize()
 {
@@ -38,6 +43,14 @@ UUserWidget* UExUserWidgetExtension::GetOuterUserWidget()
 	return GetUserWidget();
 }
 
+void UExUserWidgetExtension::SetVisibility(ESlateVisibility InVisibility)
+{
+	if (UUserWidget* UserWidget = GetUserWidget())
+	{
+		UserWidget->SetVisibility(InVisibility);
+	}
+}
+
 UUserWidgetExtension* UExUserWidgetExtension::GetUserWidgetExtensionByName(UUserWidget* UserWidget, FName ExtensionName)
 {
 	if (!UserWidget)
@@ -54,6 +67,21 @@ UUserWidgetExtension* UExUserWidgetExtension::GetUserWidgetExtensionByName(UUser
 		}
 	}
 	return nullptr;
+}
+
+UUserWidgetExtension* UExUserWidgetExtension::GetWidgetComponentExtensionByClass(UWidgetComponent* Widget, TSubclassOf<UUserWidgetExtension> Class)
+{
+	if (!Widget || !Class)
+	{
+		return nullptr;
+	}
+
+	UUserWidget* UserWidget = Widget->GetWidget();
+	if (!UserWidget)
+	{
+		return nullptr;
+	}
+	return UserWidget->GetExtension(Class);
 }
 
 bool UExUserWidgetExtension::IsTickable_Implementation() const

@@ -9,8 +9,31 @@
 #include "Subsystems/WorldSubsystem.h"
 #include "GameplayWorldSubsystem.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FObjectMulticastDelegate, UObject*, Object);
+DECLARE_DYNAMIC_DELEGATE_OneParam(FObjectDynamicDelegate, UObject*, Object);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FGameplayWorldEvent, UWorld*, World);
+USTRUCT(BlueprintType)
+struct GAMEPLAYUTILS_API FGameplayURL
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	FString Protocol;
+
+	UPROPERTY(BlueprintReadWrite)
+	FString Host;
+
+	UPROPERTY(BlueprintReadWrite)
+	int32 Port;
+
+	UPROPERTY(BlueprintReadWrite)
+	FString Map;
+
+	UPROPERTY(BlueprintReadWrite)
+	TMap<FString, FString> OptionMap;
+
+	void Parse(FURL URL);
+};
 
 UCLASS(BlueprintType)
 class GAMEPLAYUTILS_API UGameplayWorldSubsystem : public UWorldSubsystem
@@ -26,33 +49,19 @@ public:
 	virtual void Deinitialize() override;
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 
-#pragma region //////////////////////////////////World相关的一些回调///////
-public:
-	UPROPERTY(BlueprintAssignable)
-	FGameplayWorldEvent WorldBeginPlayDelegate;
-
-	UPROPERTY(BlueprintAssignable)
-	FGameplayWorldEvent WorldTeardownDeletage;
-
-	UPROPERTY(BlueprintAssignable)
-	FGameplayWorldEvent WorldInitializedActorsDeletage;
-
-private:
-	void OnWorldTearingDown(UWorld* World);
-	void OnWorldInitializedActors(const UWorld::FActorsInitializedParams& Params);
-
-private:
-	bool bIsWorldBeginplay = false;
-	FDelegateHandle WorldTearDownHandler;
-	FDelegateHandle WorldInitializedActorsHandler;
-
 #pragma region //////////////////////////////////全局的一些Object缓存////////
 public:
 	UFUNCTION(BlueprintCallable)
 	UObject* GetGlobalObject(FName ObjectName);
 
 	UFUNCTION(BlueprintCallable)
+	void GetGlobalObjectForDelegate(FName ObjectName, FObjectDynamicDelegate Delgate);
+
+	UFUNCTION(BlueprintCallable)
 	TArray<UObject*> GetGlobalObjectList(FName ObjectName);
+
+	UFUNCTION(BlueprintCallable)
+	TArray<UObject*> GetGlobalObjectListByClass(UClass* ObjectClass);
 
 	UFUNCTION(BlueprintCallable)
 	bool AddGlobalObject(FName ObjectName, UObject* Object);
@@ -64,5 +73,15 @@ private:
 	//全局的Object
 	UPROPERTY()
 	TMap<FName, FObjectListData> GlobalObjectsMap;
+
+	UPROPERTY()
+	TMap<FName, FObjectMulticastDelegate> GlobalObjectGetDelegateMap;
 #pragma endregion
+
+public:
+	UFUNCTION(BlueprintCallable)
+	FGameplayURL GetRemoteURL();
+
+private:
+	FGameplayURL RemoteURL;
 };

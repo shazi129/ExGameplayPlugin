@@ -1,16 +1,16 @@
-#pragma once
+ï»¿#pragma once
 
 /**
- * ¸ù¾İ½»»¥Êı¾İÕ¹Ê¾»òÒş²ØWidgetComponent
+ * æ ¹æ®äº¤äº’æ•°æ®å±•ç¤ºæˆ–éšè—WidgetComponent
  */
 
 #include "Components/WidgetComponent.h"
 #include "Interact/Handlers/InteractItemHandler.h"
-#include "InteractItemHandler_ShowWidget.generated.h"
+#include "InteractItemHandler_ShowWidgetComponent.generated.h"
 
 
 UCLASS(BlueprintType, Blueprintable, EditInlineNew)
-class GAMEPLAYUTILS_API UInteractItemHandler_ShowWidget : public UInteractItemHandler
+class GAMEPLAYUTILS_API UInteractItemHandler_ShowWidgetComponent : public UInteractItemHandler
 {
 	GENERATED_BODY()
 

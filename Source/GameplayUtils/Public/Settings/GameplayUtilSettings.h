@@ -21,6 +21,9 @@ public:
 	UPROPERTY(config, EditAnywhere, Category = "Basic", meta = (DisplayName = "Cheat Manager Extension", ConfigRestartRequired = true))
 	TArray<TSoftClassPtr<UCheatManagerExtension>> CheatExtensionClasses;
 
+	UPROPERTY(config, EditAnywhere, Category = "Basic")
+	TSoftClassPtr<UOnlineSession> OnLineSessionClass;
+
 	UPROPERTY(config, EditAnywhere, Category = "Global Variables")
 	TMap<FName, bool> BoolVariables;
 

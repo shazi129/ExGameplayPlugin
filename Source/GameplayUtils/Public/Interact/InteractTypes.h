@@ -112,6 +112,15 @@ class GAMEPLAYUTILS_API UInteractConfigAsset : public UDataAsset
 public:
 	UPROPERTY(EditAnywhere)
 	FInteractConfigData ConfigData;
+
+	UPROPERTY(EditAnywhere, Instanced)
+	class UInteractItemHandler* StateChangeHandler;
+
+	UPROPERTY(EditAnywhere, Instanced)
+	class UInteractItemHandler* InteractHandler;
+
+	UPROPERTY(EditAnywhere, Instanced)
+	class UInteractItemHandler* EndInteractHandler;
 };
 
 //运行时的交互数据，用于各种操作或是通知

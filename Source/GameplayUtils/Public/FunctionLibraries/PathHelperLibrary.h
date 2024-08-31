@@ -30,4 +30,18 @@ public:
 	*/
 	UFUNCTION(BlueprintPure, Category = "Path Helper")
 	static FString GetExternalAbsolutePath(const FString& RelativePath);
+
+	/**
+	 * @brief 把一个PackagePath转为ClassName, 例如：/Game/BP_Character -> /Game/BP_Character.BP_Character_C
+	 * @param PackageFullPath 
+	 * @return 
+	*/
+	UFUNCTION(BlueprintPure, Category = "Path Helper")
+	static FString ConvertPackagePathToClassPath(const FString& PackageFullPath);
+
+	UFUNCTION(BlueprintPure, Category = "Path Helper")
+	static FString GetPathName(UObject* Object);
+
+	UFUNCTION(BlueprintPure, Category = "Path Helper")
+	static FString GetSoftPtrPathName(TSoftObjectPtr<UObject> ObjectPtr);
 };

@@ -1,4 +1,31 @@
 #include "GameplayTypes.h"
+#include "GameplayUtils.h"
+
+bool FFilterActorCondition::FilterActor(AActor* Actor) const
+{
+	if (!Actor)
+	{
+		return false;
+	}
+	if (!FilterIgnoreActors(Actor))
+	{
+		return false;
+	}
+	if (!FilterExcludeComponentClasses(Actor))
+	{
+		return false;
+	}
+	if (!FilterRequireComponentClasses(Actor))
+	{
+		return false;
+	}
+	if (!GameplayUtils::FilterActorClasses(Actor, ActorClasses))
+	{
+		return false;
+	}
+
+	return true;
+}
 
 bool FFilterActorCondition::FilterExcludeComponentClasses(AActor* Actor) const
 {

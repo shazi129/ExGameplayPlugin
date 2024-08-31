@@ -35,7 +35,7 @@ void AMultiTriggerActor::NativeBeginOverlap(UPrimitiveComponent* OverlappedCompo
 
 	if (!Found)
 	{
-		FActorOverlapInfo* OverlapInfo = new (OverlappingInfoList)FActorOverlapInfo();
+		FTriggeredActorInfo* OverlapInfo = new (OverlappingInfoList)FTriggeredActorInfo();
 		OverlapInfo->Actor = OtherActor;
 		OverlapInfo->Components.Add(OtherComp);
 		OnTriggerBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
@@ -48,7 +48,7 @@ void AMultiTriggerActor::NativeEndOverlap(UPrimitiveComponent* OverlappedCompone
 	int RemoveIndex = -1;
 	for (int ActorIndex = OverlappingInfoList.Num() - 1; ActorIndex >= 0; ActorIndex--)
 	{
-		FActorOverlapInfo& OverlappingInfo = OverlappingInfoList[ActorIndex];
+		FTriggeredActorInfo& OverlappingInfo = OverlappingInfoList[ActorIndex];
 		if (OtherActor == OverlappingInfo.Actor)
 		{
 			for (int CompIndex = OverlappingInfo.Components.Num() - 1; CompIndex >= 0; CompIndex--)
